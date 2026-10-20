@@ -105,6 +105,8 @@ export class G502X extends EventEmitter {
   private readonly byIndex = new Map<number, FeatureEntry>();
   private descriptionCache?: ReturnType<typeof OnboardProfiles.decodeDescription>;
   private readonly rawWaiters = new Set<(r: Uint8Array) => boolean>();
+  /** Replies that timed out may still arrive; drop them instead of matching the next request. */
+  private readonly stale: { key: string; until: number }[] = [];
 
   private constructor(
     private readonly transport: HidTransport,
@@ -164,6 +166,7 @@ export class G502X extends EventEmitter {
       return;
     }
     if (frame.deviceIndex !== this.deviceIndex) return;
+    if (frame.swid === this.swid && this.dropStale(`${frame.featureIndex}:${frame.fn}`)) return;
     if (p && frame.swid === this.swid && frame.featureIndex === p.featureIndex && frame.fn === p.fn) {
       clearTimeout(p.timer);
       this.pending = undefined;
@@ -173,6 +176,15 @@ export class G502X extends EventEmitter {
       return;
     }
     if (frame.kind === 'message' && frame.swid === 0) this.onEvent(frame.featureIndex, frame.fn, frame.params);
+  }
+
+  private dropStale(key: string): boolean {
+    const now = Date.now();
+    while (this.stale.length && this.stale[0].until < now) this.stale.shift();
+    const i = this.stale.findIndex((s) => s.key === key);
+    if (i < 0) return false;
+    this.stale.splice(i, 1);
+    return true;
   }
 
   private onEvent(featureIndex: number, fn: number, params: Uint8Array): void {
@@ -188,6 +200,7 @@ export class G502X extends EventEmitter {
       new Promise<Uint8Array>((resolve, reject) => {
         const timer = setTimeout(() => {
           this.pending = undefined;
+          this.stale.push({ key: `${featureIndex}:${fn}`, until: Date.now() + 4 * this.timeoutMs });
           reject(new TimeoutError(`${featureName(featureId)} fn${fn}: no response within ${this.timeoutMs} ms`));
         }, this.timeoutMs);
         this.pending = { featureIndex, fn, featureId, resolve, reject, timer };
@@ -225,6 +238,18 @@ export class G502X extends EventEmitter {
     const entry = this.byId.get(featureId);
     if (!entry) return Promise.reject(new Error(`feature ${featureName(featureId)} is not present on this device`));
     return this.request(entry.index, fn, params, featureId);
+  }
+
+  /** Like call(), but fails at once if the mouse is asleep (for steps that must not be repeated). */
+  private callOnce(featureId: number, fn: number, params: ArrayLike<number> = []): Promise<Uint8Array> {
+    const entry = this.byId.get(featureId);
+    if (!entry) return Promise.reject(new Error(`feature ${featureName(featureId)} is not present on this device`));
+    return this.requestOnce(entry.index, fn, params, featureId);
+  }
+
+  /** Wait (up to wakeTimeoutMs) until the mouse answers again. */
+  private async waitAwake(): Promise<void> {
+    await this.request(0, Root.PING, [0, 0, 0x5a], Feature.ROOT);
   }
 
   /**
@@ -284,7 +309,6 @@ export class G502X extends EventEmitter {
         if (fs !== 0) return;
       } catch (err) {
         lastError = err;
-        if (err instanceof MouseUnavailableError && err.code !== Error10.UNKNOWN_DEVICE) continue;
       }
     }
     this.deviceIndex = 1;
@@ -366,7 +390,9 @@ export class G502X extends EventEmitter {
   }
 
   async setDpiIndex(index: number): Promise<void> {
-    if (!Number.isInteger(index) || index < 0 || index > 4) throw new RangeError('DPI index must be 0..4');
+    let levels = 5;
+    if ((await this.getMode()) === 'onboard') levels = (await this.readProfile(await this.getActiveProfile())).dpiLevels.length;
+    if (!Number.isInteger(index) || index < 0 || index >= levels) throw new RangeError(`DPI level must be 0..${levels - 1}`);
     await this.call(Feature.ONBOARD_PROFILES, OnboardProfiles.SET_CURRENT_DPI_INDEX, [index]);
   }
 
@@ -382,38 +408,57 @@ export class G502X extends EventEmitter {
     return out;
   }
 
+  /** One write session: start (erases the sector), 16-byte chunks, end (checks the CRC). */
+  private async writeSession(sector: number, data: Uint8Array): Promise<void> {
+    const size = data.length;
+    // No per-request wake retry inside a session: a repeated chunk would shift the data.
+    await this.callOnce(Feature.ONBOARD_PROFILES, OnboardProfiles.MEMORY_WRITE_START, OnboardProfiles.encodeWriteStart(sector, 0, size));
+    for (let off = 0; off < size; off += 16) {
+      const chunk = Array.from(data.slice(off, off + 16));
+      while (chunk.length < 16) chunk.push(0);
+      await this.callOnce(Feature.ONBOARD_PROFILES, OnboardProfiles.MEMORY_WRITE, chunk);
+    }
+    await this.callOnce(Feature.ONBOARD_PROFILES, OnboardProfiles.MEMORY_WRITE_END);
+  }
+
   /**
    * Write a whole user sector the way G Hub does (start, 16-byte chunks, end), then read it back.
    * The CRC is recomputed: the firmware checks it when the write ends and answers
-   * HARDWARE_ERROR if it is wrong. Factory sectors (0x0100+) are read-only.
+   * HARDWARE_ERROR if it is wrong. If the mouse falls asleep part-way, the whole session is
+   * repeated once it wakes. Factory sectors (0x0100+) are read-only.
    */
   async writeSector(sector: number, bytes: Uint8Array): Promise<void> {
     const { sectorSize, sectorCount } = await this.getOnboardDescription();
-    if (sector >= sectorCount) throw new RangeError(`sector ${sector} is not writable (user sectors are 0..${sectorCount - 1})`);
+    if (!Number.isInteger(sector) || sector < 0 || sector >= sectorCount) throw new RangeError(`sector ${sector} is not writable (user sectors are 0..${sectorCount - 1})`);
     if (bytes.length !== sectorSize) throw new RangeError(`a sector is ${sectorSize} bytes, got ${bytes.length}`);
     const data = withCrc(bytes);
-    await this.call(Feature.ONBOARD_PROFILES, OnboardProfiles.MEMORY_WRITE_START, OnboardProfiles.encodeWriteStart(sector, 0, sectorSize));
-    for (let off = 0; off < sectorSize; off += 16) {
-      const chunk = Array.from(data.slice(off, off + 16));
-      while (chunk.length < 16) chunk.push(0);
-      await this.call(Feature.ONBOARD_PROFILES, OnboardProfiles.MEMORY_WRITE, chunk);
+    for (let attempt = 1; ; attempt++) {
+      try {
+        await this.writeSession(sector, data);
+        break;
+      } catch (err) {
+        const asleep = err instanceof MouseUnavailableError && err.code === Error10.UNKNOWN_DEVICE;
+        if (!asleep || attempt >= 3) {
+          throw new Error(`writing sector ${sector} failed (${(err as Error).message}); the sector may now be erased. Run the command again, or restore a backup.`);
+        }
+        this.emit('waiting', err.message);
+        await this.waitAwake();
+      }
     }
-    await this.call(Feature.ONBOARD_PROFILES, OnboardProfiles.MEMORY_WRITE_END);
     const back = await this.readSector(sector);
     if (toHex(back) !== toHex(data)) throw new Error(`sector ${sector} did not read back as written`);
   }
 
   /**
    * Return a user sector to the erased state (all FF, no checksum). Starting a write erases the
-   * sector; the firmware then rejects the all-FF data at write end (bad CRC), which leaves it erased.
+   * sector; the firmware then rejects the all-FF data at write end (bad CRC), which leaves it
+   * erased. An erased sector 0 makes the mouse use its factory directory.
    */
   async eraseSector(sector: number): Promise<void> {
     const { sectorSize, sectorCount } = await this.getOnboardDescription();
-    if (sector <= 0 || sector >= sectorCount) throw new RangeError(`sector ${sector} cannot be erased (1..${sectorCount - 1})`);
-    await this.call(Feature.ONBOARD_PROFILES, OnboardProfiles.MEMORY_WRITE_START, OnboardProfiles.encodeWriteStart(sector, 0, sectorSize));
-    for (let off = 0; off < sectorSize; off += 16) await this.call(Feature.ONBOARD_PROFILES, OnboardProfiles.MEMORY_WRITE, new Array(16).fill(0xff));
+    if (!Number.isInteger(sector) || sector < 0 || sector >= sectorCount) throw new RangeError(`sector ${sector} cannot be erased (0..${sectorCount - 1})`);
     try {
-      await this.call(Feature.ONBOARD_PROFILES, OnboardProfiles.MEMORY_WRITE_END);
+      await this.writeSession(sector, new Uint8Array(sectorSize).fill(0xff));
     } catch (err) {
       if (!(err instanceof DeviceError && err.code === Error20.HARDWARE_ERROR)) throw err;
     }
@@ -421,10 +466,21 @@ export class G502X extends EventEmitter {
     if (!back.every((b) => b === 0xff)) throw new Error(`sector ${sector} did not erase`);
   }
 
-  async readDirectory(): Promise<DirectoryEntry[]> {
+  /**
+   * The profile directory. If sector 0 is blank or damaged the mouse runs from its factory
+   * directory; the user slots are still sectors 1..5, so return those (enabled like the factory
+   * profiles) and mark the directory as not stored, so the next change writes sector 0 first.
+   */
+  private async directoryState(): Promise<{ entries: DirectoryEntry[]; stored: boolean }> {
     const dir = await this.readSector(DIRECTORY_SECTOR);
-    if (!sectorCrcOk(dir)) return this.readFactoryDirectory();
-    return decodeDirectory(dir);
+    if (sectorCrcOk(dir)) return { entries: decodeDirectory(dir), stored: true };
+    const factory = await this.readFactoryDirectory();
+    const { profileCount } = await this.getOnboardDescription();
+    return { entries: [...Array(profileCount).keys()].map((k) => ({ sector: k + 1, enabled: factory[k]?.enabled ?? false })), stored: false };
+  }
+
+  async readDirectory(): Promise<DirectoryEntry[]> {
+    return (await this.directoryState()).entries;
   }
 
   /** The factory directory (sector 0x0100); the mouse falls back to it if sector 0 is blank. */
@@ -443,13 +499,22 @@ export class G502X extends EventEmitter {
     await this.writeSector(DIRECTORY_SECTOR, encodeDirectory(dir));
   }
 
+  /**
+   * Read and decode a profile. An erased slot reads as its factory profile (that is what the
+   * mouse runs); a slot that fails its checksum is reported, never silently replaced.
+   */
   async readProfile(profile: number): Promise<Profile & { sector: number; enabled: boolean }> {
     const dir = await this.readDirectory();
     const entry = dir[profile - 1];
     if (!entry) throw new RangeError(`profile ${profile} does not exist (1..${dir.length})`);
-    const bytes = await this.readSector(entry.sector);
-    const p = sectorCrcOk(bytes) ? bytes : await this.readSector(this.factorySectorFor(profile));
-    return { ...decodeProfile(p), sector: entry.sector, enabled: entry.enabled };
+    let bytes = await this.readSector(entry.sector);
+    if (!sectorCrcOk(bytes)) {
+      if (!bytes.every((b) => b === 0xff)) {
+        throw new Error(`profile ${profile} (sector ${entry.sector}) fails its checksum; restore it from a backup or with "profile ${profile} restore"`);
+      }
+      bytes = await this.readSector(this.factorySectorFor(profile));
+    }
+    return { ...decodeProfile(bytes), sector: entry.sector, enabled: entry.enabled };
   }
 
   async readProfiles() {
@@ -464,15 +529,17 @@ export class G502X extends EventEmitter {
    * mouse applies the new settings immediately (that is what G Hub does after writing).
    */
   async writeProfile(profile: number, p: Profile): Promise<void> {
-    const dir = await this.readDirectory();
-    const entry = dir[profile - 1];
+    const { entries, stored } = await this.directoryState();
+    const entry = entries[profile - 1];
     if (!entry) throw new RangeError(`profile ${profile} does not exist`);
     const { dpiLevels, reportRateMs } = p;
     const dpi = await this.getDpiCapabilities();
     for (const d of dpiLevels) if (!AdjustableDpi.isValid(d, dpi)) throw new RangeError(`${d} DPI is not supported (${this.describeDpi(dpi)})`);
     const rates = await this.getReportRates();
     if (!rates.includes(reportRateMs)) throw new RangeError(`report interval ${reportRateMs} ms is not supported (${rates.join(', ')} ms)`);
-    await this.writeSector(entry.sector, encodeProfile(p));
+    const bytes = encodeProfile(p); // validates every field before anything is erased
+    if (!stored) await this.writeSector(DIRECTORY_SECTOR, encodeDirectory(entries));
+    await this.writeSector(entry.sector, bytes);
     if ((await this.getMode()) === 'onboard' && (await this.getActiveProfile()) === profile) {
       await this.call(Feature.ONBOARD_PROFILES, OnboardProfiles.SET_CURRENT_PROFILE, OnboardProfiles.encodeSetCurrentProfile(profile));
     }

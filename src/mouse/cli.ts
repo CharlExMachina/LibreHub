@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 // g502x: command-line control for the Logitech G502 X PLUS. Same code path as the Electron app.
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import type { HidTransport } from '../device/transport.js';
 import { featureName } from './features.js';
 import { G502X } from './g502x.js';
 import { fromHex, toHex } from './hidpp.js';
@@ -22,7 +24,8 @@ const USAGE = `usage: g502x <command>
   profile <n> show [--json]
   profile <n> enable | disable | restore  restore = factory settings for that slot
   profile <n> report-rate <125|250|500|1000>
-  profile <n> dpi <d1,d2,...> [--default <i>] [--shift <i>]   up to 5 levels, 100..25600 step 50
+  profile <n> dpi <d1,d2,...> [--default <i>] [--shift <i>]   up to 5 levels, 100..25600 step 50;
+                                          indexes are 0-based and default to the current ones
   profile <n> dpi-preset <name>           ${DPI_PRESETS.map((p) => p.name).join(', ')}
   profile <n> name <text|-->              -- clears the name
   profile <n> button <control> <binding> [--gshift]
@@ -40,31 +43,45 @@ effects: ${Object.keys(EFFECT_DEFAULTS).join(' | ')}
   fixed:#rrggbb  cycle:<ms>:<bright%>  breathing:#rrggbb:<ms>:<bright%>
   wave:<ms>:<horizontal|reverse-horizontal>:<bright%>  pulsar-point:<frame ms 32-64>:<bright%>`;
 
-const argv = process.argv.slice(2);
-const flag = (name: string) => {
-  const i = argv.indexOf(name);
-  if (i < 0) return undefined;
-  const v = argv[i + 1];
-  argv.splice(i, 2);
-  return v;
-};
-const has = (name: string) => {
-  const i = argv.indexOf(name);
-  if (i >= 0) argv.splice(i, 1);
-  return i >= 0;
-};
-const debug = has('--debug');
-const json = has('--json');
-const gshift = has('--gshift');
-const defaultIdx = flag('--default');
-const shiftIdx = flag('--shift');
+interface Options {
+  json: boolean;
+  gshift: boolean;
+  debug: boolean;
+  defaultIdx?: string;
+  shiftIdx?: string;
+}
+
+/** Pull the --flags out of the arguments. */
+function parseArgs(raw: string[]): { args: string[]; opts: Options } {
+  const args = [...raw];
+  const flag = (name: string) => {
+    const i = args.indexOf(name);
+    if (i < 0) return undefined;
+    const v = args[i + 1];
+    if (v === undefined || v.startsWith('--')) throw new Error(`${name} needs a value`);
+    args.splice(i, 2);
+    return v;
+  };
+  const has = (name: string) => {
+    const i = args.indexOf(name);
+    if (i >= 0) args.splice(i, 1);
+    return i >= 0;
+  };
+  const opts = { debug: has('--debug'), json: has('--json'), gshift: has('--gshift'), defaultIdx: flag('--default'), shiftIdx: flag('--shift') };
+  return { args, opts };
+}
 
 const int = (v: string | undefined, what: string) => {
   const n = Number(v);
   if (v === undefined || !Number.isInteger(n)) throw new Error(`expected ${what} as an integer, got "${v}"`);
   return n;
 };
-const seconds = (v: string | undefined) => (v === 'never' ? null : int(v, 'seconds'));
+const seconds = (v: string | undefined) => {
+  if (v === 'never') return null;
+  const n = int(v, 'seconds');
+  if (n < 1 || n > 65534) throw new Error(`seconds must be 1..65534 or "never", got ${n}`);
+  return n;
+};
 const fmtSeconds = (s: number | null) => (s === null ? 'never' : s % 60 === 0 ? `${s / 60} min` : `${s} s`);
 
 function printProfile(p: MouseSnapshot['profiles'][number], active: boolean): void {
@@ -100,12 +117,15 @@ function printControls(): void {
   default       not remapped: the control keeps its native behaviour`);
 }
 
-async function main(): Promise<void> {
+/** Run one g502x command. `open` is injectable so tests can use a simulated receiver. */
+export async function runCli(raw: string[], open: () => HidTransport = openReceiver): Promise<void> {
+  const { args: argv, opts } = parseArgs(raw);
+  const { json, debug } = opts;
   const [cmd, ...args] = argv;
   if (!cmd || cmd === 'help' || cmd === '--help') return void console.log(USAGE);
   if (cmd === 'controls') return printControls();
 
-  const mouse = await G502X.connect(openReceiver(), {
+  const mouse = await G502X.connect(open(), {
     wakeTimeoutMs: 20000,
     log: debug ? (dir, b) => console.error(`${dir === 'out' ? '>>' : '<<'} ${toHex(b)}`) : undefined,
   });
@@ -122,14 +142,14 @@ async function main(): Promise<void> {
       }
       case 'mode':
         if (args[0] !== 'onboard' && args[0] !== 'host') throw new Error('mode must be onboard or host');
-        return apply({ type: 'mode', mode: args[0] });
+        return await apply({ type: 'mode', mode: args[0] });
       case 'dpi-level':
-        return apply({ type: 'dpiLevel', index: int(args[0], 'level') });
+        return await apply({ type: 'dpiLevel', index: int(args[0], 'level') });
       case 'startup-effect':
         if (args[0] !== 'on' && args[0] !== 'off') throw new Error('expected on or off');
-        return apply({ type: 'startupEffect', enabled: args[0] === 'on' });
+        return await apply({ type: 'startupEffect', enabled: args[0] === 'on' });
       case 'profile':
-        return await profileCommand(svc, int(args[0], 'profile'), args.slice(1));
+        return await profileCommand(svc, int(args[0], 'profile'), args.slice(1), opts);
       case 'backup': {
         if (!args[0]) throw new Error('backup needs a file name');
         const { sectorCount } = await mouse.getOnboardDescription();
@@ -168,12 +188,13 @@ async function main(): Promise<void> {
   }
 }
 
-async function profileCommand(svc: MouseService, profile: number, args: string[]): Promise<void> {
+async function profileCommand(svc: MouseService, profile: number, args: string[], opts: Options): Promise<void> {
+  const { json, gshift, defaultIdx, shiftIdx } = opts;
   const [sub, ...rest] = args;
   const apply = (a: MouseAction) => svc.apply(a);
   switch (sub) {
     case undefined:
-      return apply({ type: 'activeProfile', profile });
+      return await apply({ type: 'activeProfile', profile });
     case 'show': {
       const s = await svc.snapshot();
       const p = s.profiles[profile - 1];
@@ -184,39 +205,48 @@ async function profileCommand(svc: MouseService, profile: number, args: string[]
     }
     case 'enable':
     case 'disable':
-      return apply({ type: 'profileEnabled', profile, enabled: sub === 'enable' });
+      return await apply({ type: 'profileEnabled', profile, enabled: sub === 'enable' });
     case 'restore':
-      return apply({ type: 'restoreProfile', profile });
+      return await apply({ type: 'restoreProfile', profile });
     case 'report-rate':
-      return apply({ type: 'reportRate', profile, hz: int(rest[0], 'Hz') });
+      return await apply({ type: 'reportRate', profile, hz: int(rest[0], 'Hz') });
     case 'dpi': {
       const levels = (rest[0] ?? '').split(',').map((d) => int(d, 'DPI'));
-      return apply({ type: 'dpi', profile, levels, defaultIndex: defaultIdx ? int(defaultIdx, 'index') : 0, shiftIndex: shiftIdx ? int(shiftIdx, 'index') : 0 });
+      return await apply({
+        type: 'dpi',
+        profile,
+        levels,
+        defaultIndex: defaultIdx === undefined ? undefined : int(defaultIdx, 'index'),
+        shiftIndex: shiftIdx === undefined ? undefined : int(shiftIdx, 'index'),
+      });
     }
     case 'dpi-preset':
-      return apply({ type: 'dpiPreset', profile, preset: rest[0] ?? '' });
+      return await apply({ type: 'dpiPreset', profile, preset: rest[0] ?? '' });
     case 'name':
-      return apply({ type: 'name', profile, name: rest[0] === '--' ? null : rest.join(' ') });
+      return await apply({ type: 'name', profile, name: rest[0] === '--' ? null : rest.join(' ') });
     case 'button':
       if (rest.length < 2) throw new Error('usage: profile <n> button <control> <binding> [--gshift]');
-      return apply({ type: 'button', profile, control: rest[0], layer: gshift ? 'gshift' : 'base', binding: parseBinding(rest[1]) });
+      return await apply({ type: 'button', profile, control: rest[0], layer: gshift ? 'gshift' : 'base', binding: parseBinding(rest[1]) });
     case 'lighting':
-      return apply({ type: 'lighting', profile, target: 'active', effect: parseEffect(rest[0] ?? '') });
+      return await apply({ type: 'lighting', profile, target: 'active', effect: parseEffect(rest[0] ?? '') });
     case 'inactive-lighting': {
       const t = rest[0] ?? '';
-      if (t.startsWith('dim')) return apply({ type: 'lighting', profile, target: 'inactive', effect: 'dim', dimPercent: t.includes(':') ? int(t.split(':')[1], 'percent') : 50 });
-      return apply({ type: 'lighting', profile, target: 'inactive', effect: parseEffect(t) });
+      if (t.startsWith('dim')) return await apply({ type: 'lighting', profile, target: 'inactive', effect: 'dim', dimPercent: t.includes(':') ? int(t.split(':')[1], 'percent') : 50 });
+      return await apply({ type: 'lighting', profile, target: 'inactive', effect: parseEffect(t) });
     }
     case 'dim-after':
-      return apply({ type: 'inactivity', profile, dimAfterSeconds: seconds(rest[0]) });
+      return await apply({ type: 'inactivity', profile, dimAfterSeconds: seconds(rest[0]) });
     case 'off-after':
-      return apply({ type: 'inactivity', profile, lightsOffAfterSeconds: seconds(rest[0]) });
+      return await apply({ type: 'inactivity', profile, lightsOffAfterSeconds: seconds(rest[0]) });
     default:
       throw new Error(`unknown profile command "${sub}"\n\n${USAGE}`);
   }
 }
 
-main().catch((err) => {
-  console.error((err as Error).message);
-  process.exit(1);
-});
+const invokedDirectly = process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url));
+if (invokedDirectly) {
+  runCli(process.argv.slice(2)).catch((err) => {
+    console.error((err as Error).message);
+    process.exit(1);
+  });
+}

@@ -25,6 +25,11 @@ export class SimulatedG502X implements HidTransport {
   readonly written: Uint8Array[] = [];
   /** Replies the receiver sends as "unknown device" before the mouse answers again. */
   asleepFor = 0;
+  /** Called for every request to the mouse before it is answered (tests use it to inject faults). */
+  onRequest?: (featureId: number, fn: number) => void;
+  /** Delay the next reply by this many ms; later replies queue behind it (the receiver is FIFO). */
+  delayNextReplyMs = 0;
+  private lastReplyAt = 0;
   readonly flash = new Map<number, Uint8Array>();
   mode = 2; // host
   activeProfile = 0;
@@ -58,9 +63,15 @@ export class SimulatedG502X implements HidTransport {
   private send(bytes: number[]) {
     const out = new Uint8Array(bytes[0] === 0x10 ? 7 : 20);
     out.set(bytes.slice(0, out.length));
-    queueMicrotask(() => {
+    const deliver = () => {
       for (const l of this.listeners) l(out);
-    });
+    };
+    const at = Math.max(Date.now() + this.delayNextReplyMs, this.lastReplyAt);
+    this.delayNextReplyMs = 0;
+    if (at > Date.now()) {
+      this.lastReplyAt = at;
+      setTimeout(deliver, at - Date.now());
+    } else queueMicrotask(deliver);
   }
 
   write(report: Uint8Array): void {
@@ -74,6 +85,7 @@ export class SimulatedG502X implements HidTransport {
     }
     if (id !== 0x11) return;
     if (dev !== 1) return this.send([0x10, dev, 0x8f, sub, addr, 0x08, 0x00]);
+    this.onRequest?.(FEATURE_TABLE[sub], addr >> 4);
     if (this.asleepFor > 0) {
       this.asleepFor--;
       return this.send([0x10, dev, 0x8f, sub, addr, 0x08, 0x00]);

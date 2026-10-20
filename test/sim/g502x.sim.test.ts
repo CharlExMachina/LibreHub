@@ -5,6 +5,7 @@ import { decodeProfile, encodeProfile, Modifier } from '../../src/mouse/onboard.
 import { parseEffect } from '../../src/mouse/presets.js';
 import { MouseService } from '../../src/mouse/service.js';
 import { parseBinding } from '../../src/mouse/usages.js';
+import { runCli } from '../../src/mouse/cli.js';
 import { SECTORS } from '../fixtures/g502x-sectors.js';
 import { FEATURE_TABLE, SimulatedG502X } from './simulated-g502x.js';
 
@@ -110,7 +111,7 @@ describe('onboard memory', () => {
     await mouse.writeSector(9, encodeProfile(decodeProfile(fromHex(SECTORS.profile1))));
     await mouse.eraseSector(9);
     expect(sim.flash.get(9)!.every((b) => b === 0xff)).toBe(true);
-    await expect(mouse.eraseSector(0)).rejects.toThrow(RangeError);
+    await expect(mouse.eraseSector(16)).rejects.toThrow(RangeError);
   });
 });
 
@@ -191,5 +192,143 @@ describe('service actions', () => {
     expect(s.profiles[1].buttons.find((b) => b.control === 'middle')).toEqual({ control: 'middle', label: 'Middle Click', binding: 'mouse:middle', gshift: 'key:ctrl+t' });
     expect(s.profiles[0].lighting).toEqual({ active: 'pulsar-point:32:100', inactive: 'neutron-null:32:100' });
     expect(s.profiles[0].reportRateHz).toBe(1000);
+  });
+});
+
+describe('robustness (review findings)', () => {
+  it('ignores a reply that arrives after its request timed out', async () => {
+    const sim = new SimulatedG502X();
+    const mouse = await G502X.connect(sim, { timeoutMs: 100 });
+    sim.delayNextReplyMs = 150; // arrives after the 100 ms timeout, before the next reply
+    await expect(mouse.getDpi()).rejects.toThrow(/no response/);
+    sim.dpi = 2000;
+    // Without stale-reply dropping, this would resolve with the late 1600 reply.
+    expect((await mouse.getDpi()).dpi).toBe(2000);
+  });
+
+  it('restarts a sector write from the beginning if the mouse falls asleep part-way', async () => {
+    const sim = new SimulatedG502X();
+    const mouse = await G502X.connect(sim, { timeoutMs: 200, wakeTimeoutMs: 5000 });
+    const p = decodeProfile(fromHex(SECTORS.profile3));
+    p.name = 'after a nap';
+    const from = sim.written.length;
+    let chunks = 0;
+    sim.onRequest = (feature, fn) => {
+      if (feature === 0x8100 && fn === 7 && ++chunks === 8) sim.asleepFor = 3; // asleep from chunk 8 on
+    };
+    await mouse.writeProfile(3, p);
+    expect(sent(sim, from).filter(([f, fn]) => f === 0x8100 && fn === 6)).toHaveLength(2);
+    expect(toHex(sim.flash.get(3)!)).toBe(toHex(encodeProfile(p)));
+  });
+
+  it('with a blank directory, edits target user sectors and recreate the directory', async () => {
+    const { sim, mouse } = await setup();
+    sim.flash.set(0, new Uint8Array(255).fill(0xff));
+    expect(await mouse.readDirectory()).toEqual([1, 2, 3, 4, 5].map((s) => ({ sector: s, enabled: s <= 2 })));
+    const p = decodeProfile(fromHex(SECTORS.profile3));
+    await mouse.writeProfile(4, { ...p, name: 'four' });
+    expect(decodeProfile(sim.flash.get(4)!).name).toBe('four');
+    expect(toHex(sim.flash.get(0)!)).toBe(SECTORS.directory);
+    await mouse.setProfileEnabled(4, true);
+    expect((await mouse.readDirectory())[3]).toEqual({ sector: 4, enabled: true });
+  });
+
+  it('reports a damaged profile instead of silently showing the factory one', async () => {
+    const { sim, mouse } = await setup();
+    sim.flash.get(2)![10] ^= 0xff;
+    await expect(mouse.readProfile(2)).rejects.toThrow(/fails its checksum/);
+    sim.flash.set(3, new Uint8Array(255).fill(0xff));
+    expect((await mouse.readProfile(3)).dpiLevels).toEqual([800, 1200, 1600, 2400, 3200]); // erased = factory
+  });
+
+  it('refuses out-of-range values before anything is written', async () => {
+    const { sim, mouse, svc } = await setup();
+    const before = toHex(sim.flash.get(1)!);
+    const bad = [
+      svc.apply({ type: 'dpi', profile: 1, levels: [800, 1600], defaultIndex: -1 }),
+      svc.apply({ type: 'inactivity', profile: 1, dimAfterSeconds: 70000 }),
+      svc.apply({ type: 'lighting', profile: 1, target: 'inactive', effect: 'dim', dimPercent: 150 }),
+      svc.apply({ type: 'lighting', profile: 1, target: 'active', effect: { type: 'wave', periodMs: 5000, direction: 1, brightness: 150 } }),
+      svc.apply({ type: 'lighting', profile: 1, target: 'active', effect: { type: 'fixed', color: [300, 0, 0] } }),
+      svc.apply({ type: 'reportRate', profile: 1, hz: 900 }),
+      svc.apply({ type: 'button', profile: 1, control: 'g9', layer: 'base', binding: { type: 'key', modifiers: 0, usage: 300 } }),
+    ];
+    for (const b of bad) await expect(b).rejects.toThrow(RangeError);
+    expect(toHex(sim.flash.get(1)!)).toBe(before);
+    await mouse.setMode('onboard');
+    await expect(mouse.setDpiIndex(4)).resolves.toBeUndefined(); // profile 1 has 5 levels
+    await svc.apply({ type: 'dpi', profile: 1, levels: [800, 1600] });
+    await expect(mouse.setDpiIndex(2)).rejects.toThrow(/0..1/);
+  });
+
+  it('keeps the current default and shift levels when only the DPI list changes', async () => {
+    const { mouse, svc } = await setup();
+    await svc.apply({ type: 'dpi', profile: 1, levels: [700, 1000, 1500, 2000] });
+    const p = await mouse.readProfile(1);
+    expect([p.defaultDpiIndex, p.shiftDpiIndex]).toEqual([2, 0]);
+  });
+
+  it('runs concurrent edits one after another, so none is lost', async () => {
+    const { mouse, svc } = await setup();
+    await Promise.all([
+      svc.apply({ type: 'button', profile: 1, control: 'g9', layer: 'base', binding: parseBinding('key:f13') }),
+      svc.apply({ type: 'name', profile: 1, name: 'both' }),
+      svc.snapshot(),
+    ]);
+    const p = await mouse.readProfile(1);
+    expect([p.name, p.buttons[8]]).toEqual(['both', { type: 'key', modifiers: 0, usage: 0x68 }]);
+  });
+});
+
+describe('g502x CLI', () => {
+  const cli = async (sim: SimulatedG502X, ...args: string[]) => {
+    const log = console.log;
+    console.log = () => undefined;
+    try {
+      await runCli(args, () => sim);
+    } finally {
+      console.log = log;
+    }
+  };
+
+  it('sends single-request commands before closing the connection', async () => {
+    const sim = new SimulatedG502X();
+    await cli(sim, 'mode', 'onboard');
+    expect(sim.mode).toBe(1);
+    await cli(sim, 'dpi-level', '3');
+    expect(sim.dpiIndex).toBe(3);
+    await cli(sim, 'startup-effect', 'on');
+    expect(sim.startupEffect).toBe(1);
+  });
+
+  it('edits a profile and switches to it', async () => {
+    const sim = new SimulatedG502X();
+    await cli(sim, 'mode', 'onboard');
+    await cli(sim, 'profile', '2', 'dpi', '400,800', '--default', '1');
+    await cli(sim, 'profile', '2', 'button', 'g9', 'fn:dpi-cycle', '--gshift');
+    await cli(sim, 'profile', '2', 'lighting', 'cycle:8000:60');
+    await cli(sim, 'profile', '2');
+    const p = decodeProfile(sim.flash.get(2)!);
+    expect([p.dpiLevels, p.defaultDpiIndex, p.gshift[8], p.lighting.active.primary]).toEqual([[400, 800], 1, { type: 'function', fn: 'dpi-cycle' }, { type: 'cycle', periodMs: 8000, brightness: 60 }]);
+    expect([sim.activeProfile, sim.dpi]).toEqual([2, 800]);
+  });
+
+  it('rejects a flag without a value', async () => {
+    await expect(cli(new SimulatedG502X(), 'profile', '1', 'dpi', '800', '--default')).rejects.toThrow(/needs a value/);
+  });
+
+  it('backs up and restores the whole memory', async () => {
+    const { mkdtempSync } = await import('node:fs');
+    const { join } = await import('node:path');
+    const { tmpdir } = await import('node:os');
+    const file = join(mkdtempSync(join(tmpdir(), 'g502x-')), 'backup.json');
+    const sim = new SimulatedG502X();
+    const original = [...sim.flash.entries()].filter(([s]) => s < 16).map(([s, b]) => [s, toHex(b)]);
+    await cli(sim, 'backup', file);
+    await cli(sim, 'profile', '1', 'name', 'scratch');
+    await cli(sim, 'profile', '3', 'enable');
+    sim.flash.set(9, encodeProfile(decodeProfile(fromHex(SECTORS.profile1))));
+    await cli(sim, 'restore', file);
+    expect([...sim.flash.entries()].filter(([s]) => s < 16).map(([s, b]) => [s, toHex(b)])).toEqual(original);
   });
 });

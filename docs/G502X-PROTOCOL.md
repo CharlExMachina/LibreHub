@@ -162,8 +162,10 @@ receiver error  10 DEV 8F FIDX FN<<4|SWID CODE 00       (08 = unknown device: th
 connection      10 DEV 41 PROTO FLAGS WPID.lo WPID.hi   (FLAGS bit 6 = link not established)
 ```
 
-G Hub uses software id 0xD; this project uses 0xB, so both can run at once and replies are
-never confused. The mouse sleeps after a few idle minutes; until it is moved again the receiver
+G Hub uses software id 0xD; this project uses 0xB, so replies are never confused when both
+are running. That only makes reading safe alongside G Hub: two programs writing the onboard
+memory at the same time would interleave their write sessions, and G Hub in software mode
+re-applies its own DPI, report rate and lighting. Quit G Hub before changing settings. The mouse sleeps after a few idle minutes; until it is moved again the receiver
 answers every request with `8F … 08`. The client retries for a configurable time.
 
 ## Feature table
@@ -224,6 +226,12 @@ answers every request with `8F … 08`. The client retries for a configurable ti
 | 6 | write start | `[sector u16][offset u16][length u16]` | erases the sector |
 | 7 | write | 16 bytes | `[00][chunk count]` |
 | 8 | write end | | **fails with 04 (hardware error) if the sector's CRC is wrong**; an all-FF write is how a sector is erased |
+
+A write session (fn6, sixteen fn7, fn8) must not be interrupted: if the mouse falls asleep
+part-way, the client waits for it and starts the session again from fn6 (repeating a single
+chunk would shift the data). A profile sector that fails its checksum is reported, not
+replaced; an erased one reads as the factory profile, and an erased directory makes the mouse
+use the factory directory, so the client recreates sector 0 before the next edit.
 | 11 / 12 | get / set current DPI index | `[index 0..4]` | |
 
 User sectors are 0x0000–0x000F; reads beyond fail with 02. Factory (read-only) sectors:

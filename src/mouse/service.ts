@@ -49,7 +49,8 @@ export type MouseAction =
   | { type: 'profileEnabled'; profile: number; enabled: boolean }
   | { type: 'restoreProfile'; profile: number }
   | { type: 'reportRate'; profile: number; hz: number }
-  | { type: 'dpi'; profile: number; levels: number[]; defaultIndex: number; shiftIndex: number }
+  /** Omitted indexes keep the profile's current ones (clamped to the new number of levels). */
+  | { type: 'dpi'; profile: number; levels: number[]; defaultIndex?: number; shiftIndex?: number }
   | { type: 'dpiPreset'; profile: number; preset: string }
   | { type: 'name'; profile: number; name: string | null }
   | { type: 'button'; profile: number; control: string; layer: 'base' | 'gshift'; binding: Binding }
@@ -61,6 +62,7 @@ const OFF: LedEffect = { type: 'off' };
 
 /** Lower an effect's brightness the way G Hub's "Dim Active Effect" does. */
 export function dimmed(e: LedEffect, percent: number): LedEffect {
+  if (!Number.isInteger(percent) || percent < 1 || percent > 100) throw new RangeError(`dim percentage must be 1..100, got ${percent}`);
   switch (e.type) {
     case 'cycle':
     case 'wave':
@@ -83,7 +85,16 @@ export function placeEffect(effect: LedEffect): { all: LedEffect; primary: LedEf
 const activeOf = (l: { all: LedEffect; primary: LedEffect }) => (l.all.type !== 'off' ? l.all : l.primary);
 
 export class MouseService {
+  /** Whole operations run one at a time (read-modify-write of a profile must not interleave). */
+  private queue: Promise<unknown> = Promise.resolve();
+
   constructor(readonly mouse: G502X) {}
+
+  private exclusive<T>(fn: () => Promise<T>): Promise<T> {
+    const run = this.queue.then(fn, fn);
+    this.queue = run.catch(() => undefined);
+    return run;
+  }
 
   private view(slot: number, p: Profile & { enabled: boolean }): ProfileView {
     return {
@@ -106,7 +117,11 @@ export class MouseService {
     };
   }
 
-  async snapshot(): Promise<MouseSnapshot> {
+  snapshot(): Promise<MouseSnapshot> {
+    return this.exclusive(() => this.readSnapshot());
+  }
+
+  private async readSnapshot(): Promise<MouseSnapshot> {
     const m = this.mouse;
     const mode = await m.getMode();
     const activeProfile = await m.getActiveProfile();
@@ -137,7 +152,11 @@ export class MouseService {
     await this.mouse.writeProfile(slot, next);
   }
 
-  async apply(a: MouseAction): Promise<void> {
+  apply(a: MouseAction): Promise<void> {
+    return this.exclusive(() => this.applyNow(a));
+  }
+
+  private async applyNow(a: MouseAction): Promise<void> {
     const m = this.mouse;
     switch (a.type) {
       case 'mode':
@@ -152,15 +171,19 @@ export class MouseService {
         return m.restoreFactoryProfile(a.profile);
       case 'startupEffect':
         return m.setStartupEffect(a.enabled);
-      case 'reportRate':
+      case 'reportRate': {
+        const ms = hzToMs(a.hz);
+        if (msToHz(ms) !== a.hz) throw new RangeError(`report rate must be 1000, 500, 250 or 125 Hz, got ${a.hz}`);
         return this.editProfile(a.profile, (p) => {
-          p.reportRateMs = hzToMs(a.hz);
+          p.reportRateMs = ms;
         });
+      }
       case 'dpi':
         return this.editProfile(a.profile, (p) => {
+          const last = a.levels.length - 1;
+          p.defaultDpiIndex = a.defaultIndex ?? Math.min(p.defaultDpiIndex, last);
+          p.shiftDpiIndex = a.shiftIndex ?? Math.min(p.shiftDpiIndex, last);
           p.dpiLevels = a.levels;
-          p.defaultDpiIndex = a.defaultIndex;
-          p.shiftDpiIndex = a.shiftIndex;
         });
       case 'dpiPreset': {
         const preset = DPI_PRESETS.find((x) => x.name === a.preset);

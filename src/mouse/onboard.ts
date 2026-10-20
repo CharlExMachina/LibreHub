@@ -145,7 +145,38 @@ export function decodeBinding(b: ArrayLike<number>): Binding {
   return { type: 'raw', bytes };
 }
 
+const checkInt = (v: unknown, min: number, max: number, what: string) => {
+  if (typeof v !== 'number' || !Number.isInteger(v) || v < min || v > max) throw new RangeError(`${what} must be an integer ${min}..${max}, got ${String(v)}`);
+};
+
 export function encodeBinding(b: Binding): number[] {
+  switch (b.type) {
+    case 'mouse':
+      checkInt(b.buttons, 0, 0xffff, 'mouse button mask');
+      break;
+    case 'key':
+      checkInt(b.modifiers, 0, 0xff, 'modifiers');
+      checkInt(b.usage, 0, 0xff, 'key usage');
+      break;
+    case 'consumer':
+      checkInt(b.usage, 0, 0xffff, 'consumer usage');
+      break;
+    case 'function':
+      if (typeof b.fn === 'number') checkInt(b.fn, 0, 0xff, 'function');
+      checkInt(b.data ?? 0, 0, 0xff, 'function data');
+      break;
+    case 'software-only':
+      checkInt(b.ref, 0, 1, 'software-only reference');
+      break;
+    case 'macro':
+      checkInt(b.sector, 1, 0x0fff, 'macro sector');
+      checkInt(b.offset, 0, 0xffff, 'macro offset');
+      break;
+    case 'raw':
+      if (b.bytes.length !== 4) throw new RangeError('a raw binding is 4 bytes');
+      b.bytes.forEach((x) => checkInt(x, 0, 0xff, 'binding byte'));
+      break;
+  }
   switch (b.type) {
     case 'unassigned':
       return [0xff, 0xff, 0xff, 0xff];
@@ -217,7 +248,49 @@ export function decodeEffect(b: ArrayLike<number>): LedEffect {
   }
 }
 
+/** Range-check an effect before it is written (brightness is a percentage, 0 = firmware default). */
+export function validateEffect(e: LedEffect): void {
+  const color = (c: Rgb) => {
+    if (!Array.isArray(c) || c.length !== 3) throw new RangeError('a colour is [r, g, b]');
+    c.forEach((v) => checkInt(v, 0, 255, 'colour channel'));
+  };
+  switch (e.type) {
+    case 'fixed':
+      color(e.color);
+      break;
+    case 'cycle':
+      checkInt(e.periodMs, 0, 0xffff, 'period (ms)');
+      checkInt(e.brightness, 0, 100, 'brightness (%)');
+      break;
+    case 'wave':
+      checkInt(e.periodMs, 0, 0xffff, 'period (ms)');
+      checkInt(e.direction, 0, 0xff, 'direction');
+      checkInt(e.brightness, 0, 100, 'brightness (%)');
+      break;
+    case 'breathing':
+      color(e.color);
+      checkInt(e.periodMs, 0, 0xffff, 'period (ms)');
+      checkInt(e.waveform, 0, 0xff, 'waveform');
+      checkInt(e.brightness, 0, 100, 'brightness (%)');
+      break;
+    case 'signature':
+      if (e.variant !== 'active' && e.variant !== 'inactive') throw new RangeError('signature variant is active or inactive');
+      checkInt(e.frameMs, 0, 0xffff, 'frame time (ms)');
+      checkInt(e.brightness, 0, 100, 'brightness (%)');
+      break;
+    case 'raw':
+      if (e.bytes.length !== 11) throw new RangeError('a raw effect is 11 bytes');
+      e.bytes.forEach((x) => checkInt(x, 0, 0xff, 'effect byte'));
+      break;
+    case 'off':
+      break;
+    default:
+      throw new RangeError(`unknown effect type ${String((e as { type: unknown }).type)}`);
+  }
+}
+
 export function encodeEffect(e: LedEffect): number[] {
+  validateEffect(e);
   const p = new Array<number>(11).fill(0);
   switch (e.type) {
     case 'off':
@@ -382,8 +455,13 @@ export function encodeProfile(p: Profile): Uint8Array {
   const s = Uint8Array.from(p.raw);
   if (s.length !== SECTOR_SIZE) throw new RangeError(`profile sector must be ${SECTOR_SIZE} bytes`);
   if (p.dpiLevels.length < 1 || p.dpiLevels.length > DPI_SLOTS) throw new RangeError(`1..${DPI_SLOTS} DPI levels required`);
-  if (p.defaultDpiIndex >= p.dpiLevels.length) throw new RangeError('default DPI index out of range');
-  if (p.shiftDpiIndex >= p.dpiLevels.length) throw new RangeError('shift DPI index out of range');
+  p.dpiLevels.forEach((d) => checkInt(d, 1, 0xfffe, 'DPI'));
+  checkInt(p.defaultDpiIndex, 0, p.dpiLevels.length - 1, 'default DPI index');
+  checkInt(p.shiftDpiIndex, 0, p.dpiLevels.length - 1, 'shift DPI index');
+  checkInt(p.reportRateMs, 1, 255, 'report interval (ms)');
+  // FFFF means never, so the longest storable timeout is 65534 s.
+  if (p.dimAfterSeconds !== null) checkInt(p.dimAfterSeconds, 0, 0xfffe, 'dim-after (s)');
+  if (p.lightsOffAfterSeconds !== null) checkInt(p.lightsOffAfterSeconds, 0, 0xfffe, 'lights-off-after (s)');
   if (p.buttons.length > BUTTON_SLOTS || p.gshift.length > BUTTON_SLOTS) throw new RangeError(`at most ${BUTTON_SLOTS} buttons`);
   s[O.reportRate] = p.reportRateMs;
   s[O.defaultDpi] = p.defaultDpiIndex;
