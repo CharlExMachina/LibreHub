@@ -246,7 +246,7 @@ g502x startup-effect on|off
 
 Run it with `npm run mouse -- <args>`, or `npm link` to get `g502x` on your `PATH`. If G Hub
 left the mouse in software mode, run `g502x mode onboard` once (the mouse also returns to
-on-board mode on its own after a power cycle).
+on-board mode by itself after it has been asleep).
 
 ## Releasing
 

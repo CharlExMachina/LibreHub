@@ -35,8 +35,9 @@ software involved. G Hub does not edit onboard profiles in place: "Enable with n
 "Replace with" on a slot converts one of G Hub's software profiles into the onboard format
 and writes the whole sector.
 
-On a fresh power-up the mouse is in onboard mode (G Hub found it in mode 1 after it had been
-idle with no agent running). **This project uses onboard mode**: settings are written to the
+Host mode does not stick: after the mouse had gone to sleep and woken up, G Hub's agent found
+it back in onboard mode (mode 1, profile 2) and switched it to host mode again. Stopping G Hub
+does not change the mode by itself. **This project uses onboard mode**: settings are written to the
 mouse's flash, so they work on Linux with nothing running in the background, exactly like a
 profile G Hub put in an on-board slot. The live (host-mode) setters are implemented too, for
 parity and for previews.
