@@ -1,7 +1,7 @@
 # Evidence
 
-Raw material behind [PROTOCOL.md](../PROTOCOL.md) and [GHUB-INTERNALS.md](../GHUB-INTERNALS.md),
-captured on 2026-10-20 from a real A50 X (base station firmware 1.2.18) with G Hub
+Raw material behind [PROTOCOL.md](../PROTOCOL.md), [G502X-PROTOCOL.md](../G502X-PROTOCOL.md) and
+[GHUB-INTERNALS.md](../GHUB-INTERNALS.md). The A50 X material below was captured on 2026-10-20 from a real A50 X (base station firmware 1.2.18) with G Hub
 2026.6.981214 on macOS.
 
 | Path | What it is |
@@ -22,3 +22,25 @@ captured on 2026-10-20 from a real A50 X (base station firmware 1.2.18) with G H
 Input report lines are `ms IN bytes`, with trailing zero padding trimmed (`LEN`, the third
 byte, gives the real length). The captures include the headset's serial number, its
 given name, and the paired computer's Bluetooth name and address.
+
+## G502 X PLUS (`g502x/`)
+
+Captured on 2026-10-20 from a G502 X PLUS (firmware MPM27 27.0.16, receiver 046d:c547 4.2.9)
+with the same G Hub build. Report lines are `time IN bytes`; G Hub's requests use software id
+0xD (`…d` in the fourth byte), ours 0xB.
+
+| Path | What it is |
+|---|---|
+| `captures/feature-table.txt` | The 32-entry HID++ feature table |
+| `captures/sniff-ghub-agent-start.txt` | G Hub's agent starting: host-mode setup, button spy, RGB handshake, onboard memory read |
+| `captures/sniff-ghub-ui-dpi-reportrate-lighting.txt` | G Hub's UI changing DPI, report rate and the lighting effect |
+| `captures/sniff-ghub-onboard-mode-and-slot-write.txt` | On-board mode on/off and G Hub writing slot 3 (fn6/fn7/fn8) |
+| `captures/ui-actions-timeline.txt` | Timestamp of every UI action, to line up with the captures |
+| `onboard/original-*.txt` | Full onboard memory before any change, including factory sectors 0x0100–0x0102 |
+| `onboard/ghub-E0…E5-*.txt` | Slot 3 (and the directory) after each G Hub write experiment; see GHUB-INTERNALS.md |
+| `ghub/devices-list-g502x.json` | `/devices/list` entry: capabilities, slots, firmware |
+| `ghub/ghub-gets.json` | G Hub's mouse, onboard, battery and lighting state |
+| `ghub/oracle-round1/2-*.json` | G Hub's decoding of profiles this project wrote into slot 5 |
+| `screenshots/*.png` | G Hub's pages for the mouse (sensitivity, assignments, LIGHTSYNC, settings, on-board slots, macro editor) |
+
+These include the mouse's serial number and unit id.

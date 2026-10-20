@@ -1,0 +1,68 @@
+20:11:27.432  ACTION test
+20:11:53.543  ACTION dpi current -> 2400 (click left label)
+20:12:01.741  ACTION dpi current -> 1600
+20:12:09.976  ACTION report rate -> 500
+20:12:18.211  ACTION report rate -> 1000
+20:13:24.987  ACTION lighting FIXED
+20:14:36.240  ACTION onboard memory mode ON
+20:15:06.218  ACTION onboard memory mode OFF
+20:15:21.404  ACTION onboard memory mode ON
+20:16:24.087  ACTION active slot -> 1 (radio)
+20:16:33.285  ACTION click PROFILE 3 name
+20:16:52.855  ACTION slot 3: ENABLE WITH NEW -> Desktop Default
+20:20:36.834  ACTION onboard OFF (for E1)
+20:21:16.597  ACTION lighting COLOR WAVE
+20:21:39.170  ACTION inactivity effect Dim Active Effect
+20:21:59.582  ACTION inactivity start after 2 MINUTES
+20:22:22.331  ACTION lights off after NEVER
+20:22:40.675  ACTION inactivity effect Dim Active Effect
+20:23:00.755  ACTION onboard ON (E1)
+20:23:28.396  ACTION E1 slot3 REPLACE WITH Desktop Default (colorwave, dim 50%, 2min, never)
+20:24:34.991  ACTION onboard toggle -> off
+20:25:25.482  ACTION wave direction REVERSE HORIZONTAL
+20:25:31.862  ACTION wave rate 2000, brightness 80
+20:25:38.353  ACTION wave rate 2000 via range
+20:26:07.823  ACTION inactivity Neutron Null
+20:26:29.816  ACTION start after 5 MINUTES
+20:26:51.141  ACTION lights off 15 MINUTES
+20:27:12.604  ACTION onboard toggle -> on
+20:27:39.200  ACTION slot3 replace with Desktop Default: E2
+20:28:23.856  ACTION onboard toggle -> off
+20:28:58.974  ACTION lighting CYCLE
+20:29:05.815  ACTION lighting CYCLE
+20:29:18.974  ACTION cycle rate click ~10000
+20:29:25.167  ACTION cycle brightness click ~50
+20:30:03.005  ACTION inactivity Breathing
+20:30:25.488  ACTION onboard toggle -> on
+20:30:52.221  ACTION slot3 replace with Desktop Default: E3
+20:31:32.845  ACTION onboard toggle -> off
+20:32:07.822  ACTION lighting COLOR WAVE (E4)
+20:32:20.634  ACTION wave rate click ~3000
+20:32:43.534  ACTION onboard toggle -> on
+20:33:10.188  ACTION slot3 replace with Desktop Default: E4
+20:34:00.132  ACTION onboard toggle -> off
+20:34:29.050  ACTION restore wave rate
+20:36:19.817  ACTION restore PULSAR POINT
+20:37:04.130  ACTION restore inactivity Neutron Null
+20:37:22.961  ACTION restore start after 1 MINUTE
+20:37:41.346  ACTION restore lights off 5 MINUTES
+20:54:07.299  ACTION G9 -> DISABLE
+20:54:14.612  ACTION drag Double Click -> Middle Click
+20:56:23.413  ACTION drag Double Click -> Middle Click
+20:56:48.804  ACTION html5 drag Double Click -> Middle Click
+20:57:11.042  ACTION drag Go to DPI Shift -> Scroll Right
+20:57:14.347  ACTION drag Cycle Max Brightness -> DPI Down
+20:57:35.259  ACTION drag Go to DPI Shift -> Scroll Right
+21:00:27.506  ACTION save macro LinuxTest (Volume Up, Copy)
+21:00:39.614  ACTION drag macro LinuxTest -> Scroll Left
+21:01:13.691  ACTION onboard toggle -> on
+21:01:42.904  ACTION slot3 replace with Desktop Default: E5
+21:03:41.011  ACTION onboard toggle -> off
+21:04:30.170  ACTION use default middle
+21:04:42.756  ACTION use default tilt-left
+21:04:55.383  ACTION use default tilt-right
+21:05:07.966  ACTION use default dpi-down
+21:05:51.825  ACTION use default g9
+21:06:20.875  ACTION delete macro LinuxTest
+21:09:07.266  ACTION startup effect ENABLE (check)
+21:09:18.169  ACTION startup effect disable (uncheck)

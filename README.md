@@ -1,17 +1,20 @@
 # logitech-manager
 
-Control a **Logitech A50 X** headset without G Hub: a small library, a CLI (`a50x`) and a
-desktop app, **Libre Hub**. The goal is Linux, where G Hub doesn't exist. Everything here also runs on
-macOS. Both platforms have been verified against the real headset.
+Control Logitech gear without G Hub: the **A50 X** headset and the **G502 X PLUS** mouse. Each
+has a small library and a CLI (`a50x`, `g502x`), and the A50 X has a desktop app, **Libre Hub**.
+The goal is Linux, where G Hub doesn't exist. Everything here also runs on macOS. The A50 X has
+been verified against the real headset on both platforms, the G502 X PLUS on macOS.
 
 ![The app's overview page](docs/screenshots/app-overview.png)
 
-The protocol was reverse-engineered from G Hub and the device itself; see
-[docs/PROTOCOL.md](docs/PROTOCOL.md) for the wire format and
-[docs/GHUB-INTERNALS.md](docs/GHUB-INTERNALS.md) for how G Hub works and how this was
-worked out.
+The protocols were reverse-engineered from G Hub and the devices themselves:
 
-## What it controls
+- A50 X: [docs/PROTOCOL.md](docs/PROTOCOL.md)
+- G502 X PLUS: [docs/G502X-PROTOCOL.md](docs/G502X-PROTOCOL.md), including a map of every G Hub
+  setting to where it lives on the mouse
+- How G Hub works and how this was worked out: [docs/GHUB-INTERNALS.md](docs/GHUB-INTERNALS.md)
+
+## A50 X: what it controls
 
 | Setting | G Hub equivalent | Status |
 |---|---|---|
@@ -127,11 +130,41 @@ it is Chromium drawing 30 frames a second (the desktop's compositor spends about
 showing them). Turned off or in the background they cost nothing, and with nothing moving almost
 nothing.
 
+## G502 X PLUS: what it controls
+
+The mouse keeps five profiles in its own memory, and G Hub's "on-board memory mode" runs from
+them. `g502x` edits those profiles directly. Settings take effect at once and stay on the mouse,
+with nothing running in the background, which is what you want on Linux.
+
+| Setting | G Hub equivalent | Status |
+|---|---|---|
+| DPI levels (up to 5, 100–25600 in steps of 50), default level, DPI-shift level | Sensitivity (DPI) | ✅ verified on hardware and by G Hub's own decoder |
+| Curated DPI presets (Default, First Person, Third Person, MMORPG, MOBA, RTS, Simulation, Productivity) | G Hub's sensitivity prefabs for this model | ✅ |
+| Report rate 125 / 250 / 500 / 1000 Hz | Report rate | ✅ verified on hardware and by G Hub |
+| All 13 controls on the default and G-Shift layers: mouse buttons, keys with modifiers, media keys, DPI up/down/cycle/default/shift, profile cycle/next/previous, G-Shift, wheel tilt, scroll, battery level, disable | Assignments | ✅ encodings match G Hub's writes; G Hub decodes ours |
+| Lighting: off, fixed, cycle, breathing, colour wave (both directions), Pulsar Point; brightness and rate | LIGHTSYNC presets | ✅ byte-identical to G Hub's writes |
+| Inactivity lighting (Neutron Null, breathing, dim active effect), start after, all lights off after | Settings → Inactivity lighting | ✅ byte-identical to G Hub's writes |
+| Profiles 1–5: switch, enable/disable, name, restore factory settings; current DPI level | On-board memory mode | ✅ verified on hardware |
+| On-board vs software mode | On-board memory mode toggle | ✅ verified on hardware |
+| Device startup effect | Settings → Device startup effect | ✅ verified on hardware |
+| Battery, firmware, serial, wheel ratchet state | Settings | ✅ read-only |
+| Backup / restore of the whole onboard memory | (none) | ✅ |
+
+**Not covered:** assignments G Hub can only perform in software (Launch Application, text,
+multi-step macros, Double Click, Go to DPI Shift, Lock screen), software-driven lighting
+(Freestyle, Screen Sampler, LIGHTSYNC sync), editing the stored animations, and firmware
+updates. G Hub itself cannot store these on the mouse either; see
+[docs/G502X-PROTOCOL.md](docs/G502X-PROTOCOL.md#what-is-not-possible).
+
+The library also implements G Hub's software-mode calls (live DPI, report rate, lighting
+effects, per-LED colours, inactivity timers) for parity, but the CLI works in on-board mode.
+
 ## Requirements
 
-- The **base station connected over USB.** Settings travel USB → base station →
+- A50 X: the **base station connected over USB.** Settings travel USB → base station →
   Lightspeed → headset. The headset's direct Bluetooth link carries audio only and can't
   be configured.
+- G502 X PLUS: its **Lightspeed receiver** (USB 046d:c547), or the mouse on its cable.
 - To build from source: Node.js 20+. The repo pins Node 24 for [Volta](https://volta.sh) users.
 
 ## Install (Linux)
@@ -160,19 +193,20 @@ git clone git@github.com:CharlExMachina/LibreHub.git
 cd LibreHub
 npm ci
 
-# let your desktop user open the base station's HID interface (once)
-sudo cp linux/70-logitech-a50x.rules /etc/udev/rules.d/
+# let your desktop user open the devices' HID interfaces (once)
+sudo cp linux/70-logitech-a50x.rules linux/70-logitech-g502x.rules /etc/udev/rules.d/
 sudo udevadm control --reload-rules && sudo udevadm trigger
-# unplug and replug the base station
-# (the rule must sort before systemd's 73-seat-late.rules, hence the 70- prefix)
+# unplug and replug the base station / receiver
+# (the rules must sort before systemd's 73-seat-late.rules, hence the 70- prefix)
 
 npm run build
-npm run cli -- status     # CLI
+npm run cli -- status     # A50 X CLI
+npm run mouse -- status   # G502 X PLUS CLI
 npm start                 # Electron app
 npm run dist              # AppImage in release/
 ```
 
-## CLI
+## A50 X CLI
 
 ```
 a50x status [--json]
@@ -189,6 +223,30 @@ Run it with `npm run cli -- <args>`, or `npm link` to get `a50x` on your `PATH`.
 presets created in the app are stored in Electron's user-data folder
 (`~/.config/logitech-manager/presets.json` on Linux). The CLI reads the same file, so
 `a50x eq headphones preset "<your preset>"` works too.
+
+## G502 X PLUS CLI
+
+```
+g502x status [--json]                      device, mode, live DPI/report rate, all five profiles
+g502x backup <file.json> | restore <file.json>   do this before experimenting
+g502x mode onboard                         run from the saved profiles (needed after G Hub)
+g502x profile <1-5>                        switch profile;  g502x dpi-level <0-4>
+g502x profile <n> dpi 800,1600,3200 --default 1 --shift 0
+g502x profile <n> dpi-preset first-person
+g502x profile <n> report-rate 1000
+g502x profile <n> button g9 key:ctrl+shift+t          (add --gshift for the G-Shift layer)
+g502x profile <n> button sniper fn:g-shift
+g502x profile <n> lighting wave:5000:horizontal:100   off | fixed:#00ffff | cycle | breathing | pulsar-point
+g502x profile <n> inactive-lighting dim:50            or neutron-null, breathing:#rrggbb
+g502x profile <n> dim-after 60 | off-after 300 | off-after never
+g502x profile <n> name "Linux" | enable | disable | restore
+g502x controls                             control names and binding syntax
+g502x startup-effect on|off
+```
+
+Run it with `npm run mouse -- <args>`, or `npm link` to get `g502x` on your `PATH`. If G Hub
+left the mouse in software mode, run `g502x mode onboard` once (the mouse also returns to
+on-board mode on its own after a power cycle).
 
 ## Releasing
 
@@ -208,8 +266,9 @@ installed copies don't update to.
 ## Tests
 
 ```bash
-npm test                 # unit + simulated-device tests (98), no hardware needed
-npm run test:hardware    # 12 tests against a connected A50 X
+npm test                       # unit + simulated-device tests (TESTCOUNT), no hardware needed
+npm run test:hardware          # 12 tests against a connected A50 X
+npm run test:hardware:mouse    # 13 tests against a G502 X PLUS (quit G Hub first)
 ```
 
 - **Unit tests** decode and encode real frames captured from the headset
@@ -225,7 +284,13 @@ npm run test:hardware    # 12 tests against a connected A50 X
 
 ### Verification status
 
-- **macOS (Apple Silicon), firmware 1.2.18:** all 12 hardware tests pass. A full-state
+- **G502 X PLUS, macOS, firmware 27.0.16:** all 13 hardware tests pass (run twice). They
+  write a full profile, switch to it and check that the sensor really runs its DPI and report
+  rate, then restore all 16 onboard sectors byte for byte. Independently, G Hub decoded
+  profiles written by this code with the intended values (see
+  [GHUB-INTERNALS.md](docs/GHUB-INTERNALS.md#g502-x-plus)), and the encoder reproduces sectors
+  G Hub wrote byte for byte. Lighting was checked by encoding, not by eye.
+- **A50 X, macOS (Apple Silicon), firmware 1.2.18:** all 12 hardware tests pass. A full-state
   snapshot taken before matched one taken after, field for field. The Electron app was
   driven end to end over CDP (curated presets, sliders, saving, applying and deleting a
   custom preset), and every change was confirmed with independent HID reads.
@@ -234,21 +299,25 @@ npm run test:hardware    # 12 tests against a connected A50 X
   end over CDP with real mouse and keyboard input: sliders, faders, mutes, noise gate,
   curated and custom EQ presets (save, apply, delete, undo). Every change was checked with a
   fresh read from the device, then restored. CI (Ubuntu) runs the unit/simulated tests.
+- **G502 X PLUS on Linux:** not run against the mouse on a Linux machine yet. It uses the same
+  node-hid (hidraw) path as the A50 X; `npm run test:hardware:mouse` is the check to run first.
 
 ## Layout
 
 ```
-src/protocol/   framing (packet.ts), feature IDs, per-feature codecs, EQ codec
+src/protocol/   A50 X: framing (packet.ts), feature IDs, per-feature codecs, EQ codec
+src/mouse/      G502 X PLUS: HID++ framing, codecs, onboard-memory format, client, service, CLI
 src/device/     node-hid transport + A50X client (discovery, request matching, events)
 src/service.ts  snapshot + actions, shared by the app and the CLI
 src/audio/      Linux game/chat audio split (WirePlumber setup, status, undo), live levels
 src/presets/    custom EQ preset store (JSON)
 src/restore/    keeping settings: compare, restore and verify; when to check; saved state
-src/main/       Electron main process, sandboxed preload, tray, preferences, desktop entries
+src/main/       Electron main process, sandboxed preload (window.a50x, window.g502x), tray, preferences,
+                desktop entries
 src/renderer/   UI: plain ES modules and CSS, no build step (fonts: Geist, OFL-1.1)
 src/cli.ts      a50x command
 test/           unit, simulated-device and hardware tests; fixtures are real captures
-linux/          udev rule; WirePlumber rule and chat-routing script
+linux/          udev rules; WirePlumber rule and chat-routing script
 build/          packaging resources (the 1024 px app icon)
 docs/           protocol spec, G Hub internals and method, raw evidence
 tools/re/       the scripts used for the reverse engineering

@@ -1,0 +1,9 @@
+# Let the logged-in desktop user open the Lightspeed receiver's HID++ interface (G502 X PLUS),
+# and the mouse itself when it is plugged in with its cable. Install with:
+#   sudo cp linux/70-logitech-g502x.rules /etc/udev/rules.d/
+#   sudo udevadm control --reload-rules && sudo udevadm trigger
+# then unplug and replug the receiver.
+# The file must sort before systemd's 73-seat-late.rules, which turns the uaccess tag into an
+# ACL for the active user; a tag added later (e.g. in a 99- file) is silently ignored.
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="c547", TAG+="uaccess"
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="c095", TAG+="uaccess"

@@ -4,19 +4,22 @@
   "desktopName": "com.charlexmachina.LibreHub.desktop",
   "version": "1.0.1",
   "private": true,
-  "description": "Libre Hub: manage a Logitech A50 X headset without G Hub (Linux first, works on macOS).",
+  "description": "Libre Hub: manage Logitech gear without G Hub: the A50 X headset and the G502 X PLUS mouse (Linux first, works on macOS).",
   "type": "module",
   "main": "dist/main/main.js",
   "bin": {
-    "a50x": "dist/cli.js"
+    "a50x": "dist/cli.js",
+    "g502x": "dist/mouse/cli.js"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json && node scripts/copy-static.mjs",
     "start": "npm run build && electron .",
     "cli": "node dist/cli.js",
     "test": "vitest run test/unit test/sim",
-    "test:hardware": "A50X_HARDWARE=1 vitest run test/hardware",
+    "test:hardware": "A50X_HARDWARE=1 vitest run test/hardware/a50x.hw.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "mouse": "node dist/mouse/cli.js",
+    "test:hardware:mouse": "G502X_HARDWARE=1 vitest run test/hardware/g502x.hw.test.ts",
     "dist": "npm run build && electron-builder --linux AppImage --publish never"
   },
   "engines": {

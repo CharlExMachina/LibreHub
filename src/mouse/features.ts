@@ -1,0 +1,57 @@
+// HID++ 2.0 feature IDs used by the G502 X PLUS (firmware MPM27 27.0.16). The full table the mouse
+// reports, including the engineering features G Hub never touches, is in docs/G502X-PROTOCOL.md.
+
+export const Feature = {
+  ROOT: 0x0000,
+  FEATURE_SET: 0x0001,
+  FIRMWARE_INFO: 0x0003,
+  DEVICE_NAME: 0x0005,
+  WIRELESS_STATUS: 0x1d4b,
+  CONFIG_CHANGE: 0x0020,
+  UNIFIED_BATTERY: 0x1004,
+  ADJUSTABLE_DPI: 0x2201,
+  HIRES_WHEEL: 0x2121,
+  RGB_EFFECTS: 0x8071,
+  PER_KEY_LIGHTING: 0x8081,
+  ONBOARD_PROFILES: 0x8100,
+  MOUSE_BUTTON_SPY: 0x8110,
+  REPORT_RATE: 0x8060,
+  DFU: 0x00d0,
+} as const;
+
+export const FEATURE_NAMES: Record<number, string> = {
+  0x0000: 'Root',
+  0x0001: 'FeatureSet',
+  0x0003: 'FirmwareInfo',
+  0x0005: 'DeviceName',
+  0x0020: 'ConfigChange',
+  0x00d0: 'Dfu',
+  0x1004: 'UnifiedBattery',
+  0x1500: 'Unknown1500',
+  0x1801: 'Engineering1801',
+  0x1802: 'DeviceReset',
+  0x1803: 'GpioAccess',
+  0x1805: 'Engineering1805',
+  0x1806: 'ConfigurableDeviceProperties',
+  0x1811: 'Oob',
+  0x1830: 'PowerModes',
+  0x1861: 'Engineering1861',
+  0x1875: 'Engineering1875',
+  0x1890: 'Engineering1890',
+  0x18a1: 'LedTest',
+  0x18b1: 'MonitorMode',
+  0x18c0: 'Engineering18c0',
+  0x1d4b: 'WirelessDeviceStatus',
+  0x1e00: 'EnableHiddenFeatures',
+  0x1e22: 'SpiDirectAccess',
+  0x1eb0: 'TdeAccess',
+  0x2121: 'HiResWheel',
+  0x2201: 'AdjustableDpi',
+  0x8060: 'ReportRate',
+  0x8071: 'RgbEffects',
+  0x8081: 'PerKeyLighting',
+  0x8100: 'OnboardProfiles',
+  0x8110: 'MouseButtonSpy',
+};
+
+export const featureName = (id: number) => FEATURE_NAMES[id] ?? `0x${id.toString(16).padStart(4, '0')}`;

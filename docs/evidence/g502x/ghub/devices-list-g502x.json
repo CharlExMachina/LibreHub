@@ -1,0 +1,527 @@
+{
+ "id": "dev00000001",
+ "pid": 16537,
+ "fwInfo": [
+  {
+   "interfaceId": "046d_4099",
+   "firmwareVersion": "27.0.16",
+   "firmwareName": "MPM27",
+   "firmwareFriendlyName": "",
+   "firmwareRevision": 0,
+   "hardwareRevision": 0
+  }
+ ],
+ "isSubdevice": false,
+ "parentId": "",
+ "state": "ACTIVE",
+ "onboardMode": false,
+ "individualMode": false,
+ "resourcesAvailable": true,
+ "connectionType": "WIRELESS",
+ "hasWirelessInterface": true,
+ "displayConnectionType": "LIGHTSPEED",
+ "deviceType": "MOUSE",
+ "deviceFamily": "",
+ "deviceModel": "g502x_plus",
+ "deviceBaseModel": "g502x_plus",
+ "displayName": "G502 X PLUS",
+ "extendedDisplayName": "G502 X PLUS Wireless Gaming Mouse",
+ "slotPrefix": "g502x-plus",
+ "thumbnail": "pipeline://core_assets/thumbnails/4ddb767f-eed0-416b-acef-2ac8050c374a",
+ "stringPackage": "81b39626-9f66-4cc4-9c87-2137b1d1b078/strings",
+ "assetsPackages": {
+  "analogOnboardingPackage": "",
+  "displayPresetLogos": ""
+ },
+ "deviceExt": 0,
+ "deviceUnitId": "1234567890",
+ "deviceSignature": "MOUSE.g502x_plus.0.1234567890",
+ "givenName": "",
+ "capabilities": {
+  "lightingSupport": {
+   "deviceCategory": "MOUSE_RGB_PER_KEY",
+   "typeMap": {
+    "PERKEY_COSMETIC": "",
+    "ZONE_ALL": "ALL",
+    "ZONE_PRIMARY": "PRIMARY"
+   },
+   "zones": [
+    {
+     "zoneType": "ZONE_PRIMARY",
+     "supportedEffects": [
+      {
+       "id": "OFF",
+       "syncable": true,
+       "fixedIntensity": false,
+       "signature": false,
+       "inactivityOnly": false,
+       "name": "",
+       "fixedRate": false,
+       "fixedSaturation": false,
+       "derivativeOverrides": {}
+      },
+      {
+       "id": "FIXED",
+       "syncable": true,
+       "fixedIntensity": false,
+       "signature": false,
+       "inactivityOnly": false,
+       "name": "",
+       "fixedRate": false,
+       "fixedSaturation": false,
+       "derivativeOverrides": {}
+      },
+      {
+       "id": "CYCLE",
+       "syncable": true,
+       "fixedIntensity": false,
+       "signature": false,
+       "inactivityOnly": false,
+       "name": "",
+       "fixedRate": false,
+       "fixedSaturation": false,
+       "derivativeOverrides": {}
+      },
+      {
+       "id": "BREATHING",
+       "syncable": true,
+       "fixedIntensity": false,
+       "signature": false,
+       "inactivityOnly": false,
+       "name": "",
+       "fixedRate": false,
+       "fixedSaturation": false,
+       "derivativeOverrides": {}
+      }
+     ],
+     "onboardCluster": "CLUSTER_ONE"
+    },
+    {
+     "zoneType": "ZONE_ALL",
+     "supportedEffects": [
+      {
+       "id": "COLORWAVE",
+       "syncable": true,
+       "fixedIntensity": false,
+       "signature": false,
+       "inactivityOnly": false,
+       "name": "",
+       "fixedRate": false,
+       "fixedSaturation": false,
+       "derivativeOverrides": {}
+      },
+      {
+       "id": "SIGNATURE_FRAME_ACTIVE",
+       "syncable": false,
+       "fixedIntensity": false,
+       "signature": true,
+       "inactivityOnly": false,
+       "name": "SNIPE_PULSE_CP",
+       "fixedRate": true,
+       "fixedSaturation": false,
+       "derivativeOverrides": {}
+      },
+      {
+       "id": "SIGNATURE_FRAME_INACTIVE",
+       "syncable": false,
+       "fixedIntensity": false,
+       "signature": true,
+       "inactivityOnly": true,
+       "name": "NEURAL_WAVE_CP",
+       "fixedRate": true,
+       "fixedSaturation": false,
+       "derivativeOverrides": {}
+      },
+      {
+       "id": "CUSTOM",
+       "syncable": false,
+       "fixedIntensity": true,
+       "signature": false,
+       "inactivityOnly": false,
+       "name": "",
+       "fixedRate": false,
+       "fixedSaturation": false,
+       "derivativeOverrides": {}
+      }
+     ],
+     "onboardCluster": "CLUSTER_DEFAULT"
+    }
+   ],
+   "isMonochrome": false,
+   "isPerKey": true,
+   "persistence": {
+    "zoneEffects": false,
+    "perKeyFixed": false,
+    "customEffects": {
+     "slots": 6,
+     "entityOffset": 2
+    }
+   },
+   "brightnessLevels": [],
+   "powerSavingEffect": true,
+   "lowBatteryEffect": false,
+   "brightnessPercentage": false,
+   "gamma": false,
+   "firmwareOnly": false,
+   "offRamp": false,
+   "activeDimming": false,
+   "hasPositionalEffect": false,
+   "hasPastelPalette": false,
+   "hasRingLeds": false,
+   "hasMasterSwitch": false,
+   "needKeepAliveSignal": false,
+   "hasPcStateSync": false,
+   "btSoftwareEffects": false,
+   "overallBrightness": false,
+   "combinedLightingSettings": false,
+   "hasLowSmoothSpeed": false,
+   "defaultSmoothSpeed": 0,
+   "hasLimitedLowBatteryEffects": false,
+   "hasReportRateLimitedLighting": false,
+   "useFwInactivityLighting": false,
+   "hasLightBar": false,
+   "multiLightingZone": false,
+   "globalOverallBrightness": false,
+   "allowSeriesSignaturePallets": false,
+   "globalPowerSaveSettings": false
+  },
+  "sleepTimer": false,
+  "mstateSupport": {
+   "count": 1,
+   "timeOut": 0
+  },
+  "fnInversion": false,
+  "presentSplashScreen": true,
+  "customizableColor": false,
+  "wirelessReportRate": false,
+  "dpiIndicatorLed": {
+   "zoneType": "INVALID",
+   "steps": {
+    "1": {
+     "tag": "",
+     "hex": "#FFFFFF"
+    },
+    "2": {
+     "tag": "",
+     "hex": "#FF6400"
+    },
+    "3": {
+     "tag": "",
+     "hex": "#28FFDC"
+    },
+    "4": {
+     "tag": "",
+     "hex": "#FFFF14"
+    },
+    "5": {
+     "tag": "",
+     "hex": "#DC14FF"
+    }
+   }
+  },
+  "hybridEngine": false,
+  "advancedSleepTimer": false,
+  "onboardProfiles": {
+   "disableProfileNaming": false,
+   "profilesAlwaysActive": false,
+   "supportsOnboardMode": true,
+   "useFileSystem": false,
+   "prioritizeSoftwareDefaults": false
+  },
+  "angleSnapping": false,
+  "excludeGShift": false,
+  "hostRemovalSupport": false,
+  "scrollControls": {
+   "scrollUp": 13,
+   "scrollDown": 12
+  },
+  "hostInfos": false,
+  "gkeyLayout": "INVALID_GKEY_LAYOUT",
+  "hasBatteryStatus": true,
+  "powerOffTimer": false,
+  "requiresBackupForDfu": false,
+  "unifiedBattery": true,
+  "dpiLighting": false,
+  "hasGlobalDamping": false,
+  "nonInteractive": false,
+  "receiverPairing": {
+   "receiverType": "LS2",
+   "receiverPid": 0,
+   "pairingAction": "ACTION_POWER_CYCLE",
+   "hasForcePairing": true
+  },
+  "chargepadCompatible": true,
+  "individuality": false,
+  "defaultSlotFormat": "INVALID_FORMAT",
+  "fnToggle": false,
+  "isFullHidppWheel": false,
+  "hasConfigurationProfiles": false,
+  "disableCenterSpring": false,
+  "hasOnboardDeviceName": false,
+  "systemTraySupport": false,
+  "inputSupport": {
+   "supportsPresets": false,
+   "supportedCategories": [
+    "MOUSE_BUTTON"
+   ],
+   "supportsLayerConfiguration": true,
+   "supportedLayers": [
+    "LAYER_BASE",
+    "LAYER_G"
+   ],
+   "hasEnableToggle": false,
+   "maximumTriggerIndex": 0,
+   "maximumMultiActionKeys": 0,
+   "hasRemappableDial": false,
+   "gkeyLayout": "INVALID_GKEY_LAYOUT",
+   "enableToggleOptions": []
+  },
+  "cidBasedGameModeSupport": false,
+  "depotNotRequired": false,
+  "ledBrightness": false,
+  "autoSleep": false,
+  "hasFactoryReset": false,
+  "dpiCalibrationLimits": {
+   "min": 100,
+   "max": 3200
+  },
+  "disableLightingViewMenu": false,
+  "dpiVersion": 2,
+  "hasWiredReportRate": true,
+  "keyboardSize": "UNKNOWN",
+  "uiThemeVersion": 0,
+  "deviceNameMaxLength": 0,
+  "hasBatteryEcoMode": false,
+  "hasTotalUsageTime": false,
+  "iprofileDatasyncSupport": false,
+  "modeMatchingAlgorithm": "DEFAULT",
+  "useRealSoc": false,
+  "hasEuPowerModeControl": false,
+  "hasBunnyHoppingSupport": false,
+  "hasSpatialSound": false,
+  "hasPerformanceReportRate": false,
+  "hasRename": false,
+  "deviceSettingsVersion": 0,
+  "hasOnboardEditSupport": false,
+  "hasCustomDeviceNameStyle": false,
+  "hasKeepAliveSupport": false,
+  "hasBoolStates": false,
+  "coachmarksThemeVersion": 0,
+  "hasNoFnKeys": false,
+  "disableOnboardDpiSave": true,
+  "dpiVersionAutoDetectTemporary": true,
+  "reportRateAutoDetectTemporary": true
+ },
+ "activeInterfaces": [
+  {
+   "type": "DEVIO",
+   "id": "046d_4099",
+   "pid": 16537,
+   "modelId": 0,
+   "extendedModel": 0,
+   "serialNumber": "1234567890",
+   "path": "IOService:/AppleARMPE/arm-io@10F00000/AppleH16GFamilyIO/usb-drd2@92280000/AppleT8132USBXHCI@02000000/usb-drd2-port-hs@02100000/USB Receiver@02100000/IOUSBHostInterface@2/AppleUserUSBHostHIDDevice:0",
+   "containerId": "",
+   "deviceType": "MOUSE",
+   "deviceName": "G502 X PLUS",
+   "keyboardLayout": "INVALID_LAYOUT",
+   "firmwareVersion": "27.0.16",
+   "firmwareName": "MPM27",
+   "firmwareRevision": 0,
+   "hardwareRevision": 0,
+   "unitId": "1234567890",
+   "fwEntities": [
+    {
+     "id": 0,
+     "version": "42.0.16",
+     "name": "BL142",
+     "active": false
+    },
+    {
+     "id": 1,
+     "version": "27.0.16",
+     "name": "MPM27",
+     "active": true
+    }
+   ],
+   "connectionType": "WIRELESS",
+   "hasOnboardMode": true,
+   "parentPath": "",
+   "hashedSerialNumber": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "hashedUnitId": "1b082323ae9df141d02ca40cb4924bcdb62b84bf0aaebc94c09cfdfcc5db4567"
+  }
+ ],
+ "slots": {
+  "g502x-plus_mouse_settings": {
+   "id": "g502x-plus_mouse_settings",
+   "attribute": "MOUSE_SETTINGS",
+   "disabled": false,
+   "defaultCard": "1ed21572-a4f0-4630-bfae-bf221fb73628"
+  },
+  "g502x-plus_g6_m1_shifted": {
+   "id": "g502x-plus_g6_m1_shifted",
+   "attribute": "MACRO_PLAYBACK",
+   "disabled": false,
+   "defaultCard": "0f82f693-5b78-4cf5-867e-090700000000"
+  },
+  "g502x-plus_g4_m1_shifted": {
+   "id": "g502x-plus_g4_m1_shifted",
+   "attribute": "MACRO_PLAYBACK",
+   "disabled": false,
+   "defaultCard": "0f82f693-5b78-4cf5-867e-090700000000"
+  },
+  "g502x-plus_scroll1_m1": {
+   "id": "g502x-plus_scroll1_m1",
+   "attribute": "MACRO_PLAYBACK",
+   "disabled": false,
+   "defaultCard": "0f82f693-5b78-4cf5-867e-040900000000"
+  },
+  "g502x-plus_scroll2_m1": {
+   "id": "g502x-plus_scroll2_m1",
+   "attribute": "MACRO_PLAYBACK",
+   "disabled": false,
+   "defaultCard": "0f82f693-5b78-4cf5-867e-040a00000000"
+  },
+  "g502x-plus_g1_m1_shifted": {
+   "id": "g502x-plus_g1_m1_shifted",
+   "attribute": "MACRO_PLAYBACK",
+   "disabled": false,
+   "defaultCard": "0f82f693-5b78-4cf5-867e-090700000000"
+  },
+  "g502x-plus_g3_m1_shifted": {
+   "id": "g502x-plus_g3_m1_shifted",
+   "attribute": "MACRO_PLAYBACK",
+   "disabled": false,
+   "defaultCard": "0f82f693-5b78-4cf5-867e-090700000000"
+  },
+  "g502x-plus_g2_m1": {
+   "id": "g502x-plus_g2_m1",
+   "attribute": "MACRO_PLAYBACK",
+   "disabled": false,
+   "defaultCard": "0f82f693-5b78-4cf5-867e-020200000000"
+  },
+  "g502x-plus_g10_m1_shifted": {
+   "id": "g502x-plus_g10_m1_shifted",
+   "attribute": "MACRO_PLAYBACK",
+   "disabled": false,
+   "defaultCard": "0f82f693-5b78-4cf5-867e-090700000000"
+  },
+  "g502x-plus_g6_m1": {
+   "id": "g502x-plus_g6_m1",
+   "attribute": "MACRO_PLAYBACK",
+   "disabled": false,
+   "defaultCard": "0f82f693-5b78-4cf5-867e-020500000000"
+  },
+  "g502x-plus_g11_m1": {
+   "id": "g502x-plus_g11_m1",
+   "attribute": "MACRO_PLAYBACK",
+   "disabled": false,
+   "defaultCard": "0f82f693-5b78-4cf5-867e-040200000000"
+  },
+  "g502x-plus_lighting_setting_firmware": {
+   "id": "g502x-plus_lighting_setting_firmware",
+   "attribute": "FIRMWARE_LIGHTING_SETTINGS",
+   "disabled": false,
+   "defaultCard": "cc50ee6c-ae5e-40bf-b89b-0d3267825de3"
+  },
+  "g502x-plus_g7_m1": {
+   "id": "g502x-plus_g7_m1",
+   "attribute": "MACRO_PLAYBACK",
+   "disabled": false,
+   "defaultCard": "0f82f693-5b78-4cf5-867e-040b00000000"
+  },
+  "g502x-plus_scroll1_m1_shifted": {
+   "id": "g502x-plus_scroll1_m1_shifted",
+   "attribute": "MACRO_PLAYBACK",
+   "disabled": false,
+   "defaultCard": "0f82f693-5b78-4cf5-867e-090700000000"
+  },
+  "g502x-plus_g2_m1_shifted": {
+   "id": "g502x-plus_g2_m1_shifted",
+   "attribute": "MACRO_PLAYBACK",
+   "disabled": false,
+   "defaultCard": "0f82f693-5b78-4cf5-867e-090700000000"
+  },
+  "g502x-plus_g9_m1_shifted": {
+   "id": "g502x-plus_g9_m1_shifted",
+   "attribute": "MACRO_PLAYBACK",
+   "disabled": false,
+   "defaultCard": "0f82f693-5b78-4cf5-867e-090700000000"
+  },
+  "g502x-plus_g10_m1": {
+   "id": "g502x-plus_g10_m1",
+   "attribute": "MACRO_PLAYBACK",
+   "disabled": false,
+   "defaultCard": "0f82f693-5b78-4cf5-867e-040100000000"
+  },
+  "g502x-plus_g8_m1": {
+   "id": "g502x-plus_g8_m1",
+   "attribute": "MACRO_PLAYBACK",
+   "disabled": false,
+   "defaultCard": "0f82f693-5b78-4cf5-867e-040c00000000"
+  },
+  "g502x-plus_g5_m1": {
+   "id": "g502x-plus_g5_m1",
+   "attribute": "MACRO_PLAYBACK",
+   "disabled": false,
+   "defaultCard": "0f82f693-5b78-4cf5-867e-040300000000"
+  },
+  "g502x-plus_g7_m1_shifted": {
+   "id": "g502x-plus_g7_m1_shifted",
+   "attribute": "MACRO_PLAYBACK",
+   "disabled": false,
+   "defaultCard": "0f82f693-5b78-4cf5-867e-090700000000"
+  },
+  "g502x-plus_g11_m1_shifted": {
+   "id": "g502x-plus_g11_m1_shifted",
+   "attribute": "MACRO_PLAYBACK",
+   "disabled": false,
+   "defaultCard": "0f82f693-5b78-4cf5-867e-090700000000"
+  },
+  "g502x-plus_g1_m1": {
+   "id": "g502x-plus_g1_m1",
+   "attribute": "MACRO_PLAYBACK",
+   "disabled": false,
+   "defaultCard": "0f82f693-5b78-4cf5-867e-020100000000"
+  },
+  "g502x-plus_g8_m1_shifted": {
+   "id": "g502x-plus_g8_m1_shifted",
+   "attribute": "MACRO_PLAYBACK",
+   "disabled": false,
+   "defaultCard": "0f82f693-5b78-4cf5-867e-090700000000"
+  },
+  "g502x-plus_g3_m1": {
+   "id": "g502x-plus_g3_m1",
+   "attribute": "MACRO_PLAYBACK",
+   "disabled": false,
+   "defaultCard": "0f82f693-5b78-4cf5-867e-020300000000"
+  },
+  "g502x-plus_g5_m1_shifted": {
+   "id": "g502x-plus_g5_m1_shifted",
+   "attribute": "MACRO_PLAYBACK",
+   "disabled": false,
+   "defaultCard": "0f82f693-5b78-4cf5-867e-090700000000"
+  },
+  "g502x-plus_scroll2_m1_shifted": {
+   "id": "g502x-plus_scroll2_m1_shifted",
+   "attribute": "MACRO_PLAYBACK",
+   "disabled": false,
+   "defaultCard": "0f82f693-5b78-4cf5-867e-090700000000"
+  },
+  "g502x-plus_g9_m1": {
+   "id": "g502x-plus_g9_m1",
+   "attribute": "MACRO_PLAYBACK",
+   "disabled": false,
+   "defaultCard": "0f82f693-5b78-4cf5-867e-090100000000"
+  },
+  "g502x-plus_g4_m1": {
+   "id": "g502x-plus_g4_m1",
+   "attribute": "MACRO_PLAYBACK",
+   "disabled": false,
+   "defaultCard": "0f82f693-5b78-4cf5-867e-020400000000"
+  }
+ },
+ "configurations": {},
+ "path": "IOService:/AppleARMPE/arm-io@10F00000/AppleH16GFamilyIO/usb-drd2@92280000/AppleT8132USBXHCI@02000000/usb-drd2-port-hs@02100000/USB Receiver@02100000/IOUSBHostInterface@2/AppleUserUSBHostHIDDevice:0",
+ "parentPath": ""
+}
