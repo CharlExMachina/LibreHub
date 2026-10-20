@@ -266,7 +266,7 @@ installed copies don't update to.
 ## Tests
 
 ```bash
-npm test                       # unit + simulated-device tests (156), no hardware needed
+npm test                       # unit + simulated-device tests (209), no hardware needed
 npm run test:hardware          # 12 tests against a connected A50 X
 npm run test:hardware:mouse    # 13 tests against a G502 X PLUS (quit G Hub first)
 ```
