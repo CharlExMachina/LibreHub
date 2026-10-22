@@ -151,6 +151,40 @@ function updateLine(u) {
   }
 }
 
+/** What a manual check found, as a toast. */
+function updateToast(u) {
+  switch (u?.status) {
+    case 'latest': return toast('You have the latest version.');
+    case 'downloading': return toast(`Downloading version ${u.version}…`);
+    case 'ready': return toast(`Version ${u.version} is ready. It’s installed when you quit.`,
+      { action: { label: 'Restart to update', run: () => void window.a50x.app.installUpdate() }, timeout: 8000 });
+    case 'error': return toast(`Couldn’t check for updates: ${u.error}.`, { kind: 'error', timeout: 8000 });
+  }
+}
+
+/** A small button that checks for updates now instead of waiting for the next scheduled check. */
+export function updateCheckButton() {
+  const btn = el('button', { class: 'btn ghost sm icon-only', type: 'button', html: icon('refresh', 14) });
+  btn.addEventListener('click', async () => {
+    btn.disabled = true;
+    state = await window.a50x.app.checkForUpdate();
+    sync();
+    updateToast(state.update);
+  });
+  syncs.add(() => {
+    const status = state?.update?.status;
+    btn.hidden = !status || status === 'off';
+    const busy = status === 'checking' || status === 'downloading';
+    btn.disabled = busy;
+    btn.classList.toggle('busy', busy);
+    const label = status === 'checking' ? 'Checking for updates…' : status === 'downloading' ? 'Downloading an update…' : 'Check for updates';
+    btn.title = label;
+    btn.setAttribute('aria-label', label);
+  });
+  sync();
+  return btn;
+}
+
 export function appCard() {
   const login = labelledToggle('s-login', (on) => void change({ openAtLogin: on }));
   const versionT = el('div', { class: 't', id: 's-version-t' });
