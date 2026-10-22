@@ -1,0 +1,92 @@
+{
+  "name": "logitech-manager",
+  "productName": "Libre Hub",
+  "desktopName": "com.charlexmachina.LibreHub.desktop",
+  "version": "1.0.1",
+  "private": true,
+  "description": "Libre Hub: manage a Logitech A50 X headset without G Hub (Linux first, works on macOS).",
+  "type": "module",
+  "main": "dist/main/main.js",
+  "bin": {
+    "a50x": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node scripts/copy-static.mjs",
+    "start": "npm run build && electron .",
+    "cli": "node dist/cli.js",
+    "test": "vitest run test/unit test/sim",
+    "test:hardware": "A50X_HARDWARE=1 vitest run test/hardware",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "dist": "npm run build && electron-builder --linux AppImage --publish never"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.9",
+    "node-hid": "^3.4.0"
+  },
+  "devDependencies": {
+    "@fontsource-variable/geist": "^5.3.0",
+    "@fontsource-variable/geist-mono": "^5.3.0",
+    "@types/node": "^26.6.5",
+    "electron": "^44.9.1",
+    "electron-builder": "^26.15.3",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  },
+  "volta": {
+    "node": "24.22.0"
+  },
+  "author": {
+    "name": "Carlos Eduardo Pérez Villanueva"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CharlExMachina/LibreHub.git"
+  },
+  "build": {
+    "appId": "com.charlexmachina.LibreHub",
+    "productName": "Libre Hub",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "linux/**/*",
+      "package.json",
+      "!dist/**/*.map"
+    ],
+    "asarUnpack": [
+      "linux/**/*"
+    ],
+    "npmRebuild": false,
+    "toolsets": {
+      "appimage": "1.0.3"
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "AudioVideo",
+      "icon": "build/icon.png",
+      "executableName": "libre-hub",
+      "artifactName": "Libre-Hub-${arch}.AppImage",
+      "desktop": {
+        "entry": {
+          "Name": "Libre Hub",
+          "StartupWMClass": "com.charlexmachina.LibreHub"
+        }
+      }
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "CharlExMachina",
+        "repo": "LibreHub",
+        "releaseType": "release"
+      }
+    ]
+  }
+}

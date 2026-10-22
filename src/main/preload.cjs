@@ -1,0 +1,28 @@
+// Sandboxed preload: the only bridge between the page and the device.
+const { contextBridge, ipcRenderer } = require('electron');
+
+contextBridge.exposeInMainWorld('a50x', {
+  platform: process.platform,
+  snapshot: () => ipcRenderer.invoke('a50x:snapshot'),
+  apply: (action) => ipcRenderer.invoke('a50x:apply', action),
+  onChanged: (listener) => ipcRenderer.on('a50x:changed', (_event, what) => listener(what)),
+  audio: {
+    status: () => ipcRenderer.invoke('audio:status'),
+    setup: () => ipcRenderer.invoke('audio:setup'),
+    undo: () => ipcRenderer.invoke('audio:undo'),
+  },
+  meters: {
+    watch: (keys) => ipcRenderer.invoke('meters:watch', keys),
+    onLevels: (listener) => ipcRenderer.on('meters:levels', (_event, frame) => listener(frame)),
+    onLost: (listener) => ipcRenderer.on('meters:lost', (_event, key) => listener(key)),
+  },
+  app: {
+    get: () => ipcRenderer.invoke('app:get'),
+    set: (patch) => ipcRenderer.invoke('app:set', patch),
+    checkNow: () => ipcRenderer.invoke('app:check-now'),
+    rememberNow: () => ipcRenderer.invoke('app:remember-now'),
+    checkForUpdate: () => ipcRenderer.invoke('app:update-check'),
+    installUpdate: () => ipcRenderer.invoke('app:update-install'),
+    onEvent: (listener) => ipcRenderer.on('app:event', (_event, what, data) => listener(what, data)),
+  },
+});

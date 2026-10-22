@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:" />
+  <title>Libre Hub</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app" id="app">
+    <aside class="sidebar">
+      <div class="device-card" id="device-card"></div>
+      <nav class="nav" id="nav" aria-label="Sections"></nav>
+      <div class="sidebar-foot" id="sidebar-foot"></div>
+    </aside>
+    <main class="main" id="main" tabindex="-1"></main>
+  </div>
+  <div class="toasts" id="toasts" popover="manual"></div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

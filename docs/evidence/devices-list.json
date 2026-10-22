@@ -1,0 +1,299 @@
+EVT {
+ "msgId": "",
+ "verb": "OPTIONS",
+ "path": "/",
+ "origin": "backend"
+}
+
+=== /devices/list
+{
+ "msgId": "1",
+ "verb": "GET",
+ "path": "/devices/list",
+ "origin": "backend",
+ "result": {
+  "code": "SUCCESS",
+  "what": ""
+ },
+ "payload": {
+  "@type": "type.googleapis.com/logi.protocol.devices.Device.Info.List",
+  "deviceInfos": [
+   {
+    "id": "dev00000000",
+    "pid": 2827,
+    "fwInfo": [
+     {
+      "interfaceId": "046d_0b0b",
+      "firmwareVersion": "1.2.18",
+      "firmwareName": "36",
+      "firmwareFriendlyName": "",
+      "firmwareRevision": 0,
+      "hardwareRevision": 0
+     }
+    ],
+    "isSubdevice": false,
+    "parentId": "",
+    "state": "ACTIVE",
+    "onboardMode": false,
+    "individualMode": false,
+    "resourcesAvailable": true,
+    "connectionType": "USB",
+    "hasWirelessInterface": false,
+    "displayConnectionType": "LIGHTSPEED",
+    "deviceType": "HEADSET",
+    "deviceFamily": "",
+    "deviceModel": "a50_x",
+    "deviceBaseModel": "a50_x",
+    "displayName": "A50 X",
+    "extendedDisplayName": "A50 X Gaming Headset",
+    "slotPrefix": "a50x",
+    "thumbnail": "pipeline://core_assets/thumbnails/10148034-555f-45fb-a800-8f3201776ef4",
+    "stringPackage": "1803f5d5-35cc-4eac-a2fb-28177d13b84a/strings",
+    "assetsPackages": {
+     "analogOnboardingPackage": "",
+     "displayPresetLogos": ""
+    },
+    "deviceExt": 0,
+    "deviceUnitId": "0000XX0X0X00",
+    "deviceSignature": "HEADSET.a50_x.0.0000XX0X0X00",
+    "givenName": "Carlos'",
+    "capabilities": {
+     "audio": {
+      "systemTray": {
+       "hasInputVolumeControl": false,
+       "hasOutputVolumeControl": false,
+       "hasDeviceVolumeControl": true,
+       "hasAudioMixingControl": false,
+       "hasAudioMixingMatrixControl": true,
+       "hasBalanceMixerControl": true,
+       "hasSidetoneControl": true
+      },
+      "hasDts": false,
+      "hasDolby": false,
+      "hasDtsHx2e": false,
+      "hasBlueVoice1": false,
+      "hasBlueVoice2": false,
+      "hasLogivoice": false,
+      "hasSamplerApo": false,
+      "hasAutomaticGainControl": false,
+      "hasMicrophoneVolumeFeatures": false,
+      "syncMicSettingsCardGainWithSystem": false,
+      "hasProEq": false,
+      "hasOnboardEq": false,
+      "hasOnboardProEq": false,
+      "hasCenturionEq": false,
+      "hasCenturionOnboardEq": false,
+      "unifiedEqualizer": {
+       "type": "CENTURION_ADVANCED_PARAMETRIC",
+       "instanceNames": {
+        "0": "MICROPHONE_LABEL",
+        "1": "HEADPHONES_LABEL"
+       },
+       "fetchDefaultPresetsFromDevice": false,
+       "unsupportedInstances": []
+      },
+      "hasLightspeedAux": false,
+      "hasCenturionVolumeInAcoustics": false,
+      "hasAudioMixingMatrix": true,
+      "hasMicrophoneTest": true,
+      "hasEq": false,
+      "hasAcoustics": false,
+      "hasEqualizerSwitchView": false,
+      "hasPlaybackControlsLock": false,
+      "hasHardwareNoiseReduction": false,
+      "balanceMixerInSettings": {
+       "inverted": true,
+       "leftSource": "DEVICE_ACOUSTICS_GAME_SOURCE_LABEL",
+       "rightSource": "DEVICE_ACOUSTICS_VOICE_SOURCE_LABEL"
+      },
+      "hasCenturionOnboardNoiseReduction": false,
+      "hasHeadsetTones": true,
+      "hasSidetoneInSettings": true,
+      "hasCenturionVolumeInSettings": true,
+      "hasNoiseExposureInSettings": false,
+      "hasHidMic": false,
+      "hasDenoiser": false,
+      "multiEndpoint": {
+       "captureNameMustEndWith": "A50 X Stream Out",
+       "renderNameMustEndWith": "A50 X Game",
+       "onlyForPid": ""
+      },
+      "hasOnboardProfiles": false,
+      "hasHeadphoneJack": false,
+      "hasOptionalHeadphoneJack": false,
+      "micLightingOptOut": false,
+      "hasMicFunctionalLighting": false,
+      "hasLatchingMuteButton": false,
+      "hasMicLedSupport": false,
+      "hasMicrophoneSettings": false,
+      "hasMicrophonePreset": false,
+      "hasAutomaticPatternControl": false,
+      "hasSimpleMicTest": false,
+      "hasOnboardMetering": false,
+      "shareAudioRoutesWithChildren": false,
+      "micType": "INVALID_MIC_TYPE"
+     },
+     "sleepTimer": false,
+     "mstateSupport": {
+      "count": 1,
+      "timeOut": 0
+     },
+     "fnInversion": false,
+     "presentSplashScreen": true,
+     "customizableColor": false,
+     "wirelessReportRate": false,
+     "hybridEngine": false,
+     "advancedSleepTimer": false,
+     "angleSnapping": false,
+     "excludeGShift": false,
+     "hostRemovalSupport": false,
+     "hostInfos": false,
+     "gkeyLayout": "INVALID_GKEY_LAYOUT",
+     "hasBatteryStatus": true,
+     "powerOffTimer": true,
+     "requiresBackupForDfu": false,
+     "unifiedBattery": false,
+     "dpiLighting": false,
+     "hasGlobalDamping": false,
+     "nonInteractive": false,
+     "chargepadCompatible": false,
+     "individuality": false,
+     "defaultSlotFormat": "INVALID_FORMAT",
+     "fnToggle": false,
+     "isFullHidppWheel": false,
+     "hasConfigurationProfiles": false,
+     "disableCenterSpring": false,
+     "hasOnboardDeviceName": true,
+     "systemTraySupport": true,
+     "wirelessSupport": {
+      "supports2khz": false,
+      "supportsBluetooth": false,
+      "wirelessDfu": false,
+      "btHostInfo": true
+     },
+     "cidBasedGameModeSupport": false,
+     "depotNotRequired": false,
+     "ledBrightness": true,
+     "autoSleep": true,
+     "hasFactoryReset": true,
+     "disableLightingViewMenu": false,
+     "dpiVersion": 0,
+     "hasWiredReportRate": false,
+     "keyboardSize": "UNKNOWN",
+     "uiThemeVersion": 0,
+     "crossDeviceSupport": {
+      "usePresetsFrom": {
+       "AUDIO_EQ_UNIFIED": {
+        "extendedDisplayNames": [
+         "Logitech G A50 X",
+         "A50 Gaming Headset"
+        ]
+       }
+      }
+     },
+     "deviceNameMaxLength": 0,
+     "hasBatteryEcoMode": false,
+     "hasTotalUsageTime": false,
+     "iprofileDatasyncSupport": false,
+     "modeMatchingAlgorithm": "DEFAULT",
+     "useRealSoc": false,
+     "hasEuPowerModeControl": true,
+     "hasBunnyHoppingSupport": false,
+     "hasSpatialSound": false,
+     "hasPerformanceReportRate": false,
+     "hasRename": false,
+     "deviceSettingsVersion": 0,
+     "hasOnboardEditSupport": false,
+     "hasCustomDeviceNameStyle": false,
+     "hasKeepAliveSupport": false,
+     "hasBoolStates": false,
+     "coachmarksThemeVersion": 0,
+     "hasNoFnKeys": false,
+     "disableOnboardDpiSave": false,
+     "dpiVersionAutoDetectTemporary": false,
+     "reportRateAutoDetectTemporary": false
+    },
+    "activeInterfaces": [
+     {
+      "type": "DEVIO",
+      "id": "046d_0b0b",
+      "pid": 2827,
+      "modelId": 0,
+      "extendedModel": 0,
+      "serialNumber": "0000XX0X0X00",
+      "path": "IOService:/AppleARMPE/arm-io@10F00000/AppleH16GFamilyIO/usb-drd2@92280000/AppleT8132USBXHCI@02000000/usb-drd2-port-hs@02100000/A50 X@02100000/A50 X@8/AppleUserUSBHostHIDDevice",
+      "containerId": "0x2100000",
+      "deviceType": "INVALID_TYPE",
+      "deviceName": "A50 X",
+      "keyboardLayout": "INVALID_LAYOUT",
+      "firmwareVersion": "1.2.18",
+      "firmwareName": "36",
+      "firmwareRevision": 0,
+      "hardwareRevision": 0,
+      "unitId": "0000XX0X0X00",
+      "fwEntities": [],
+      "connectionType": "USB",
+      "hasOnboardMode": false,
+      "parentPath": "",
+      "hashedSerialNumber": "",
+      "hashedUnitId": "ef6b65517bfb032897c94019c60ad68a0bbfa55fc2f9e02be01e8b386dd8bb9a"
+     },
+     {
+      "type": "AUDIO",
+      "id": "046d_0b0b",
+      "pid": 0,
+      "modelId": 0,
+      "extendedModel": 0,
+      "serialNumber": "",
+      "path": "",
+      "containerId": "0x2100000",
+      "deviceType": "INVALID_TYPE",
+      "deviceName": "",
+      "keyboardLayout": "INVALID_LAYOUT",
+      "firmwareVersion": "",
+      "firmwareName": "",
+      "firmwareRevision": 0,
+      "hardwareRevision": 0,
+      "unitId": "",
+      "fwEntities": [],
+      "connectionType": "VIRTUAL",
+      "hasOnboardMode": false,
+      "parentPath": "",
+      "hashedSerialNumber": "",
+      "hashedUnitId": ""
+     }
+    ],
+    "slots": {
+     "a50x_unified_equalizer_preset_0": {
+      "id": "a50x_unified_equalizer_preset_0",
+      "attribute": "UNIFIED_EQUALIZER_PRESET",
+      "disabled": false,
+      "defaultCard": "50972608-3af9-340d-ac0c-4c104e274697"
+     },
+     "a50x_mixing_matrix": {
+      "id": "a50x_mixing_matrix",
+      "attribute": "AUDIO_MIXING_MATRIX_SETTINGS",
+      "disabled": false,
+      "defaultCard": "99C65655-E1F4-4413-B609-6F1771198A37"
+     },
+     "a50x_unified_equalizer_preset_1": {
+      "id": "a50x_unified_equalizer_preset_1",
+      "attribute": "UNIFIED_EQUALIZER_PRESET",
+      "disabled": false,
+      "defaultCard": "2675437e-ea5d-3a3c-be83-5c259c12699a"
+     },
+     "a50x_centurion_mixer_mic": {
+      "id": "a50x_centurion_mixer_mic",
+      "attribute": "CENTURION_MIXER_MIC",
+      "disabled": false,
+      "defaultCard": "d327117d-9ad6-49db-b194-398018d5ed91"
+     }
+    },
+    "configurations": {},
+    "path": "IOService:/AppleARMPE/arm-io@10F00000/AppleH16GFamilyIO/usb-drd2@92280000/AppleT8132USBXHCI@02000000/usb-drd2-port-hs@02100000/A50 X@02100000/A50 X@8/AppleUserUSBHostHIDDevice",
+    "parentPath": ""
+   }
+  ]
+ }
+}
+timeout; pending []

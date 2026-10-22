@@ -1,0 +1,224 @@
+[
+ {
+  "id": 33,
+  "type": "PipeWire:Interface:Device",
+  "info": {
+   "props": {
+    "device.name": "alsa_card.usb-Logitech_A50_X-00",
+    "device.description": "A50 X",
+    "device.api": "alsa",
+    "media.class": "Audio/Device"
+   },
+   "params": {
+    "EnumProfile": [
+     {
+      "index": 0,
+      "name": "off",
+      "description": "Off",
+      "priority": 0,
+      "available": "yes"
+     },
+     {
+      "index": 1,
+      "name": "output:analog-stereo+input:mono-fallback",
+      "description": "Analog Stereo Output + Mono Input",
+      "priority": 6501,
+      "available": "unknown"
+     },
+     {
+      "index": 2,
+      "name": "output:analog-stereo",
+      "description": "Analog Stereo Output",
+      "priority": 6500,
+      "available": "unknown"
+     },
+     {
+      "index": 3,
+      "name": "output:iec958-stereo+input:mono-fallback",
+      "description": "Digital Stereo (IEC958) Output + Mono Input",
+      "priority": 5501,
+      "available": "unknown"
+     },
+     {
+      "index": 4,
+      "name": "output:iec958-stereo",
+      "description": "Digital Stereo (IEC958) Output",
+      "priority": 5500,
+      "available": "unknown"
+     },
+     {
+      "index": 5,
+      "name": "output:iec958-ac3-surround-51+input:mono-fallback",
+      "description": "Digital Surround 5.1 (IEC958/AC3) Output + Mono Input",
+      "priority": 301,
+      "available": "unknown"
+     },
+     {
+      "index": 6,
+      "name": "output:iec958-ac3-surround-51",
+      "description": "Digital Surround 5.1 (IEC958/AC3) Output",
+      "priority": 300,
+      "available": "unknown"
+     },
+     {
+      "index": 7,
+      "name": "pro-audio",
+      "description": "Pro Audio",
+      "priority": 1,
+      "available": "yes"
+     },
+     {
+      "index": 8,
+      "name": "input:mono-fallback",
+      "description": "Mono Input",
+      "priority": 1,
+      "available": "unknown"
+     }
+    ],
+    "Profile": [
+     {
+      "index": 7,
+      "name": "pro-audio"
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": 50,
+  "type": "PipeWire:Interface:Node",
+  "info": {
+   "props": {
+    "node.name": "alsa_output.usb-Logitech_A50_X-00.pro-output-0",
+    "node.description": "A50 X Voice",
+    "media.class": "Audio/Sink",
+    "device.id": 33,
+    "priority.session": 900,
+    "object.serial": 839
+   }
+  }
+ },
+ {
+  "id": 106,
+  "type": "PipeWire:Interface:Node",
+  "info": {
+   "props": {
+    "node.name": "alsa_output.usb-Logitech_A50_X-00.pro-output-1",
+    "node.description": "A50 X Game",
+    "media.class": "Audio/Sink",
+    "device.id": 33,
+    "priority.session": 3000,
+    "object.serial": 840
+   }
+  }
+ },
+ {
+  "id": 35,
+  "type": "PipeWire:Interface:Node",
+  "info": {
+   "props": {
+    "node.name": "alsa_input.usb-Logitech_A50_X-00.pro-input-0",
+    "node.description": "A50 X Mic",
+    "media.class": "Audio/Source",
+    "device.id": 33,
+    "priority.session": 3000,
+    "object.serial": 841
+   }
+  }
+ },
+ {
+  "id": 83,
+  "type": "PipeWire:Interface:Node",
+  "info": {
+   "props": {
+    "node.name": "alsa_input.usb-Logitech_A50_X-00.pro-input-1",
+    "node.description": "A50 X Stream Out",
+    "media.class": "Audio/Source",
+    "device.id": 33,
+    "priority.session": 100,
+    "object.serial": 842
+   }
+  }
+ },
+ {
+  "id": 54,
+  "type": "PipeWire:Interface:Node",
+  "info": {
+   "props": {
+    "node.name": "alsa_output.pci-0000_03_00.1.hdmi-stereo",
+    "node.description": "Navi 31 HDMI/DP Audio Digital Stereo (HDMI) [Odyssey G80SD]",
+    "media.class": "Audio/Sink",
+    "device.id": 82,
+    "priority.session": 696,
+    "object.serial": 847
+   }
+  }
+ },
+ {
+  "id": 107,
+  "type": "PipeWire:Interface:Node",
+  "info": {
+   "props": {
+    "node.name": "alsa_output.usb-Generic_USB_Audio-00.HiFi__SPDIF__sink",
+    "node.description": "USB Audio S/PDIF Output",
+    "media.class": "Audio/Sink",
+    "device.id": 49,
+    "priority.session": 796,
+    "object.serial": 848
+   }
+  }
+ },
+ {
+  "id": 66,
+  "type": "PipeWire:Interface:Node",
+  "info": {
+   "props": {
+    "node.name": "alsa_output.usb-Generic_USB_Audio-00.HiFi__Speaker__sink",
+    "node.description": "USB Audio Speakers",
+    "media.class": "Audio/Sink",
+    "device.id": 49,
+    "priority.session": 1100,
+    "object.serial": 849
+   }
+  }
+ },
+ {
+  "id": 65,
+  "type": "PipeWire:Interface:Node",
+  "info": {
+   "props": {
+    "node.name": "alsa_output.usb-Generic_USB_Audio-00.HiFi__Headphones__sink",
+    "node.description": "USB Audio Front Headphones",
+    "media.class": "Audio/Sink",
+    "device.id": 49,
+    "priority.session": 828,
+    "object.serial": 850
+   }
+  }
+ },
+ {
+  "id": 104,
+  "type": "PipeWire:Interface:Metadata",
+  "props": {
+   "metadata.name": "default"
+  },
+  "metadata": [
+   {
+    "subject": 0,
+    "key": "default.audio.sink",
+    "type": "Spa:String:JSON",
+    "value": {
+     "name": "alsa_output.usb-Logitech_A50_X-00.pro-output-1"
+    }
+   },
+   {
+    "subject": 0,
+    "key": "default.audio.source",
+    "type": "Spa:String:JSON",
+    "value": {
+     "name": "alsa_input.usb-Logitech_A50_X-00.pro-input-0"
+    }
+   }
+  ]
+ }
+]

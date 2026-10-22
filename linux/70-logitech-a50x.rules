@@ -1,0 +1,8 @@
+# Logitech A50 X base station (USB 046d:0b0b): let the logged-in desktop user open its
+# vendor HID interface without root. Install with:
+#   sudo cp linux/70-logitech-a50x.rules /etc/udev/rules.d/
+#   sudo udevadm control --reload-rules && sudo udevadm trigger
+# then unplug and replug the base station.
+# The file must sort before systemd's 73-seat-late.rules, which turns the uaccess tag into an
+# ACL for the active user; a tag added later (e.g. in a 99- file) is silently ignored.
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="0b0b", TAG+="uaccess"
