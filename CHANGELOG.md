@@ -4,6 +4,16 @@ Libre Hub follows [Semantic Versioning](https://semver.org): a **major** version
 that break something you rely on (a moved settings file, a dropped feature), a **minor** version
 for new features, a **patch** version for fixes. Each release is the tag `vX.Y.Z`.
 
+## 1.1.0 - 2026-10-22
+
+- **Check for updates now:** a small refresh button next to the firmware version, at the bottom
+  of the sidebar, checks for a new version right away instead of waiting for the scheduled
+  check. A message says what it found: up to date, downloading, ready to install (with Restart
+  to update), or why the check failed. The button only shows in the AppImage.
+- **The mic level is a row of LED dots** on the Microphone page, lit from the left up to the
+  level, instead of a scrolling trace. Every dot goes dark when the noise gate cuts your mic to
+  silence.
+
 ## 1.0.1 - 2026-10-22
 
 - The application menu, launcher and login entry keep Libre Hub's icon when you run it from the
