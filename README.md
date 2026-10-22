@@ -1,4 +1,4 @@
-# logitech-manager
+# LibreHub
 
 Control a **Logitech A50 X** headset without G Hub: a small library, a CLI (`a50x`) and a
 desktop app, **Libre Hub**. The goal is Linux, where G Hub doesn't exist. Everything here also runs on
