@@ -4,7 +4,7 @@ import { headsetArt } from './art.js';
 import { eqGraph, miniCurve } from './eq.js';
 import { icon } from './icons.js';
 import { dbText, gateWatch, ledMeter, levelBar } from './meters.js';
-import { appCard, initAppSettings, keepCard } from './prefs.js';
+import { appCard, initAppSettings, keepCard, updateCheckButton } from './prefs.js';
 import { choiceCards, createWriter, el, muteButton, prompt, segmented, slider, toast } from './ui.js';
 
 const $ = (sel) => document.querySelector(sel);
@@ -214,10 +214,11 @@ function renderDeviceCard(reconnecting = false) {
         shown ? el('span', { class: `num${online ? '' : ' dim'}`, style: { marginLeft: 'auto' }, title: 'Battery' }, `${shown.battery}%`) : null)));
 }
 
+const updateCheck = updateCheckButton();
 function renderFoot() {
   const foot = $('#sidebar-foot');
   foot.hidden = !snap;
-  if (snap) foot.replaceChildren(el('div', {}, `Firmware ${snap.device.firmware.version}`));
+  if (snap) foot.replaceChildren(el('div', { class: 'row' }, el('span', {}, `Firmware ${snap.device.firmware.version}`), updateCheck));
 }
 
 function show(id, { focus = false } = {}) {

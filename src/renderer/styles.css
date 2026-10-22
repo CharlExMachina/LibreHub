@@ -142,6 +142,10 @@ h1[tabindex='-1']:focus { outline: none; }
 .nav .hint { margin-left: auto; font-size: 12px; color: var(--text-3); font-weight: 450; max-width: 92px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .nav button[aria-current='page'] .hint { color: var(--text-2); }
 .sidebar-foot { margin-top: auto; padding: 12px 12px 2px; color: var(--text-3); font-size: 12px; line-height: 1.5; border-top: 1px solid var(--line); }
+.sidebar-foot .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 24px; }
+.sidebar-foot .btn.icon-only { width: 24px; height: 24px; margin-right: -6px; border-radius: 6px; color: var(--text-3); }
+.sidebar-foot .btn.icon-only:hover:not(:disabled) { color: var(--text); }
+.btn.busy .icon { animation: spin 0.9s linear infinite; }
 .spinner.sm { width: 12px; height: 12px; border-width: 1.5px; }
 .main { position: relative; }
 .main.reconnecting > * { opacity: 0.35; filter: grayscale(0.7); transition: opacity 0.3s, filter 0.3s; }
