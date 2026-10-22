@@ -76,102 +76,55 @@ export function gateWatch() {
   };
 }
 
-/** The last few seconds of mic level, newest on the right; silent stretches are shaded. */
-export function levelTrace({ seconds = 6, fps = 30, label }) {
-  const n = seconds * fps;
-  const canvas = el('canvas', { class: 'trace-canvas', 'aria-hidden': 'true' });
-  const grid = el('div', { class: 'trace-grid', 'aria-hidden': 'true' },
-    ...[-20, -40, -60].map((db) => el('span', { 'data-db': `−${-db} dB`, style: { top: `${(1 - frac(db)) * 100}%` } })));
-  const node = el('div', { class: 'trace', role: 'img', 'aria-label': label }, canvas, grid);
-  const levels = new Float32Array(n).fill(FLOOR_DB);
-  const silent = new Uint8Array(n);
-  let head = 0;
-  let count = 0;
-  let quiet = 0;
-  let skipped = 0;
-  const calm = matchMedia('(prefers-reduced-motion: reduce)');
-  let colors = null;
-  let w = 0;
-  let h = 0;
-  const ctx = canvas.getContext('2d');
+/** Dots in a ledMeter: about 2 dB each over FLOOR_DB..0. */
+const LEDS = 36;
+/** The dB marks under a ledMeter. */
+const LED_MARKS = [-60, -40, -20, -6, 0];
 
-  const resize = () => {
-    const r = canvas.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
-    w = Math.round(r.width * dpr);
-    h = Math.round(r.height * dpr);
-    if (!w || !h) return;
-    canvas.width = w;
-    canvas.height = h;
-    draw();
-  };
-  new ResizeObserver(resize).observe(canvas);
-
-  let pattern = null;
-  const stripes = () => {
-    if (pattern) return pattern;
-    const dpr = window.devicePixelRatio || 1;
-    const size = Math.round(8 * dpr);
-    const tile = new OffscreenCanvas(size, size);
-    const t = tile.getContext('2d');
-    t.strokeStyle = 'rgb(255 255 255 / 0.12)';
-    t.lineWidth = dpr;
-    t.beginPath();
-    for (const o of [-size, 0, size]) { t.moveTo(o, size); t.lineTo(o + size, 0); }
-    t.stroke();
-    pattern = ctx.createPattern(tile, 'repeat');
-    return pattern;
-  };
-
-  function draw() {
-    if (!w || !h) return;
-    colors ??= (() => {
-      const css = getComputedStyle(document.documentElement);
-      return { accent: css.getPropertyValue('--accent').trim(), warn: css.getPropertyValue('--warn').trim(), danger: css.getPropertyValue('--danger').trim() };
-    })();
-    ctx.clearRect(0, 0, w, h);
-    const col = w / n;
-    const gap = Math.min(col * 0.35, 2 * (window.devicePixelRatio || 1));
-    // Stripe runs of silence first, then draw the level bars on top.
-    ctx.fillStyle = stripes();
-    for (let i = 0; i < count; ) {
-      const at = (j) => (head - count + j + n) % n;
-      if (!silent[at(i)]) { i++; continue; }
-      let j = i;
-      while (j < count && silent[at(j)]) j++;
-      const x0 = w - (count - i) * col;
-      ctx.fillRect(x0, 0, (j - i) * col, h);
-      i = j;
-    }
-    for (let i = 0; i < count; i++) {
-      const k = (head - count + i + n) % n;
-      if (silent[k] || levels[k] <= FLOOR_DB) continue;
-      const db = levels[k];
-      const bh = Math.max(1, frac(db) * h);
-      ctx.fillStyle = db > -1 ? colors.danger : db > -6 ? colors.warn : colors.accent;
-      ctx.globalAlpha = 0.35 + 0.65 * ((i + n - count) / n);
-      ctx.fillRect(w - (count - i) * col + gap / 2, h - bh, col - gap, bh);
-    }
-    ctx.globalAlpha = 1;
-  }
-
-  return {
+/**
+ * A horizontal meter of dots, lit from the left up to the level, with the peak marker as one dimmer dot.
+ * Each dot keeps its colour (mint, amber from -6 dB, red from -1 dB); a frame only flips the dots whose
+ * state changed, so silence or a steady level costs nothing.
+ */
+export function ledMeter({ label }) {
+  // Dot i covers the 2 dB below top(i), lights from its middle up, and takes its colour from its top.
+  const top = (i) => FLOOR_DB + ((i + 1) / LEDS) * -FLOOR_DB;
+  const dots = Array.from({ length: LEDS }, (_, i) => el('span', { class: top(i) > -1 ? 'danger' : top(i) > -6 ? 'warn' : '' }));
+  // Each mark sits under the dot whose range holds it.
+  const marks = LED_MARKS.map((db) => el('span', { style: { gridColumn: String(Math.max(1, Math.ceil(frac(db) * LEDS))) } }, db ? `−${-db}` : '0'));
+  const node = el('div', { class: 'led', role: 'meter', 'aria-label': label, 'aria-valuemin': String(FLOOR_DB), 'aria-valuemax': '0' },
+    el('div', { class: 'led-dots' }, dots), el('div', { class: 'led-marks', 'aria-hidden': 'true' }, marks));
+  let lit = 0;
+  let held = -1;
+  let spoken = 0;
+  const api = {
     el: node,
-    push(db, isSilent) {
-      const unchanged = isSilent && count === n && quiet >= n;
-      levels[head] = db;
-      silent[head] = isSilent ? 1 : 0;
-      head = (head + 1) % n;
-      count = Math.min(n, count + 1);
-      quiet = isSilent ? quiet + 1 : 0;
-      // A trace that's silent end to end looks the same next frame: don't redraw it. With reduced
-      // motion, it moves in steps a few times a second instead of scrolling smoothly.
-      if (!unchanged && (!calm.matches || ++skipped % 8 === 0)) draw();
+    /** level and peak in dBFS; silent: the mic sends silence, which leaves every dot dark. */
+    set(level, peak, silent = false) {
+      const n = silent ? 0 : Math.round(frac(level) * LEDS);
+      const h = silent ? -1 : Math.round(frac(peak) * LEDS) - 1;
+      for (let i = Math.min(n, lit); i < Math.max(n, lit); i++) dots[i].classList.toggle('on', i < n);
+      if (h !== held) {
+        if (held >= 0) dots[held].classList.remove('hold');
+        if (h >= n) dots[h].classList.add('hold');
+      } else if (h >= 0) dots[h].classList.toggle('hold', h >= n);
+      lit = n;
+      held = h;
+      // Screen readers get the value a few times a second, not 30.
+      const now = performance.now();
+      if (now - spoken > 250) {
+        spoken = now;
+        node.setAttribute('aria-valuenow', String(Math.round(silent ? FLOOR_DB : Math.max(level, FLOOR_DB))));
+        node.setAttribute('aria-valuetext', silent ? 'Silence' : dbText(level));
+      }
     },
     clear() {
-      count = 0;
-      quiet = 0;
-      draw();
+      api.set(FLOOR_DB, FLOOR_DB, true);
+      spoken = 0;
+      node.setAttribute('aria-valuenow', String(FLOOR_DB));
+      node.setAttribute('aria-valuetext', 'Not measuring');
     },
   };
+  api.clear();
+  return api;
 }

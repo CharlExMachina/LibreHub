@@ -3,7 +3,7 @@
 import { headsetArt } from './art.js';
 import { eqGraph, miniCurve } from './eq.js';
 import { icon } from './icons.js';
-import { FLOOR_DB, dbText, gateWatch, levelBar, levelTrace } from './meters.js';
+import { dbText, gateWatch, ledMeter, levelBar } from './meters.js';
 import { appCard, initAppSettings, keepCard } from './prefs.js';
 import { choiceCards, createWriter, el, muteButton, prompt, segmented, slider, toast } from './ui.js';
 
@@ -750,15 +750,14 @@ const NUMBER_MS = 90;
  */
 function micLevels() {
   const head = levelsBar({ live: 'Measuring your mic. Nothing is recorded.' });
-  const trace = levelTrace({ label: 'Mic level over the last few seconds' });
-  const now = levelBar({ label: 'Mic input level', className: 'trace-now' });
+  const meter = ledMeter({ label: 'Mic input level' });
   const gate = gateWatch();
   const state = el('span', { class: 'gate-state' });
   const value = el('span', { class: 'mic-db' });
   const hint = el('p', { class: 'mic-hint' });
   const panel = el('div', { class: 'mic-live' },
     el('div', { class: 'mic-live-top' }, state, value),
-    el('div', { class: 'trace-row' }, trace.el, now.el),
+    meter.el,
     hint);
   let gateValue = null;
   let silentFor = 0;
@@ -775,15 +774,14 @@ function micLevels() {
       : silentFor > 90 ? ['closed', 'Silent: gate closed, or mic muted'] : ['closed', 'Gate closed'];
     const tip = off
       ? 'With the gate off, everything the mic hears goes out, room noise included. Pick a gate and talk to see where it cuts in.'
-      : 'Striped parts are where the gate cut your mic to silence. The headset doesn’t say how loud you need to be to open it, so talk normally and compare settings.';
+      : 'When every dot goes dark, the gate has cut your mic to silence. The headset doesn’t say how loud you need to be to open it, so talk normally and compare settings.';
     // Called every frame: only touch the DOM when something changed.
     if (state.textContent !== text) state.textContent = text;
     if (state.className !== `gate-state ${cls}`) state.className = `gate-state ${cls}`;
     if (hint.textContent !== tip) hint.textContent = tip;
   };
   const reset = () => {
-    trace.clear();
-    now.clear();
+    meter.clear();
     gate.reset();
     value.textContent = '';
     silentFor = 0;
@@ -809,11 +807,10 @@ function micLevels() {
     levels([level, hold, peak]) {
       const silent = gate.push(peak);
       silentFor = silent ? silentFor + 1 : 0;
-      trace.push(peak, silent);
-      // The bar drops with the gate, like the trace, instead of falling slowly through the silence.
-      now.set(silent ? FLOOR_DB : level, hold);
+      // The dots go dark with the gate, instead of falling slowly through the silence.
+      meter.set(level, hold, silent);
       // The number would change about 30 times a second, too fast to read, and each change lays out and
-      // repaints it: update it 10 times a second (the bar and trace still move every frame). Silence shows at once.
+      // repaints it: update it 10 times a second (the dots still move every frame). Silence shows at once.
       const db = silent ? '—' : dbText(level);
       const at = performance.now();
       if (value.textContent !== db && (at - numberAt >= NUMBER_MS || silent || value.textContent === '—')) {
