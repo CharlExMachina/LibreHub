@@ -1,4 +1,4 @@
-# logitech-manager
+# LibreHub
 
 Control Logitech gear without G Hub: the **A50 X** headset and the **G502 X PLUS** mouse. Each
 has a small library and a CLI (`a50x`, `g502x`), and the A50 X has a desktop app, **Libre Hub**.

@@ -142,6 +142,10 @@ h1[tabindex='-1']:focus { outline: none; }
 .nav .hint { margin-left: auto; font-size: 12px; color: var(--text-3); font-weight: 450; max-width: 92px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .nav button[aria-current='page'] .hint { color: var(--text-2); }
 .sidebar-foot { margin-top: auto; padding: 12px 12px 2px; color: var(--text-3); font-size: 12px; line-height: 1.5; border-top: 1px solid var(--line); }
+.sidebar-foot .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 24px; }
+.sidebar-foot .btn.icon-only { width: 24px; height: 24px; margin-right: -6px; border-radius: 6px; color: var(--text-3); }
+.sidebar-foot .btn.icon-only:hover:not(:disabled) { color: var(--text); }
+.btn.busy .icon { animation: spin 0.9s linear infinite; }
 .spinner.sm { width: 12px; height: 12px; border-width: 1.5px; }
 .main { position: relative; }
 .main.reconnecting > * { opacity: 0.35; filter: grayscale(0.7); transition: opacity 0.3s, filter 0.3s; }
@@ -602,14 +606,20 @@ dialog p { margin: 0 0 16px; color: var(--text-2); font-size: 13px; }
    (opacity, not transform: a transform layer would draw the text a little softer) */
 .mic-db { position: absolute; top: 0; right: 0; font-size: 13.5px; font-weight: 550; font-variant-numeric: tabular-nums; color: var(--text-2);
   will-change: opacity; }
-.trace-row { display: flex; gap: 10px; height: 76px; }
-.trace { position: relative; flex: 1; min-width: 0; border-radius: 10px; background: rgb(0 0 0 / 0.22); border: 1px solid var(--line); overflow: hidden; }
-.trace-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-.trace-grid span { position: absolute; left: 0; right: 0; border-top: 1px solid rgb(255 255 255 / 0.05); }
-.trace-grid { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
-.trace-grid span::before { content: attr(data-db); position: absolute; left: 5px; bottom: 2px; padding: 1px 3px; border-radius: 4px;
-  font: 10px/1 var(--mono); color: var(--text-3); background: rgb(11 12 15 / 0.7); }
-.lvl.trace-now { width: 8px; --lvl-r: 4px; }
+/* -70..0 dBFS in 36 dots, lit up to the level, the peak marker a dimmer dot further right; the dB marks below
+   share the dots' columns. The dots get their own layer, so lighting one repaints only that row */
+.led { display: grid; gap: 6px; padding: 14px 12px 8px; border-radius: 10px; background: rgb(0 0 0 / 0.22); border: 1px solid var(--line); }
+.led-dots, .led-marks { display: grid; grid-template-columns: repeat(36, 1fr); }
+.led-dots { height: 26px; will-change: transform; }
+.led-dots span { justify-self: center; width: min(10px, 62%); border-radius: 999px; background: rgb(255 255 255 / 0.08); --on: var(--accent); }
+.led-dots span.warn { --on: var(--warn); }
+.led-dots span.danger { --on: var(--danger); }
+.led-dots span.on { background: var(--on); }
+.led-dots span.hold { background: var(--on); opacity: 0.6; }
+/* a peak that reached the red dot stays bright, like the clip marker of the bars */
+.led-dots span.danger.hold { opacity: 1; }
+.led-marks { font: 10px/1 var(--mono); color: var(--text-3); }
+.led-marks span { justify-self: center; white-space: nowrap; }
 /* two lines tall either way, so switching gates doesn't move the cards below */
 .mic-hint { margin: 0; min-height: calc(2 * 1.45em); color: var(--text-2); font-size: 12.5px; line-height: 1.45; text-wrap: pretty; }
 
