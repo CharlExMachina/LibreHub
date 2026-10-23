@@ -542,9 +542,12 @@ function shutdown(reason: string): void {
   service = undefined;
   meters?.stop();
   tray?.destroy();
-  mouse.close();
-  // app.exit skips the window-close dance; nothing else needs saving.
-  app.exit(0);
+  // Give the mouse a moment to stop reporting presses and take its LEDs back (a sleeping mouse
+  // would not answer; don't wait for it).
+  void Promise.race([mouse.close(), new Promise((r) => setTimeout(r, 1000))]).finally(() => {
+    // app.exit skips the window-close dance; nothing else needs saving.
+    app.exit(0);
+  });
 }
 
 app.on('window-all-closed', () => shutdown('window closed'));

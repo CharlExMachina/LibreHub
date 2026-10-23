@@ -3,13 +3,18 @@
 //
 // The mouse keeps five profiles in its own flash. Editing a profile here rewrites that profile's
 // sector; the mouse uses the new settings at once if it is the active profile, and keeps them
-// with no software running (which is what you want on Linux).
+// with no software running (which is what you want on Linux). Macros go to the profile's macro
+// sectors (macros.ts). Software actions and Freestyle lighting can't live on the mouse; they go to
+// the settings file (software.ts) and need the agent (agent.ts) running.
 
 import { msToHz, hzToMs } from './codecs.js';
 import type { G502X } from './g502x.js';
-import { controlIndex, G502X_CONTROLS, type Binding, type LedEffect, type Profile } from './onboard.js';
+import { formatMacro, macroSectorsFor, packMacros, readMacro } from './macros.js';
+import { controlIndex, G502X_CONTROLS, type Binding, type ControlId, type LedEffect, type MacroStep, type Profile } from './onboard.js';
 import { DPI_PRESETS, formatEffect, isPrimaryZoneEffect } from './presets.js';
+import { formatFreestyle, formatSoftwareAction, parseAssignment, profileSoftware, type Assignment, type Freestyle, type Layer, type ProfileSoftware, type SoftwareConfig, type SoftwareStore } from './software.js';
 import { formatBinding } from './usages.js';
+import { toHex } from './hidpp.js';
 
 export interface ProfileView {
   slot: number;
@@ -23,6 +28,8 @@ export interface ProfileView {
   lighting: { active: string; inactive: string };
   dimAfterSeconds: number | null;
   lightsOffAfterSeconds: number | null;
+  /** Per-LED colours shown while the agent runs, left to right (FREESTYLE_LEDS), or "off". */
+  freestyle: string;
 }
 
 export interface MouseSnapshot {
@@ -53,7 +60,10 @@ export type MouseAction =
   | { type: 'dpi'; profile: number; levels: number[]; defaultIndex?: number; shiftIndex?: number }
   | { type: 'dpiPreset'; profile: number; preset: string }
   | { type: 'name'; profile: number; name: string | null }
-  | { type: 'button'; profile: number; control: string; layer: 'base' | 'gshift'; binding: Binding }
+  /** A binding, a macro (stored on the mouse) or a software action; text as in parseAssignment. */
+  | { type: 'button'; profile: number; control: string; layer: Layer; assignment: Assignment | string }
+  /** Freestyle per-LED colours for a profile (null = off). Shown while the agent runs. */
+  | { type: 'freestyle'; profile: number; colors: Freestyle | null }
   | { type: 'lighting'; profile: number; target: LightingTarget; effect: LedEffect | 'dim'; dimPercent?: number }
   | { type: 'inactivity'; profile: number; dimAfterSeconds?: number | null; lightsOffAfterSeconds?: number | null }
   | { type: 'startupEffect'; enabled: boolean };
@@ -88,7 +98,16 @@ export class MouseService {
   /** Whole operations run one at a time (read-modify-write of a profile must not interleave). */
   private queue: Promise<unknown> = Promise.resolve();
 
-  constructor(readonly mouse: G502X) {}
+  constructor(
+    readonly mouse: G502X,
+    /** Where software actions and Freestyle are kept; without it those can't be set. */
+    readonly store?: SoftwareStore,
+  ) {}
+
+  /** Run device I/O without interleaving with an operation in progress (the agent uses this). */
+  run<T>(fn: () => Promise<T>): Promise<T> {
+    return this.exclusive(fn);
+  }
 
   private exclusive<T>(fn: () => Promise<T>): Promise<T> {
     const run = this.queue.then(fn, fn);
@@ -96,7 +115,17 @@ export class MouseService {
     return run;
   }
 
-  private view(slot: number, p: Profile & { enabled: boolean }): ProfileView {
+  private view(slot: number, p: Profile & { enabled: boolean }, sectors: Map<number, Uint8Array>, sw: ProfileSoftware): ProfileView {
+    const show = (b: Binding | undefined, layer: Layer, control: ControlId): string => {
+      if (!b) return 'default';
+      if (b.type === 'macro') {
+        const steps = readMacro(sectors.get(b.sector), b.offset);
+        return steps ? formatMacro(steps) : `macro:missing(${b.sector}:${b.offset})`;
+      }
+      const action = sw.actions[layer][control];
+      if (b.type === 'disabled' && action) return formatSoftwareAction(action);
+      return formatBinding(b);
+    };
     return {
       slot,
       enabled: p.enabled,
@@ -108,13 +137,31 @@ export class MouseService {
       buttons: G502X_CONTROLS.map((c, k) => ({
         control: c.id,
         label: c.label,
-        binding: formatBinding(p.buttons[k] ?? { type: 'unassigned' }),
-        gshift: formatBinding(p.gshift[k] ?? { type: 'unassigned' }),
+        binding: show(p.buttons[k], 'base', c.id),
+        gshift: show(p.gshift[k], 'gshift', c.id),
       })),
       lighting: { active: formatEffect(activeOf(p.lighting.active)), inactive: formatEffect(activeOf(p.lighting.inactive)) },
       dimAfterSeconds: p.dimAfterSeconds,
       lightsOffAfterSeconds: p.lightsOffAfterSeconds,
+      freestyle: formatFreestyle(sw.freestyle),
     };
+  }
+
+  /** The sectors the profiles' macro bindings point at, read once each. */
+  private async macroSectors(profiles: Profile[]): Promise<Map<number, Uint8Array>> {
+    const out = new Map<number, Uint8Array>();
+    const { sectorCount } = await this.mouse.getOnboardDescription();
+    for (const p of profiles) {
+      for (const b of [...p.buttons, ...p.gshift]) {
+        if (b.type !== 'macro' || out.has(b.sector) || b.sector >= sectorCount) continue;
+        out.set(b.sector, await this.mouse.readSector(b.sector));
+      }
+    }
+    return out;
+  }
+
+  private async software(): Promise<SoftwareConfig> {
+    return this.store ? this.store.read() : { version: 1, profiles: {} };
   }
 
   snapshot(): Promise<MouseSnapshot> {
@@ -140,9 +187,78 @@ export class MouseService {
       reportRateHz: msToHz(await m.getReportRate()),
       wheel: await m.getWheel(),
       startupEffect: await m.getStartupEffect(),
-      profiles: profiles.map((p, k) => this.view(k + 1, p)),
+      profiles: await (async () => {
+        const sectors = await this.macroSectors(profiles);
+        const sw = await this.software();
+        return profiles.map((p, k) => this.view(k + 1, p, sectors, profileSoftware(sw, k + 1)));
+      })(),
       capabilities: { dpi: range, reportRatesHz: (await m.getReportRates()).map(msToHz), dpiPresets: DPI_PRESETS.map((p) => p.name) },
     };
+  }
+
+  private async assign(slot: number, control: string, layer: Layer, a: Assignment): Promise<void> {
+    const k = controlIndex(control);
+    const id = G502X_CONTROLS[k].id;
+    if (a.kind === 'software' && !this.store) throw new Error('software actions need a settings file');
+    if (layer !== 'base' && layer !== 'gshift') throw new RangeError(`layer must be base or gshift, got ${String(layer)}`);
+    const p = await this.mouse.readProfile(slot);
+    const bindings = layer === 'gshift' ? p.gshift : p.buttons;
+    while (bindings.length <= k) bindings.push({ type: 'unassigned' });
+    // A control with a software action does nothing on the mouse; the agent performs the action.
+    // A macro gets its pointer from writeWithMacros.
+    bindings[k] = a.kind === 'binding' ? a.binding : { type: 'disabled' };
+    await this.writeWithMacros(slot, p, a.kind === 'macro' ? { layer, k, steps: a.steps } : undefined);
+    if (this.store) {
+      await this.store.update(slot, (s) => {
+        if (a.kind === 'software') s.actions[layer][id] = a.action;
+        else delete s.actions[layer][id];
+      });
+    }
+  }
+
+  /**
+   * Write a profile together with its macros: collect the macros its bindings use (plus a new
+   * one), pack them into the profile's own macro sectors, point the bindings at them, and write
+   * changed macro sectors before the profile that points into them.
+   */
+  private async writeWithMacros(slot: number, p: Profile, added?: { layer: Layer; k: number; steps: MacroStep[] }): Promise<void> {
+    const own = macroSectorsFor(slot);
+    const { sectorSize } = await this.mouse.getOnboardDescription();
+    const current = new Map<number, Uint8Array>();
+    for (const s of own) current.set(s, await this.mouse.readSector(s));
+    const users: { layer: Binding[]; k: number }[] = [];
+    const macros: MacroStep[][] = [];
+    for (const layer of [p.buttons, p.gshift]) {
+      layer.forEach((b, k) => {
+        if (b.type !== 'macro' || !own.includes(b.sector)) return;
+        const steps = readMacro(current.get(b.sector), b.offset);
+        if (steps) {
+          users.push({ layer, k });
+          macros.push(steps);
+        } else {
+          layer[k] = { type: 'disabled' }; // points at nothing valid; don't keep a dangling pointer
+        }
+      });
+    }
+    if (added) {
+      users.push({ layer: added.layer === 'gshift' ? p.gshift : p.buttons, k: added.k });
+      macros.push(added.steps);
+    }
+    const packed = packMacros(macros, own, sectorSize);
+    users.forEach((u, i) => {
+      u.layer[u.k] = { type: 'macro', ...packed.pointers[i] };
+    });
+    for (const s of own) {
+      const want = packed.sectors.get(s)!;
+      const have = current.get(s)!;
+      const empty = want.slice(0, -2).every((b) => b === 0xff);
+      if (empty) {
+        if (!have.every((b) => b === 0xff)) await this.mouse.eraseSector(s);
+      } else if (toHex(want) !== toHex(have)) {
+        await this.mouse.writeSector(s, want);
+      }
+    }
+    await this.mouse.writeProfile(slot, p);
   }
 
   /** Read a profile, change it, write it back. */
@@ -168,7 +284,13 @@ export class MouseService {
       case 'profileEnabled':
         return m.setProfileEnabled(a.profile, a.enabled);
       case 'restoreProfile':
-        return m.restoreFactoryProfile(a.profile);
+        await m.restoreFactoryProfile(a.profile);
+        // G Hub's "restore" resets everything, including what lives on the computer.
+        await this.store?.update(a.profile, (s) => {
+          s.actions = { base: {}, gshift: {} };
+          s.freestyle = null;
+        });
+        return;
       case 'startupEffect':
         return m.setStartupEffect(a.enabled);
       case 'reportRate': {
@@ -198,12 +320,13 @@ export class MouseService {
         return this.editProfile(a.profile, (p) => {
           p.name = a.name;
         });
-      case 'button': {
-        const k = controlIndex(a.control);
-        return this.editProfile(a.profile, (p) => {
-          const layer = a.layer === 'gshift' ? p.gshift : p.buttons;
-          while (layer.length <= k) layer.push({ type: 'unassigned' });
-          layer[k] = a.binding;
+      case 'button':
+        return this.assign(a.profile, a.control, a.layer, typeof a.assignment === 'string' ? parseAssignment(a.assignment) : a.assignment);
+      case 'freestyle': {
+        if (!this.store) throw new Error('Freestyle lighting needs a settings file');
+        await m.readProfile(a.profile); // the profile must exist
+        return this.store.update(a.profile, (s) => {
+          s.freestyle = a.colors;
         });
       }
       case 'lighting':

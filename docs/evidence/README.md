@@ -42,5 +42,13 @@ with the same G Hub build. Report lines are `time IN bytes`; G Hub's requests us
 | `ghub/ghub-gets.json` | G Hub's mouse, onboard, battery and lighting state |
 | `ghub/oracle-round1/2-*.json` | G Hub's decoding of profiles this project wrote into slot 5 |
 | `screenshots/*.png` | G Hub's pages for the mouse (sensitivity, assignments, LIGHTSYNC, settings, on-board slots, macro editor) |
+| `lab/lab.txt` | 2026-10-23, G Hub closed, a person at the mouse: spy events for each control in onboard (test 1) and host mode (test 2); a firmware macro on G9 typing "hi" (test 3); per-LED frames right after a profile write (test 4, not shown) |
+| `lab/lab2.txt`, `lab/lab3.txt` | Per-LED (Freestyle) frames in host and onboard mode, by eye |
+| `lab/lab4.txt` | An attempt to map LED numbers by eye (unreliable: the strip is Y-shaped; G Hub's `light_map.json` is used instead) |
+| `lab/lab5.txt` | Which `0x8071` effect calls keep per-LED frames visible on an animated profile |
+| `lab/handson-1-ghub-running.txt`, `lab/handson-2.txt` | `tools/re/g502x-handson.mjs` through the real CLI and agent: the first with G Hub restarted in the background (Freestyle failed), the second with it closed (all passed) |
+
+In the `lab/` logs, `ANSWER`/`DIALOG` lines are what the person clicked or typed into the
+prompt; a "Yes" with a contradicting comment counts as No (lab2, first answer).
 
 These include the mouse's serial number and unit id.

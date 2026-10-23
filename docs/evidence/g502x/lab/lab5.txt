@@ -1,0 +1,29 @@
+16:49:28.675 profile 1 {"all":{"type":"signature","variant":"active","frameMs":32,"brightness":100},"primary":{"type":"off"}}
+16:49:32.139 swControl ok 01 03 05 00 00 00
+16:49:32.146 setIndividual ok 01 02 03 04 00 00
+16:49:32.156 setIndividual ok 05 06 07 08 00 00
+16:49:32.165 frameEnd ok 00 00 00 00 00 00
+16:49:49.905 ANSWER button returned:Yes, gave up:false
+16:49:50.319 release ok 01 00 00 00 00 00
+16:49:54.913 swControl ok 01 03 05 00 00 00
+16:49:54.922 setEffect c0 off ok 00 00 00 00 00 00
+16:49:54.931 setIndividual ok 01 02 03 04 00 00
+16:49:54.940 setIndividual ok 05 06 07 08 00 00
+16:49:54.949 frameEnd ok 00 00 00 00 00 00
+16:50:00.899 ANSWER button returned:No, gave up:false
+16:50:00.908 release ok 01 00 00 00 00 00
+16:50:03.574 swControl ok 01 03 05 00 00 00
+16:50:03.583 setEffect ff 0x13 ok 00 00 00 00 00 00
+16:50:03.591 setIndividual ok 01 02 03 04 00 00
+16:50:03.601 setIndividual ok 05 06 07 08 00 00
+16:50:03.609 frameEnd ok 00 00 00 00 00 00
+16:50:08.873 ANSWER button returned:Yes, gave up:false
+16:50:08.880 release ok 01 00 00 00 00 00
+16:50:11.540 swControl ok 01 03 05 00 00 00
+16:50:11.549 setEffect ff 0x0c ok 00 00 00 00 00 00
+16:50:11.558 setIndividual ok 01 02 03 04 00 00
+16:50:11.566 setIndividual ok 05 06 07 08 00 00
+16:50:11.575 frameEnd ok 00 00 00 00 00 00
+16:50:18.029 ANSWER button returned:No, gave up:false
+16:50:19.759 release ok 01 00 00 00 00 00
+16:50:22.413 RESULTS {"A":true,"B":false,"C":true,"D":false}

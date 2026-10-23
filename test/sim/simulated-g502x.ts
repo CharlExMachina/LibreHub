@@ -2,7 +2,9 @@
 // real mouse (test/fixtures). It behaves like the firmware in the ways that matter to the client:
 // receiver pairing register, HID++ 1.0 "unknown device" while asleep, the 32-entry feature table,
 // onboard memory that erases on write start and rejects a bad CRC at write end, read-only factory
-// sectors, and profile/DPI state that follows the active onboard profile.
+// sectors, and profile/DPI state that follows the active onboard profile. It also reports button
+// presses while MouseButtonSpy runs, takes per-LED frames, and can switch profile or wake up the
+// way the real mouse announces it.
 
 import type { HidTransport } from '../../src/device/transport.js';
 import { fromHex } from '../../src/mouse/hidpp.js';
@@ -29,7 +31,7 @@ export class SimulatedG502X implements HidTransport {
   onRequest?: (featureId: number, fn: number) => void;
   /** Delay the next reply by this many ms; later replies queue behind it (the receiver is FIFO). */
   delayNextReplyMs = 0;
-  private lastReplyAt = 0;
+  private outbox: Promise<void> = Promise.resolve();
   readonly flash = new Map<number, Uint8Array>();
   mode = 2; // host
   activeProfile = 0;
@@ -40,6 +42,10 @@ export class SimulatedG502X implements HidTransport {
   wheelMode = 0;
   swControl = [0, 0];
   readonly effects: number[][] = [];
+  spying = false;
+  /** Per-LED frames received (LED number → [r, g, b]), one per frame end. */
+  readonly ledFrames: Record<number, number[]>[] = [];
+  private ledPending: Record<number, number[]> = {};
   private pendingWrite?: { sector: number; length: number; data: number[] };
 
   constructor() {
@@ -60,18 +66,51 @@ export class SimulatedG502X implements HidTransport {
     this.listeners.clear();
   }
 
+  /** Hold down exactly these controls (bit k = control k in onboard order). Reported only while spying. */
+  buttons(mask: number): void {
+    if (this.spying) this.send([0x11, 0x01, idx(0x8110), 0x00, mask >> 8, mask & 0xff]);
+  }
+
+  /** Press and release controls. */
+  press(mask: number): void {
+    this.buttons(mask);
+    this.buttons(0);
+  }
+
+  /** The profile button: next enabled profile, announced like the mouse does (0x8100 event 0). */
+  cycleProfile(): void {
+    const dir = decodeDirectory(this.flash.get(0)!);
+    let n = this.activeProfile;
+    do n = (n % dir.length) + 1;
+    while (!dir[n - 1].enabled);
+    this.activate(n);
+    this.send([0x11, 0x01, idx(0x8100), 0x00, 0x00, n]);
+  }
+
+  /** The mouse went to sleep and woke up again: the spy stops and the LEDs return to the profile. */
+  sleepAndWake(): void {
+    this.spying = false;
+    this.swControl = [0, 0];
+    this.send([0x10, 0x01, 0x41, 0x11, 0x72, 0x99, 0x40]);
+    this.send([0x10, 0x01, 0x41, 0x11, 0x32, 0x99, 0x40]);
+  }
+
   private send(bytes: number[]) {
     const out = new Uint8Array(bytes[0] === 0x10 ? 7 : 20);
     out.set(bytes.slice(0, out.length));
     const deliver = () => {
       for (const l of this.listeners) l(out);
     };
-    const at = Math.max(Date.now() + this.delayNextReplyMs, this.lastReplyAt);
+    // Strictly in order, like the receiver: a delayed reply holds back everything after it.
+    // (Separate timers that come due in the same millisecond may fire in either order.)
+    const at = Date.now() + this.delayNextReplyMs;
     this.delayNextReplyMs = 0;
-    if (at > Date.now()) {
-      this.lastReplyAt = at;
-      setTimeout(deliver, at - Date.now());
-    } else queueMicrotask(deliver);
+    this.outbox = this.outbox
+      .then(() => {
+        const wait = at - Date.now();
+        return wait > 0 ? new Promise<void>((r) => setTimeout(r, wait)) : undefined;
+      })
+      .then(deliver);
   }
 
   write(report: Uint8Array): void {
@@ -179,10 +218,20 @@ export class SimulatedG502X implements HidTransport {
         return 0x07;
       case 0x8110:
         if (fn === 0) return [0x0b];
+        if (fn === 1) this.spying = true;
+        if (fn === 2) this.spying = false;
+        if (fn === 3) return [1, 2, 3, 4, 0, 5];
         return [];
       case 0x8071:
         return this.rgb(fn, p);
       case 0x8081:
+        if (fn === 1) {
+          for (let i = 0; i + 3 < 16 && p[i + 1] !== undefined; i += 4) if (p[i] || p[i + 1] || p[i + 2] || p[i + 3]) this.ledPending[p[i]] = p.slice(i + 1, i + 4);
+        }
+        if (fn === 7) {
+          this.ledFrames.push(this.ledPending);
+          this.ledPending = {};
+        }
         return [];
       case 0x8100:
         return this.onboard(fn, p);

@@ -12,6 +12,8 @@ real mouse or from what G Hub itself wrote to it; raw evidence is in
 - [Feature table](#feature-table)
 - [Live features](#live-features): DPI, report rate, lighting, wheel, battery
 - [Onboard memory](#onboard-memory): directory, profile layout, bindings, lighting, macros
+- [Macros, software actions and Freestyle](#macros-software-actions-and-freestyle): the G Hub
+  features that look software-only, and how this project provides them
 - [What is not possible](#what-is-not-possible)
 
 ## How G Hub drives the mouse
@@ -96,11 +98,13 @@ entries at profile byte 96.
 | Battery Level | `90 0c` | G Hub decoded ours as `BATTERY_LIFE` |
 | Disable | `90 00 00 00` | G Hub wrote it (G9 → DISABLE) |
 | Use default | the factory binding above | |
-| Macros, Double Click, Go to DPI Shift | `00 00 00 00` (macro) / `00 01 00 00` (the other two): placeholders that do nothing on the mouse | G Hub wrote them; no macro data was written anywhere |
+| Macros, Double Click, Go to DPI Shift | G Hub: `00 00 00 00` (macro) / `00 01 00 00` (the other two), placeholders that do nothing on the mouse. This project stores text, Double Click and macros as real onboard macros instead, `0S SS 00 OO` (see [Macros](#macros)) | G Hub wrote the placeholders; the mouse ran our macros (hands-on) |
 | Cycle Maximum Brightness | `90 00 00 00`: G Hub cannot store it, so the button does nothing on the mouse | G Hub wrote it |
 
 In software mode G Hub performs every assignment itself through MouseButtonSpy (`0x8110`); in
-onboard mode only the rows above with real bytes work.
+onboard mode only the rows above with real bytes work. Launch Application and other actions on
+the computer are covered by the agent here; see
+[Macros, software actions and Freestyle](#macros-software-actions-and-freestyle).
 
 ### LIGHTSYNC
 
@@ -113,7 +117,7 @@ onboard mode only the rows above with real bytes work.
 | Effect: Color Wave | rate, direction (horizontal / reverse), brightness | all slot: `04 00 00 00 00 00 00 P.lo DIR BRIGHT P.hi` (period split!) | G Hub wrote 5000/18500 ms; G Hub decoded ours (`COLORWAVE 7000 ms REVERSE_HORIZONTAL 0.7`) |
 | Effect: Pulsar Point | effect rate 32–64 ms | all slot: `0f 00 00 00 00 00 F.hi F.lo BRIGHT 00 00` (`SIGNATURE_FRAME_ACTIVE`) | G Hub wrote |
 | Effect: Screen Sampler | | software only | |
-| Freestyle (per-LED colours) | 8 LEDs | software mode only: `0x8081` per-key frames | |
+| Freestyle (per-LED colours) | 8 LEDs | not storable: `0x8081` per-LED frames while software controls the LEDs, in either mode | seen on the mouse (hands-on); see [Freestyle](#freestyle) |
 | Animations / Effects on device | 6 stored animation slots | stored through `0x8071`; not editable here | |
 | Inactivity: Neutron Null | | inactive all slot: `10 … F.hi F.lo BRIGHT` (`SIGNATURE_FRAME_INACTIVE`) | G Hub wrote |
 | Inactivity: Breathing | colour | inactive primary slot, breathing as above | G Hub wrote |
@@ -184,7 +188,7 @@ answers every request with `8F … 08`. The client retries for a configurable ti
 | 7 | 2201 | AdjustableDpi v2 | live DPI |
 | 8 | 2121 | HiResWheel | wheel mode, ratchet switch |
 | 9 | 8071 | RgbEffects v2 | live lighting, startup effect, inactivity timers |
-| 10 | 8081 | PerKeyLighting v2 | Freestyle (software mode) |
+| 10 | 8081 | PerKeyLighting v2 | Freestyle |
 | 11 | 8100 | OnboardProfiles | modes, profiles, memory |
 | 12 | 8110 | MouseButtonSpy | G Hub's software assignments |
 | 13 | 8060 | ReportRate | live report rate |
@@ -211,7 +215,11 @@ answers every request with `8F … 08`. The client retries for a configurable ti
 | | fn3 NV config | `[0 get / 1 set][cap u16][data]` | cap 0x0001 = startup effect |
 | | fn5 software control | `[1][mode 3][flags]` / `[1][0][0]` to release | |
 | | fn7 power config | `[0]` get → `[00 00 00][idle s u16][sleep s u16]`; `[1 00 00 idle sleep]` set | |
-| 8110 MouseButtonSpy | fn0 count `[11]`, fn1 start, fn2 stop, fn3/fn4 remapping | | |
+| 8110 MouseButtonSpy | fn0 count | | `[0b]` |
+| | fn1 start / fn2 stop | | |
+| | fn3 get / fn4 set remapping | | `01 02 03 04 00 05 00…`: in host mode control k sends HID button n (0 = nothing). G Hub sets all zeros, so only it sees presses |
+| | event 0 (while started) | | `[mask u16 BE]` of the controls held down, bit k = onboard control k (left `0001` … DPI down `0400`), on every press and release, in onboard and host mode |
+| 8100 OnboardProfiles | event 0 | | `[00][profile]` after the profile button switched profile (not after a host-requested switch) |
 
 ## Onboard memory
 
@@ -278,20 +286,91 @@ immediately (hardware test: the sensor DPI changes).
 ### Macros
 
 The description advertises macro format 1 (libratbag's "G402" opcodes: `43 MOD KEY` key down,
-`44` key up, `40 MS` delay, `41/42` buttons, `45/46` consumer, `20` wheel, `61` move, `FF` end; a
-binding `0S SS 00 OO` points at sector S offset O). G Hub 2026.6 does **not** use them for this
-mouse: when a G Hub macro is assigned and the profile written to a slot, G Hub stores the
-placeholder `00 00 00 00` and writes no macro data. The codec here implements the format
-(unit-tested), but whether this firmware executes it is unverified, so the CLI does not offer it.
+`44 MOD KEY` key up, `40 MS` delay, `41/42 MASK` buttons down/up, `45/46 USAGE` consumer
+down/up, `20`/`21` wheel/tilt, `61` move, `FF` end; a binding `0S SS 00 OO` points at sector S,
+offset O). G Hub 2026.6 does not use it for this mouse: when a G Hub macro is assigned and the
+profile written to a slot, G Hub stores the placeholder `00 00 00 00` and writes no macro data.
+
+**The firmware runs these macros by itself.** A G9 binding pointing at `43 00 0b 44 00 0b 40 00
+1e 43 00 0c 44 00 0c ff` in sector 6 typed "hi" into a text field
+([lab.txt](evidence/g502x/lab/lab.txt), test 3). Through the CLI, a double-click macro selected
+a word and `text:Hello, World!` typed over it exactly, capitals and punctuation included
+([handson-2.txt](evidence/g502x/lab/handson-2.txt)). Shift is the modifier byte of the same key
+step (`43 02 0b` = H).
+
+Sectors 6–15 are erased on the factory mouse and nothing else uses them. This project gives
+each profile two of them (profile n: sectors 4+2n and 5+2n), packs that profile's macros into
+them first-fit, and rewrites them before the profile that points into them, so editing one
+profile never touches another's macros. A macro has to fit in one sector (253 bytes, about 40
+characters of text, at 6 bytes per character).
+
+## Macros, software actions and Freestyle
+
+G Hub lists some features that it can't store on this mouse, because in its default software
+mode it does them itself: it runs MouseButtonSpy, sees every press, and plays macros, types
+text, launches applications and paints per-LED colours from the computer. In on-board memory
+mode those assignments become placeholders that do nothing.
+
+This project splits them by what the hardware can do:
+
+| G Hub feature | Here | Needs software running? |
+|---|---|---|
+| Macros (keys, combos, pauses, mouse buttons, media keys, wheel) | an onboard macro: `macro:ctrl+c, 50ms, ctrl+v` | no: the mouse plays it |
+| Text (Text & Emojis) | an onboard macro of key taps: `text:Hello, World!` (printable ASCII, US layout) | no |
+| Double Click | an onboard macro: `double-click` | no |
+| Launch Application, open a file or website, Lock screen and other system actions | `open:<app, file or URL>` / `run:<command>`; the mouse stores "disabled" and the agent acts on the press | yes |
+| Freestyle | per-LED colours per profile; the agent paints them | yes |
+
+Emojis and other non-ASCII text are not possible from the mouse: it can only send key presses.
+
+### The agent
+
+`g502x agent` (or the app, while it runs, also from the tray) does the part that needs the computer:
+
+1. Starts MouseButtonSpy. In onboard mode the profile keeps working normally (G9 still
+   switched profile while spied, [lab.txt](evidence/g502x/lab/lab.txt) test 1), and every press
+   is also reported as event 0. Without the remapping G Hub uses, nothing is taken away from
+   the mouse.
+2. On a press, looks up the active profile's action for that control and layer (G-Shift layer
+   while a control bound to `fn:g-shift` is held) and runs it, but only if the mouse binding
+   is still "disabled", so a profile changed by other software never fires a stale action.
+3. Paints Freestyle for the active profile and paints again when the profile changes (event 0
+   of 0x8100), when the mouse wakes up (receiver notification 0x41), and when the settings
+   file changes.
+4. On exit, stops the spy and hands the LEDs back.
+
+Software actions and Freestyle are kept in `g502x.json` next to the app's other settings
+(`~/.config/logitech-manager/` on Linux, `~/Library/Application Support/logitech-manager/` on
+macOS). A lock file next to it keeps the app and `g502x agent` from both acting.
+
+### Freestyle
+
+- Per-LED frames (`0x8081` fn1 `[led][r][g][b]`×4, fn7 frame end) show only after software
+  control is taken (`0x8071` fn5 `[1][3][5]`), in host and onboard mode alike
+  ([lab2.txt](evidence/g502x/lab/lab2.txt), [lab3.txt](evidence/g502x/lab/lab3.txt)).
+- The LEDs are numbered 1–8 (fn0 info `[00 00]` → `00 00 ff 01`: LED 0 does nothing). G Hub's
+  `light_map.json` maps its eight Freestyle dots to these numbers; left to right on its
+  picture: 3, 4, 8, 7, 6, 5, then 2 (right side, upper) and 1 (right side, lower). The strip is
+  Y-shaped, which made a by-eye map unreliable ([lab4.txt](evidence/g502x/lab/lab4.txt)).
+- The mouse repaints its own effect shortly after a profile is selected or the mode changes,
+  over any frame sent just before; a frame sent a few seconds later stays. Selecting effect
+  `0x13` on cluster `ff` keeps frames visible; selecting a cluster-0 effect or `0x0c` hides
+  them ([lab5.txt](evidence/g502x/lab/lab5.txt)).
+- G Hub running at the same time takes the LEDs back. The first hands-on run failed only on
+  Freestyle, with G Hub's agent restarted in the background
+  ([handson-1-ghub-running.txt](evidence/g502x/lab/handson-1-ghub-running.txt)); with it
+  closed, it passed.
 
 ## What is not possible
 
-- **Software-only G Hub assignments** (Launch Application, Text & Emojis, multi-step macros,
-  Double Click, Go to DPI Shift, Lock screen, G HUB/Audio actions, Cycle Maximum Brightness):
-  G Hub performs these itself while it runs. They need a program that watches MouseButtonSpy
-  and injects input (uinput on Linux); this project does not ship one.
-- **Freestyle and Screen Sampler** are software-driven lighting. The live per-LED API
-  (`setLedColors`) is implemented, but nothing keeps it running.
+- **Emojis and non-ASCII text**: the mouse can only send key presses. Text is typed with a US
+  layout, so other keyboard layouts may get different characters for symbols.
+- **G HUB/Audio actions and Cycle Maximum Brightness** control G Hub itself; there is nothing
+  to control here. Use `run:` for an equivalent command.
+- **Screen Sampler and LIGHTSYNC sync** (lighting that follows the screen or other devices)
+  are not implemented.
+- **Freestyle without software running**: the mouse can't store per-LED colours in a profile.
+  Without the agent, the profile's own lighting shows.
 - **Editing the stored animations** ("Effects on device", 6 slots) is not implemented; they can
   still be read through `0x8071` fn0 info type 1.
 - **Asymmetric X/Y DPI** presets exist in G Hub's data but this sensor feature stores one DPI.

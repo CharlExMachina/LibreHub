@@ -8,6 +8,17 @@ import { parseBinding } from '../../src/mouse/usages.js';
 import { runCli } from '../../src/mouse/cli.js';
 import { SECTORS } from '../fixtures/g502x-sectors.js';
 import { FEATURE_TABLE, SimulatedG502X } from './simulated-g502x.js';
+import { mkdtempSync, readFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { SoftwareAgent } from '../../src/mouse/agent.js';
+import { decodeMacro } from '../../src/mouse/onboard.js';
+import { SoftwareStore, type SoftwareAction } from '../../src/mouse/software.js';
+
+// The CLI keeps software actions in a settings file; never touch the real one from tests.
+process.env.G502X_CONFIG = join(mkdtempSync(join(tmpdir(), 'g502x-cli-')), 'g502x.json');
+const tempStore = () => new SoftwareStore(join(mkdtempSync(join(tmpdir(), 'g502x-')), 'g502x.json'));
+const tick = (ms = 0) => new Promise((r) => setTimeout(r, ms));
 
 async function setup() {
   const sim = new SimulatedG502X();
@@ -156,14 +167,14 @@ describe('service actions', () => {
 
   it('remaps buttons on either layer', async () => {
     const { mouse, svc } = await setup();
-    await svc.apply({ type: 'button', profile: 1, control: 'g9', layer: 'base', binding: parseBinding('key:ctrl+shift+t') });
-    await svc.apply({ type: 'button', profile: 1, control: 'wheel-up', layer: 'gshift', binding: parseBinding('media:volume-up') });
-    await svc.apply({ type: 'button', profile: 1, control: 'g5', layer: 'base', binding: parseBinding('disabled') });
+    await svc.apply({ type: 'button', profile: 1, control: 'g9', layer: 'base', assignment: { kind: 'binding', binding: parseBinding('key:ctrl+shift+t') } });
+    await svc.apply({ type: 'button', profile: 1, control: 'wheel-up', layer: 'gshift', assignment: { kind: 'binding', binding: parseBinding('media:volume-up') } });
+    await svc.apply({ type: 'button', profile: 1, control: 'g5', layer: 'base', assignment: { kind: 'binding', binding: parseBinding('disabled') } });
     const p = await mouse.readProfile(1);
     expect(p.buttons[8]).toEqual({ type: 'key', modifiers: Modifier.lctrl | Modifier.lshift, usage: 0x17 });
     expect(p.gshift[12]).toEqual({ type: 'consumer', usage: 0xe9 });
     expect(p.buttons[4]).toEqual({ type: 'disabled' });
-    await expect(svc.apply({ type: 'button', profile: 1, control: 'nope', layer: 'base', binding: { type: 'disabled' } })).rejects.toThrow(/unknown control/);
+    await expect(svc.apply({ type: 'button', profile: 1, control: 'nope', layer: 'base', assignment: { kind: 'binding', binding: { type: 'disabled' } } })).rejects.toThrow(/unknown control/);
   });
 
   it('places lighting in the LED slot G Hub uses and builds "Dim Active Effect"', async () => {
@@ -251,7 +262,7 @@ describe('robustness (review findings)', () => {
       svc.apply({ type: 'lighting', profile: 1, target: 'active', effect: { type: 'wave', periodMs: 5000, direction: 1, brightness: 150 } }),
       svc.apply({ type: 'lighting', profile: 1, target: 'active', effect: { type: 'fixed', color: [300, 0, 0] } }),
       svc.apply({ type: 'reportRate', profile: 1, hz: 900 }),
-      svc.apply({ type: 'button', profile: 1, control: 'g9', layer: 'base', binding: { type: 'key', modifiers: 0, usage: 300 } }),
+      svc.apply({ type: 'button', profile: 1, control: 'g9', layer: 'base', assignment: { kind: 'binding', binding: { type: 'key', modifiers: 0, usage: 300 } } }),
     ];
     for (const b of bad) await expect(b).rejects.toThrow(RangeError);
     expect(toHex(sim.flash.get(1)!)).toBe(before);
@@ -271,7 +282,7 @@ describe('robustness (review findings)', () => {
   it('runs concurrent edits one after another, so none is lost', async () => {
     const { mouse, svc } = await setup();
     await Promise.all([
-      svc.apply({ type: 'button', profile: 1, control: 'g9', layer: 'base', binding: parseBinding('key:f13') }),
+      svc.apply({ type: 'button', profile: 1, control: 'g9', layer: 'base', assignment: { kind: 'binding', binding: parseBinding('key:f13') } }),
       svc.apply({ type: 'name', profile: 1, name: 'both' }),
       svc.snapshot(),
     ]);
@@ -330,5 +341,212 @@ describe('g502x CLI', () => {
     sim.flash.set(9, encodeProfile(decodeProfile(fromHex(SECTORS.profile1))));
     await cli(sim, 'restore', file);
     expect([...sim.flash.entries()].filter(([s]) => s < 16).map(([s, b]) => [s, toHex(b)])).toEqual(original);
+  });
+});
+
+describe('macros stored on the mouse', () => {
+  async function withStore() {
+    const sim = new SimulatedG502X();
+    const mouse = await G502X.connect(sim, { timeoutMs: 200 });
+    const store = tempStore();
+    return { sim, mouse, store, svc: new MouseService(mouse, store) };
+  }
+
+  it('writes text into the profile\'s macro sector and points the control at it', async () => {
+    const { sim, svc } = await withStore();
+    await svc.apply({ type: 'button', profile: 1, control: 'g9', layer: 'base', assignment: 'text:Hello, World!' });
+    const p = decodeProfile(sim.flash.get(1)!);
+    expect(p.buttons[8]).toEqual({ type: 'macro', sector: 6, offset: 0 });
+    expect(decodeMacro(sim.flash.get(6)!)).toHaveLength(26);
+    const view = (await svc.snapshot()).profiles[0].buttons[8];
+    expect(view.binding).toBe('text:Hello, World!');
+  });
+
+  it('packs several macros, repacks when one is replaced, and erases the sectors when none are left', async () => {
+    const { sim, svc } = await withStore();
+    await svc.apply({ type: 'button', profile: 2, control: 'g9', layer: 'base', assignment: 'double-click' });
+    await svc.apply({ type: 'button', profile: 2, control: 'back', layer: 'gshift', assignment: 'macro:ctrl+c, 50ms, ctrl+v' });
+    let p = decodeProfile(sim.flash.get(2)!);
+    expect([p.buttons[8], p.gshift[3]]).toEqual([{ type: 'macro', sector: 8, offset: 0 }, { type: 'macro', sector: 8, offset: 16 }]);
+    await svc.apply({ type: 'button', profile: 2, control: 'g9', layer: 'base', assignment: 'fn:profile-cycle' });
+    p = decodeProfile(sim.flash.get(2)!);
+    expect(p.gshift[3]).toEqual({ type: 'macro', sector: 8, offset: 0 });
+    const s = await svc.snapshot();
+    expect(s.profiles[1].buttons[3].gshift).toBe('macro:ctrl+c, 50ms, ctrl+v');
+    await svc.apply({ type: 'button', profile: 2, control: 'back', layer: 'gshift', assignment: 'default' });
+    expect(sim.flash.get(8)!.every((b) => b === 0xff)).toBe(true);
+    expect(sim.flash.get(6)!.every((b) => b === 0xff)).toBe(true); // profile 1's sectors untouched
+  });
+
+  it('refuses a macro that does not fit before writing anything', async () => {
+    const { sim, svc } = await withStore();
+    const before = toHex(sim.flash.get(1)!);
+    await expect(svc.apply({ type: 'button', profile: 1, control: 'g9', layer: 'base', assignment: `text:${'x'.repeat(60)}` })).rejects.toThrow(/at most 253/);
+    expect(toHex(sim.flash.get(1)!)).toBe(before);
+  });
+});
+
+describe('software actions and Freestyle (agent)', () => {
+  async function running(opts: { profile?: number } = {}) {
+    const sim = new SimulatedG502X();
+    const mouse = await G502X.connect(sim, { timeoutMs: 200 });
+    const store = tempStore();
+    const svc = new MouseService(mouse, store);
+    await svc.apply({ type: 'mode', mode: 'onboard' });
+    if (opts.profile) await svc.apply({ type: 'activeProfile', profile: opts.profile });
+    const ran: SoftwareAction[] = [];
+    const agent = new SoftwareAgent(svc, store, { runner: (a) => ran.push(a), settleMs: 5, repaintMs: 20 });
+    return { sim, mouse, store, svc, agent, ran };
+  }
+  const G9 = 1 << 8;
+  const BACK = 1 << 3;
+  const SNIPER = 1 << 4;
+
+  it('stores the control as "disabled" on the mouse and performs the action on press', async () => {
+    const { sim, svc, store, agent, ran } = await running();
+    await svc.apply({ type: 'button', profile: 1, control: 'g9', layer: 'base', assignment: 'open:https://example.com' });
+    expect(decodeProfile(sim.flash.get(1)!).buttons[8]).toEqual({ type: 'disabled' });
+    expect((await store.read()).profiles['1'].actions.base.g9).toEqual({ type: 'open', target: 'https://example.com' });
+    expect((await svc.snapshot()).profiles[0].buttons[8].binding).toBe('open:https://example.com');
+    await agent.start();
+    expect(sim.spying).toBe(true);
+    sim.press(G9);
+    sim.press(BACK); // no action on back
+    await tick(5);
+    expect(ran).toEqual([{ type: 'open', target: 'https://example.com' }]);
+    await agent.stop();
+    expect(sim.spying).toBe(false);
+  });
+
+  it('uses the G-Shift layer while a G-Shift button is held, and fires once per press', async () => {
+    const { svc, agent, ran, sim } = await running();
+    await svc.apply({ type: 'button', profile: 1, control: 'sniper', layer: 'base', assignment: 'fn:g-shift' });
+    await svc.apply({ type: 'button', profile: 1, control: 'back', layer: 'gshift', assignment: 'run:echo shifted' });
+    await svc.apply({ type: 'button', profile: 1, control: 'back', layer: 'base', assignment: 'run:echo plain' });
+    await agent.start();
+    sim.buttons(SNIPER);
+    sim.buttons(SNIPER | BACK);
+    sim.buttons(SNIPER | BACK); // repeated report while held: no second action
+    sim.buttons(SNIPER);
+    sim.buttons(0);
+    sim.press(BACK);
+    await tick(5);
+    expect(ran.map((a) => (a.type === 'run' ? a.command : ''))).toEqual(['echo shifted', 'echo plain']);
+    await agent.stop();
+  });
+
+  it('does nothing if the mouse binding was changed behind its back (e.g. by G Hub)', async () => {
+    const { svc, agent, ran, sim, store } = await running();
+    await svc.apply({ type: 'button', profile: 1, control: 'g9', layer: 'base', assignment: 'run:echo hi' });
+    await store.update(1, () => undefined);
+    await svc.editProfile(1, (p) => {
+      p.buttons[8] = { type: 'function', fn: 'profile-cycle' };
+    });
+    await agent.start();
+    sim.press(G9);
+    await tick(5);
+    expect(ran).toEqual([]);
+    await agent.stop();
+  });
+
+  it('follows the active profile: actions and Freestyle of the profile the mouse switched to', async () => {
+    const { svc, agent, ran, sim } = await running();
+    await svc.apply({ type: 'profileEnabled', profile: 3, enabled: true });
+    await svc.apply({ type: 'button', profile: 2, control: 'g9', layer: 'base', assignment: 'run:echo two' });
+    await svc.apply({ type: 'freestyle', profile: 2, colors: { 1: '#ff0000', 2: '#00ff00' } });
+    await agent.start();
+    expect(agent.state.profile).toBe(1);
+    expect(sim.ledFrames).toEqual([]);
+    sim.cycleProfile();
+    await tick(40);
+    expect(agent.state.profile).toBe(2);
+    expect(sim.ledFrames.at(-1)).toEqual({ 1: [255, 0, 0], 2: [0, 255, 0] });
+    expect(sim.ledFrames.length).toBe(2); // painted, then painted again after the mouse's own repaint
+    expect(sim.swControl).toEqual([3, 5]);
+    sim.press(G9);
+    await tick(5);
+    expect(ran).toEqual([{ type: 'run', command: 'echo two' }]);
+    sim.cycleProfile(); // to 3: no Freestyle, so the LEDs go back to the profile's effect
+    await tick(40);
+    expect(sim.swControl).toEqual([0, 0]);
+    await agent.stop();
+  });
+
+  it('restarts the spy and repaints after the mouse sleeps and wakes up', async () => {
+    const { svc, agent, ran, sim } = await running();
+    await svc.apply({ type: 'button', profile: 1, control: 'g9', layer: 'base', assignment: 'run:echo awake' });
+    await svc.apply({ type: 'freestyle', profile: 1, colors: { 5: '#0000ff' } });
+    await agent.start();
+    const frames = sim.ledFrames.length;
+    sim.sleepAndWake();
+    expect(sim.spying).toBe(false);
+    await tick(40);
+    expect(sim.spying).toBe(true);
+    expect(sim.ledFrames.length).toBeGreaterThan(frames);
+    sim.press(G9);
+    await tick(5);
+    expect(ran).toHaveLength(1);
+    await agent.stop();
+    expect([sim.spying, sim.swControl]).toEqual([false, [0, 0]]);
+  });
+
+  it('stops at once even if the mouse has fallen asleep', async () => {
+    const sim = new SimulatedG502X();
+    const mouse = await G502X.connect(sim, { timeoutMs: 200, wakeTimeoutMs: 60000 });
+    const store = tempStore();
+    const svc = new MouseService(mouse, store);
+    await svc.apply({ type: 'mode', mode: 'onboard' });
+    await svc.apply({ type: 'freestyle', profile: 1, colors: { 1: '#ffffff' } });
+    const agent = new SoftwareAgent(svc, store, { runner: () => undefined, settleMs: 5, repaintMs: 1000 });
+    await agent.start();
+    sim.asleepFor = 1000;
+    const t = Date.now();
+    await agent.stop();
+    expect(Date.now() - t).toBeLessThan(1000);
+  });
+
+  it('does nothing in host mode, where there is no profile to follow', async () => {
+    const sim = new SimulatedG502X();
+    const mouse = await G502X.connect(sim, { timeoutMs: 200 });
+    const store = tempStore();
+    const svc = new MouseService(mouse, store);
+    const ran: SoftwareAction[] = [];
+    await store.update(1, (p) => {
+      p.actions.base.g9 = { type: 'run', command: 'x' };
+    });
+    const agent = new SoftwareAgent(svc, store, { runner: (a) => ran.push(a), settleMs: 5 });
+    await agent.start();
+    sim.press(G9);
+    await tick(5);
+    expect([agent.state.profile, ran]).toEqual([null, []]);
+    await agent.stop();
+  });
+
+  it('clears software settings when a profile is restored to factory', async () => {
+    const { svc, store } = await running();
+    await svc.apply({ type: 'button', profile: 1, control: 'g9', layer: 'base', assignment: 'run:echo hi' });
+    await svc.apply({ type: 'freestyle', profile: 1, colors: { 1: '#ffffff' } });
+    await svc.apply({ type: 'restoreProfile', profile: 1 });
+    expect(await store.read()).toEqual({ version: 1, profiles: {} });
+  });
+
+  it('CLI: assigns text, a software action and Freestyle, and shows them', async () => {
+    const sim = new SimulatedG502X();
+    const out: string[] = [];
+    const log = console.log;
+    console.log = (...a: unknown[]) => out.push(a.join(' '));
+    try {
+      await runCli(['profile', '1', 'button', 'g9', 'text:Hello,', 'World!'], () => sim);
+      await runCli(['profile', '1', 'button', 'back', 'open:https://example.com', '--gshift'], () => sim);
+      await runCli(['profile', '1', 'freestyle', '#00ffff'], () => sim);
+      await runCli(['profile', '1', 'show'], () => sim);
+    } finally {
+      console.log = log;
+    }
+    const shown = out.join('\n');
+    expect(shown).toMatch(/g9 +text:Hello, World!/);
+    expect(shown).toMatch(/back .*g-shift: open:https:\/\/example.com/);
+    expect(shown).toMatch(/freestyle +#00ffff(,#00ffff){7}/);
+    expect(JSON.parse(readFileSync(process.env.G502X_CONFIG!, 'utf8')).profiles['1'].actions.gshift.back).toEqual({ type: 'open', target: 'https://example.com' });
   });
 });
