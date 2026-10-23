@@ -338,6 +338,16 @@ npm run test:hardware:mouse    # 15 tests against a G502 X PLUS (quit G Hub firs
 - **G502 X PLUS on Linux:** not run against the mouse on a Linux machine yet. It uses the same
   node-hid (hidraw) path as the A50 X; `npm run test:hardware:mouse` is the check to run first.
 
+## Adding a device
+
+The process that mapped both devices is packaged as an agent skill,
+[`reverse-engineer-device`](.agents/skills/reverse-engineer-device/SKILL.md) (also linked from
+`.claude/skills/`). Ask your coding agent to add a device or a missing G Hub setting and it
+follows the same steps: inventory what G Hub offers, analyse G Hub with
+[REA](https://github.com/morluto/rea), sniff while G Hub applies each setting, copy G Hub's
+bytes, test against the real device with everything restored, and document the evidence.
+It needs a machine with G Hub (macOS so far) and the device.
+
 ## Layout
 
 ```

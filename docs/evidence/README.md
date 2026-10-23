@@ -20,8 +20,9 @@ Raw material behind [PROTOCOL.md](../PROTOCOL.md), [G502X-PROTOCOL.md](../G502X-
 | `screenshots/logitech-manager-app.png` | This project's app, showing the same headset |
 
 Input report lines are `ms IN bytes`, with trailing zero padding trimmed (`LEN`, the third
-byte, gives the real length). The captures include the headset's serial number, its
-given name, and the paired computer's Bluetooth name and address.
+byte, gives the real length). The headset's serial number and the paired computer's
+Bluetooth name and address are replaced with placeholders; the headset's given name is as
+captured.
 
 ## G502 X PLUS (`g502x/`)
 
@@ -51,4 +52,5 @@ with the same G Hub build. Report lines are `time IN bytes`; G Hub's requests us
 In the `lab/` logs, `ANSWER`/`DIALOG` lines are what the person clicked or typed into the
 prompt; a "Yes" with a contradicting comment counts as No (lab2, first answer).
 
-These include the mouse's serial number and unit id.
+The mouse's serial number and unit id are replaced with placeholders, as in the rest of the
+evidence.
