@@ -314,7 +314,7 @@ npm run test:hardware:mouse    # 15 tests against a G502 X PLUS (quit G Hub firs
 
 ### Verification status
 
-- **G502 X PLUS, macOS, firmware 27.0.16:** all 13 hardware tests pass (three runs). They
+- **G502 X PLUS, macOS, firmware 27.0.16:** the first 13 hardware tests passed three runs. They
   write a full profile, switch to it and check that the sensor really runs its DPI and report
   rate, then restore all 16 onboard sectors byte for byte. Independently, G Hub decoded
   profiles written by this code with the intended values (see

@@ -217,7 +217,7 @@ answers every request with `8F … 08`. The client retries for a configurable ti
 | | fn7 power config | `[0]` get → `[00 00 00][idle s u16][sleep s u16]`; `[1 00 00 idle sleep]` set | |
 | 8110 MouseButtonSpy | fn0 count | | `[0b]` |
 | | fn1 start / fn2 stop | | |
-| | fn3 get / fn4 set remapping | | `01 02 03 04 00 05 00…`: in host mode control k sends HID button n (0 = nothing). G Hub sets all zeros, so only it sees presses |
+| | fn3 get / fn4 set remapping | | `01 02 03 04 00 05 00…`, which reads as control k → HID mouse button n (0 = none). G Hub sets all zeros in software mode. Not exercised here |
 | | event 0 (while started) | | `[mask u16 BE]` of the controls held down, bit k = onboard control k (left `0001` … DPI down `0400`), on every press and release, in onboard and host mode |
 | 8100 OnboardProfiles | event 0 | | `[00][profile]` after the profile button switched profile (not after a host-requested switch) |
 
@@ -345,9 +345,10 @@ macOS). A lock file next to it keeps the app and `g502x agent` from both acting.
 
 ### Freestyle
 
-- Per-LED frames (`0x8081` fn1 `[led][r][g][b]`×4, fn7 frame end) show only after software
-  control is taken (`0x8071` fn5 `[1][3][5]`), in host and onboard mode alike
-  ([lab2.txt](evidence/g502x/lab/lab2.txt), [lab3.txt](evidence/g502x/lab/lab3.txt)).
+- Per-LED frames (`0x8081` fn1 `[led][r][g][b]`×4, fn7 frame end), sent after taking software
+  control (`0x8071` fn5 `[1][3][5]`, as G Hub does), show in host and onboard mode alike
+  ([lab2.txt](evidence/g502x/lab/lab2.txt), [lab3.txt](evidence/g502x/lab/lab3.txt)). Frames
+  without software control were not tried.
 - The LEDs are numbered 1–8 (fn0 info `[00 00]` → `00 00 ff 01`: LED 0 does nothing). G Hub's
   `light_map.json` maps its eight Freestyle dots to these numbers; left to right on its
   picture: 3, 4, 8, 7, 6, 5, then 2 (right side, upper) and 1 (right side, lower). The strip is
