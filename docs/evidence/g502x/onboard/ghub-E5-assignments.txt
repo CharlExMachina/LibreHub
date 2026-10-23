@@ -1,0 +1,204 @@
+sector 0000:
+  000  00 01 01 ff 00 02 01 ff 00 03 01 ff 00 04 00 ff
+  010  00 05 00 ff ff ff ff ff ff ff ff ff ff ff ff ff
+  020  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  030  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  040  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  050  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  060  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  070  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  080  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  090  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0a0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0b0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0c0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0d0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0e0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0f0  ff ff ff ff ff ff ff ff ff ff ff ff ff 7b 69
+sector 0003:
+  000  01 02 00 20 03 b0 04 40 06 60 09 80 0c ff ff ff
+  010  ff 00 ff ff ff ff ff ff ff ff ff ff 3c 00 2c 01
+  020  80 01 00 01 80 01 00 02 00 01 00 00 80 01 00 08
+  030  90 07 00 00 80 01 00 10 00 00 00 00 00 01 00 00
+  040  90 00 00 00 90 03 00 00 90 00 00 00 90 10 00 00
+  050  90 11 00 00 ff ff ff ff ff ff ff ff ff ff ff ff
+  060  80 01 00 01 80 01 00 02 00 01 00 00 80 01 00 08
+  070  90 07 00 00 80 01 00 10 00 00 00 00 00 01 00 00
+  080  90 00 00 00 90 03 00 00 90 00 00 00 90 10 00 00
+  090  90 11 00 00 ff ff ff ff ff ff ff ff ff ff ff ff
+  0a0  50 00 52 00 4f 00 46 00 49 00 4c 00 45 00 5f 00
+  0b0  4e 00 41 00 4d 00 45 00 5f 00 44 00 45 00 46 00
+  0c0  41 00 55 00 4c 00 54 00 00 00 00 00 00 00 00 00
+  0d0  0f 00 00 00 00 00 00 20 64 00 00 00 00 00 00 00
+  0e0  00 00 00 00 00 00 10 00 00 00 00 00 00 20 64 00
+  0f0  00 00 00 00 00 00 00 00 00 00 00 00 03 71 c7
+sector 0006:
+  000  43 01 04 44 01 04 40 00 32 43 01 06 44 01 06 ff
+  010  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  020  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  030  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  040  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  050  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  060  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  070  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  080  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  090  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0a0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0b0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0c0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0d0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0e0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0f0  ff ff ff ff ff ff ff ff ff ff ff ff ff cb 3d
+sector 0007:
+  000  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  010  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  020  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  030  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  040  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  050  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  060  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  070  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  080  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  090  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0a0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0b0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0c0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0d0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0e0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0f0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+sector 0008:
+  000  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  010  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  020  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  030  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  040  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  050  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  060  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  070  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  080  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  090  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0a0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0b0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0c0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0d0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0e0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0f0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+sector 0009:
+  000  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  010  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  020  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  030  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  040  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  050  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  060  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  070  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  080  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  090  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0a0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0b0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0c0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0d0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0e0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0f0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+sector 000a:
+  000  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  010  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  020  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  030  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  040  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  050  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  060  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  070  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  080  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  090  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0a0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0b0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0c0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0d0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0e0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0f0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+sector 000b:
+  000  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  010  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  020  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  030  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  040  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  050  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  060  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  070  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  080  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  090  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0a0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0b0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0c0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0d0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0e0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0f0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+sector 000c:
+  000  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  010  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  020  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  030  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  040  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  050  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  060  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  070  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  080  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  090  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0a0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0b0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0c0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0d0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0e0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0f0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+sector 000d:
+  000  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  010  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  020  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  030  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  040  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  050  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  060  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  070  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  080  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  090  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0a0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0b0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0c0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0d0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0e0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0f0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+sector 000e:
+  000  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  010  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  020  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  030  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  040  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  050  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  060  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  070  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  080  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  090  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0a0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0b0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0c0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0d0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0e0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0f0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+sector 000f:
+  000  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  010  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  020  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  030  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  040  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  050  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  060  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  070  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  080  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  090  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0a0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0b0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0c0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0d0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0e0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  0f0  ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff

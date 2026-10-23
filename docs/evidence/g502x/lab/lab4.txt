@@ -1,0 +1,9 @@
+16:29:08.232 host; settling
+16:29:26.255 ZONE 1 right side: lower
+16:29:39.605 ZONE 2 right side: lower
+16:29:57.769 ZONE 3 right side: upper
+16:30:07.094 ZONE 4 left side
+16:30:26.755 ZONE 5 left side
+16:30:53.044 ZONE 6 right side: upper
+16:31:14.619 ZONE 7 bottom strip: 5th from the left
+16:31:22.477 ZONE 8 bottom strip: 3rd from the left

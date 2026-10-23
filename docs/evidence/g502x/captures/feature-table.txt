@@ -1,0 +1,35 @@
+device 1: HID++ 4.2
+FeatureSet at index 1, 32 features (incl. root)
+idx  id      flags ver  name
+  0  0x0000  00    -    Root
+  1  0x0001  00    2    FeatureSet
+  2  0x0003  00    4    DeviceFwVersion
+  3  0x0005  00    0    DeviceName
+  4  0x1d4b  00    0    WirelessDeviceStatus
+  5  0x0020  00    0    ConfigChange
+  6  0x1004  00    3    UnifiedBattery
+  7  0x2201  00    2    AdjustableDpi
+  8  0x2121  00    0    HiResWheel
+  9  0x8071  00    2    RgbEffects
+ 10  0x8081  00    2    PerKeyLightingV2
+ 11  0x8100  00    0    OnboardProfiles
+ 12  0x8110  00    0    MouseButtonSpy
+ 13  0x8060  00    0    ReportRate
+ 14  0x1500  00    0    0x1500
+ 15  0x00d0  00    3    Dfu
+ 16  0x1802  70    0    DeviceReset
+ 17  0x1803  70    0    GpioAccess
+ 18  0x1806  70    8    ConfigurableDeviceProperties
+ 19  0x1811  70    0    Oob
+ 20  0x1805  60    0    0x1805
+ 21  0x1830  70    0    PowerModes
+ 22  0x1875  70    0    0x1875
+ 23  0x1861  70    1    0x1861
+ 24  0x1890  68    7    0x1890
+ 25  0x18a1  70    0    LedTest
+ 26  0x1801  70    0    0x1801
+ 27  0x1e00  40    0    EnableHiddenFeatures
+ 28  0x1e22  70    0    SpiDirectAccess
+ 29  0x1eb0  70    0    TdeAccess
+ 30  0x18b1  70    0    MonitorMode
+ 31  0x18c0  70    0    0x18c0

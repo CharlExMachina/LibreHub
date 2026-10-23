@@ -1,0 +1,1373 @@
+{
+ "/mouse/dev00000001/mode_status": {
+  "msgId": "3",
+  "verb": "GET",
+  "path": "/mouse/dev00000001/mode_status",
+  "origin": "backend",
+  "result": {
+   "code": "NO_SUCH_PATH",
+   "what": "message path '/mouse/dev00000001/mode_status' not found."
+  }
+ },
+ "/mouse/dev00000001/dpi_always_on": {
+  "msgId": "4",
+  "verb": "GET",
+  "path": "/mouse/dev00000001/dpi_always_on",
+  "origin": "backend",
+  "result": {
+   "code": "NO_SUCH_PATH",
+   "what": "message path '/mouse/dev00000001/dpi_always_on' not found."
+  }
+ },
+ "/mouse/dev00000001/dpi_shift": {
+  "msgId": "2",
+  "verb": "GET",
+  "path": "/mouse/dev00000001/dpi_shift",
+  "origin": "backend",
+  "result": {
+   "code": "SUCCESS",
+   "what": ""
+  },
+  "payload": {
+   "@type": "type.googleapis.com/logi.protocol.mouse.Dpi.Shift.State"
+  }
+ },
+ "/report_rate/dev00000001/report_rate_list": {
+  "msgId": "5",
+  "verb": "GET",
+  "path": "/report_rate/dev00000001/report_rate_list",
+  "origin": "backend",
+  "result": {
+   "code": "NO_SUCH_PATH",
+   "what": "message path '/report_rate/dev00000001/report_rate_list' not found."
+  }
+ },
+ "/mouse/dev00000001/info": {
+  "msgId": "1",
+  "verb": "GET",
+  "path": "/mouse/dev00000001/info",
+  "origin": "backend",
+  "result": {
+   "code": "SUCCESS",
+   "what": ""
+  },
+  "payload": {
+   "@type": "type.googleapis.com/logi.protocol.mouse.Info",
+   "reportRates": {
+    "rates": [
+     1000,
+     500,
+     250,
+     125
+    ],
+    "wirelessRates": []
+   },
+   "dpiInfo": {
+    "range": {
+     "min": 100,
+     "max": 25600,
+     "steps": 50,
+     "maxLevels": 0
+    },
+    "defaultDpi": 1600,
+    "effectiveDpiVersion": 1
+   },
+   "isBunnyHoppingSupported": false
+  }
+ },
+ "/onboard_profiles/dev00000001/onboard_mode": {
+  "msgId": "6",
+  "verb": "GET",
+  "path": "/onboard_profiles/dev00000001/onboard_mode",
+  "origin": "backend",
+  "result": {
+   "code": "SUCCESS",
+   "what": ""
+  },
+  "payload": {
+   "@type": "type.googleapis.com/logi.protocol.devices.OnboardMode"
+  }
+ },
+ "/input/dev00000001/mstate": {
+  "msgId": "14",
+  "verb": "GET",
+  "path": "/input/dev00000001/mstate",
+  "origin": "backend",
+  "result": {
+   "code": "NO_SUCH_PATH",
+   "what": "message path '/input/dev00000001/mstate' not found."
+  }
+ },
+ "/devices/dev00000001/slots/state": {
+  "msgId": "15",
+  "verb": "GET",
+  "path": "/devices/dev00000001/slots/state",
+  "origin": "backend",
+  "result": {
+   "code": "INVALID_ARG",
+   "what": "no handler for 'GET /devices/dev00000001/slots/state'."
+  }
+ },
+ "/onboard_profiles/dev00000001/profiles": {
+  "msgId": "7",
+  "verb": "GET",
+  "path": "/onboard_profiles/dev00000001/profiles",
+  "origin": "backend",
+  "result": {
+   "code": "SUCCESS",
+   "what": ""
+  },
+  "payload": {
+   "@type": "type.googleapis.com/logi.protocol.onboard_profiles.ProfileDirectory",
+   "directoryEntries": [
+    {
+     "onboardSlotId": "PROFILE_1",
+     "enabled": true,
+     "name": "PROFILE_NAME_DEFAULT",
+     "mouseSettings": {
+      "reportRate": {
+       "value": 1000,
+       "deviceId": ""
+      },
+      "dpiTable": {
+       "levels": [
+        800,
+        1200,
+        2100,
+        2400,
+        3200
+       ],
+       "defaultDpi": 2100,
+       "shiftDpi": 800,
+       "activeDpi": 2100
+      }
+     },
+     "angleSnapping": {
+      "enabled": false
+     },
+     "lighting": {
+      "effects": [
+       {
+        "id": "SIGNATURE_FRAME_ACTIVE",
+        "zoneType": "ZONE_ALL",
+        "persistent": false,
+        "frameDataParams": {
+         "frameRate": 32,
+         "intensity": 1
+        }
+       }
+      ]
+     },
+     "buttonMappings": [
+      {
+       "button": 1
+      },
+      {
+       "button": 2
+      },
+      {
+       "button": 3
+      },
+      {
+       "button": 4
+      },
+      {
+       "button": 0,
+       "macro": {
+        "type": "MOUSE",
+        "id": "",
+        "name": "",
+        "icon": "",
+        "actionName": "",
+        "onboardable": false,
+        "targetSignatures": [],
+        "mouse": {
+         "action": "DPI_SHIFT",
+         "hidUsage": 0
+        }
+       }
+      },
+      {
+       "button": 5
+      },
+      {
+       "button": 0,
+       "macro": {
+        "type": "MOUSE",
+        "id": "",
+        "name": "",
+        "icon": "",
+        "actionName": "",
+        "onboardable": false,
+        "targetSignatures": [],
+        "mouse": {
+         "action": "WHEEL_LEFT",
+         "hidUsage": 0
+        }
+       }
+      },
+      {
+       "button": 0,
+       "macro": {
+        "type": "MOUSE",
+        "id": "",
+        "name": "",
+        "icon": "",
+        "actionName": "",
+        "onboardable": false,
+        "targetSignatures": [],
+        "mouse": {
+         "action": "WHEEL_RIGHT",
+         "hidUsage": 0
+        }
+       }
+      },
+      {
+       "button": 0,
+       "macro": {
+        "type": "DEVICE",
+        "id": "",
+        "name": "",
+        "icon": "",
+        "actionName": "",
+        "onboardable": false,
+        "targetSignatures": [],
+        "device": {
+         "action": "PROFILE_CYCLE"
+        }
+       }
+      },
+      {
+       "button": 0,
+       "macro": {
+        "type": "MOUSE",
+        "id": "",
+        "name": "",
+        "icon": "",
+        "actionName": "",
+        "onboardable": false,
+        "targetSignatures": [],
+        "mouse": {
+         "action": "DPI_UP",
+         "hidUsage": 0
+        }
+       }
+      },
+      {
+       "button": 0,
+       "macro": {
+        "type": "MOUSE",
+        "id": "",
+        "name": "",
+        "icon": "",
+        "actionName": "",
+        "onboardable": false,
+        "targetSignatures": [],
+        "mouse": {
+         "action": "DPI_DOWN",
+         "hidUsage": 0
+        }
+       }
+      }
+     ],
+     "gshiftMappings": [
+      {
+       "button": 1
+      },
+      {
+       "button": 2
+      },
+      {
+       "button": 3
+      },
+      {
+       "button": 4
+      },
+      {
+       "button": 0,
+       "macro": {
+        "type": "MOUSE",
+        "id": "",
+        "name": "",
+        "icon": "",
+        "actionName": "",
+        "onboardable": false,
+        "targetSignatures": [],
+        "mouse": {
+         "action": "DPI_SHIFT",
+         "hidUsage": 0
+        }
+       }
+      },
+      {
+       "button": 5
+      },
+      {
+       "button": 0,
+       "macro": {
+        "type": "MOUSE",
+        "id": "",
+        "name": "",
+        "icon": "",
+        "actionName": "",
+        "onboardable": false,
+        "targetSignatures": [],
+        "mouse": {
+         "action": "WHEEL_LEFT",
+         "hidUsage": 0
+        }
+       }
+      },
+      {
+       "button": 0,
+       "macro": {
+        "type": "MOUSE",
+        "id": "",
+        "name": "",
+        "icon": "",
+        "actionName": "",
+        "onboardable": false,
+        "targetSignatures": [],
+        "mouse": {
+         "action": "WHEEL_RIGHT",
+         "hidUsage": 0
+        }
+       }
+      },
+      {
+       "button": 0,
+       "macro": {
+        "type": "DEVICE",
+        "id": "",
+        "name": "",
+        "icon": "",
+        "actionName": "",
+        "onboardable": false,
+        "targetSignatures": [],
+        "device": {
+         "action": "PROFILE_CYCLE"
+        }
+       }
+      },
+      {
+       "button": 0,
+       "macro": {
+        "type": "MOUSE",
+        "id": "",
+        "name": "",
+        "icon": "",
+        "actionName": "",
+        "onboardable": false,
+        "targetSignatures": [],
+        "mouse": {
+         "action": "DPI_UP",
+         "hidUsage": 0
+        }
+       }
+      },
+      {
+       "button": 0,
+       "macro": {
+        "type": "MOUSE",
+        "id": "",
+        "name": "",
+        "icon": "",
+        "actionName": "",
+        "onboardable": false,
+        "targetSignatures": [],
+        "mouse": {
+         "action": "DPI_DOWN",
+         "hidUsage": 0
+        }
+       }
+      }
+     ],
+     "layerRemappings": {},
+     "gameModeKeys": []
+    },
+    {
+     "onboardSlotId": "PROFILE_2",
+     "enabled": true,
+     "name": "",
+     "mouseSettings": {
+      "reportRate": {
+       "value": 500,
+       "deviceId": ""
+      },
+      "dpiTable": {
+       "levels": [
+        800,
+        1200,
+        1600,
+        2400,
+        3200
+       ],
+       "defaultDpi": 1600,
+       "shiftDpi": 800,
+       "activeDpi": 1600
+      }
+     },
+     "angleSnapping": {
+      "enabled": false
+     },
+     "lighting": {
+      "effects": [
+       {
+        "id": "SIGNATURE_FRAME_ACTIVE",
+        "zoneType": "ZONE_ALL",
+        "persistent": false,
+        "frameDataParams": {
+         "frameRate": 0,
+         "intensity": 1
+        }
+       }
+      ]
+     },
+     "buttonMappings": [
+      {
+       "button": 1
+      },
+      {
+       "button": 2
+      },
+      {
+       "button": 3
+      },
+      {
+       "button": 4
+      },
+      {
+       "button": 0,
+       "macro": {
+        "type": "DEVICE",
+        "id": "",
+        "name": "",
+        "icon": "",
+        "actionName": "",
+        "onboardable": false,
+        "targetSignatures": [],
+        "device": {
+         "action": "G_SHIFT"
+        }
+       }
+      },
+      {
+       "button": 5
+      },
+      {
+       "button": 0,
+       "macro": {
+        "type": "MOUSE",
+        "id": "",
+        "name": "",
+        "icon": "",
+        "actionName": "",
+        "onboardable": false,
+        "targetSignatures": [],
+        "mouse": {
+         "action": "WHEEL_LEFT",
+         "hidUsage": 0
+        }
+       }
+      },
+      {
+       "button": 0,
+       "macro": {
+        "type": "MOUSE",
+        "id": "",
+        "name": "",
+        "icon": "",
+        "actionName": "",
+        "onboardable": false,
+        "targetSignatures": [],
+        "mouse": {
+         "action": "WHEEL_RIGHT",
+         "hidUsage": 0
+        }
+       }
+      },
+      {
+       "button": 0,
+       "macro": {
+        "type": "DEVICE",
+        "id": "",
+        "name": "",
+        "icon": "",
+        "actionName": "",
+        "onboardable": false,
+        "targetSignatures": [],
+        "device": {
+         "action": "PROFILE_CYCLE"
+        }
+       }
+      },
+      {
+       "button": 0,
+       "macro": {
+        "type": "MOUSE",
+        "id": "",
+        "name": "",
+        "icon": "",
+        "actionName": "",
+        "onboardable": false,
+        "targetSignatures": [],
+        "mouse": {
+         "action": "DPI_UP",
+         "hidUsage": 0
+        }
+       }
+      },
+      {
+       "button": 0,
+       "macro": {
+        "type": "MOUSE",
+        "id": "",
+        "name": "",
+        "icon": "",
+        "actionName": "",
+        "onboardable": false,
+        "targetSignatures": [],
+        "mouse": {
+         "action": "DPI_DOWN",
+         "hidUsage": 0
+        }
+       }
+      }
+     ],
+     "gshiftMappings": [
+      {
+       "button": 1
+      },
+      {
+       "button": 2
+      },
+      {
+       "button": 0,
+       "macro": {
+        "type": "KEYSTROKE",
+        "id": "",
+        "name": "",
+        "icon": "",
+        "actionName": "",
+        "onboardable": false,
+        "targetSignatures": [],
+        "keystroke": {
+         "code": 23,
+         "modifiers": [
+          1
+         ],
+         "displayCharacter": ""
+        }
+       }
+      },
+      {
+       "button": 4
+      }
+     ],
+     "layerRemappings": {},
+     "gameModeKeys": []
+    },
+    {
+     "onboardSlotId": "PROFILE_3",
+     "enabled": false,
+     "name": "",
+     "mouseSettings": {
+      "reportRate": {
+       "value": 1000,
+       "deviceId": ""
+      },
+      "dpiTable": {
+       "levels": [
+        800,
+        1200,
+        1600,
+        2400,
+        3200
+       ],
+       "defaultDpi": 1600,
+       "shiftDpi": 800,
+       "activeDpi": 1600
+      }
+     },
+     "angleSnapping": {
+      "enabled": false
+     },
+     "lighting": {
+      "effects": [
+       {
+        "id": "SIGNATURE_FRAME_ACTIVE",
+        "zoneType": "ZONE_ALL",
+        "persistent": false,
+        "frameDataParams": {
+         "frameRate": 0,
+         "intensity": 1
+        }
+       }
+      ]
+     },
+     "buttonMappings": [
+      {
+       "button": 1
+      },
+      {
+       "button": 2
+      },
+      {
+       "button": 3
+      },
+      {
+       "button": 4
+      },
+      {
+       "button": 0,
+       "macro": {
+        "type": "MOUSE",
+        "id": "",
+        "name": "",
+        "icon": "",
+        "actionName": "",
+        "onboardable": false,
+        "targetSignatures": [],
+        "mouse": {
+         "action": "DPI_SHIFT",
+         "hidUsage": 0
+        }
+       }
+      },
+      {
+       "button": 5
+      },
+      {
+       "button": 0,
+       "macro": {
+        "type": "MOUSE",
+        "id": "",
+        "name": "",
+        "icon": "",
+        "actionName": "",
+        "onboardable": false,
+        "targetSignatures": [],
+        "mouse": {
+         "action": "WHEEL_LEFT",
+         "hidUsage": 0
+        }
+       }
+      },
+      {
+       "button": 0,
+       "macro": {
+        "type": "MOUSE",
+        "id": "",
+        "name": "",
+        "icon": "",
+        "actionName": "",
+        "onboardable": false,
+        "targetSignatures": [],
+        "mouse": {
+         "action": "WHEEL_RIGHT",
+         "hidUsage": 0
+        }
+       }
+      },
+      {
+       "button": 0,
+       "macro": {
+        "type": "DEVICE",
+        "id": "",
+        "name": "",
+        "icon": "",
+        "actionName": "",
+        "onboardable": false,
+        "targetSignatures": [],
+        "device": {
+         "action": "PROFILE_CYCLE"
+        }
+       }
+      },
+      {
+       "button": 0,
+       "macro": {
+        "type": "MOUSE",
+        "id": "",
+        "name": "",
+        "icon": "",
+        "actionName": "",
+        "onboardable": false,
+        "targetSignatures": [],
+        "mouse": {
+         "action": "DPI_UP",
+         "hidUsage": 0
+        }
+       }
+      },
+      {
+       "button": 0,
+       "macro": {
+        "type": "MOUSE",
+        "id": "",
+        "name": "",
+        "icon": "",
+        "actionName": "",
+        "onboardable": false,
+        "targetSignatures": [],
+        "mouse": {
+         "action": "DPI_DOWN",
+         "hidUsage": 0
+        }
+       }
+      }
+     ],
+     "gshiftMappings": [],
+     "layerRemappings": {},
+     "gameModeKeys": []
+    },
+    {
+     "onboardSlotId": "PROFILE_4",
+     "enabled": false,
+     "name": "",
+     "mouseSettings": {
+      "reportRate": {
+       "value": 1000,
+       "deviceId": ""
+      },
+      "dpiTable": {
+       "levels": [
+        800,
+        1200,
+        1600,
+        2400,
+        3200
+       ],
+       "defaultDpi": 1600,
+       "shiftDpi": 800,
+       "activeDpi": 1600
+      }
+     },
+     "angleSnapping": {
+      "enabled": false
+     },
+     "lighting": {
+      "effects": [
+       {
+        "id": "SIGNATURE_FRAME_ACTIVE",
+        "zoneType": "ZONE_ALL",
+        "persistent": false,
+        "frameDataParams": {
+         "frameRate": 0,
+         "intensity": 1
+        }
+       }
+      ]
+     },
+     "buttonMappings": [
+      {
+       "button": 1
+      },
+      {
+       "button": 2
+      },
+      {
+       "button": 3
+      },
+      {
+       "button": 4
+      },
+      {
+       "button": 0,
+       "macro": {
+        "type": "MOUSE",
+        "id": "",
+        "name": "",
+        "icon": "",
+        "actionName": "",
+        "onboardable": false,
+        "targetSignatures": [],
+        "mouse": {
+         "action": "DPI_SHIFT",
+         "hidUsage": 0
+        }
+       }
+      },
+      {
+       "button": 5
+      },
+      {
+       "button": 0,
+       "macro": {
+        "type": "MOUSE",
+        "id": "",
+        "name": "",
+        "icon": "",
+        "actionName": "",
+        "onboardable": false,
+        "targetSignatures": [],
+        "mouse": {
+         "action": "WHEEL_LEFT",
+         "hidUsage": 0
+        }
+       }
+      },
+      {
+       "button": 0,
+       "macro": {
+        "type": "MOUSE",
+        "id": "",
+        "name": "",
+        "icon": "",
+        "actionName": "",
+        "onboardable": false,
+        "targetSignatures": [],
+        "mouse": {
+         "action": "WHEEL_RIGHT",
+         "hidUsage": 0
+        }
+       }
+      },
+      {
+       "button": 0,
+       "macro": {
+        "type": "DEVICE",
+        "id": "",
+        "name": "",
+        "icon": "",
+        "actionName": "",
+        "onboardable": false,
+        "targetSignatures": [],
+        "device": {
+         "action": "PROFILE_CYCLE"
+        }
+       }
+      },
+      {
+       "button": 0,
+       "macro": {
+        "type": "MOUSE",
+        "id": "",
+        "name": "",
+        "icon": "",
+        "actionName": "",
+        "onboardable": false,
+        "targetSignatures": [],
+        "mouse": {
+         "action": "DPI_UP",
+         "hidUsage": 0
+        }
+       }
+      },
+      {
+       "button": 0,
+       "macro": {
+        "type": "MOUSE",
+        "id": "",
+        "name": "",
+        "icon": "",
+        "actionName": "",
+        "onboardable": false,
+        "targetSignatures": [],
+        "mouse": {
+         "action": "DPI_DOWN",
+         "hidUsage": 0
+        }
+       }
+      }
+     ],
+     "gshiftMappings": [],
+     "layerRemappings": {},
+     "gameModeKeys": []
+    },
+    {
+     "onboardSlotId": "PROFILE_5",
+     "enabled": false,
+     "name": "",
+     "mouseSettings": {
+      "reportRate": {
+       "value": 1000,
+       "deviceId": ""
+      },
+      "dpiTable": {
+       "levels": [
+        800,
+        1200,
+        1600,
+        2400,
+        3200
+       ],
+       "defaultDpi": 1600,
+       "shiftDpi": 800,
+       "activeDpi": 1600
+      }
+     },
+     "angleSnapping": {
+      "enabled": false
+     },
+     "lighting": {
+      "effects": [
+       {
+        "id": "SIGNATURE_FRAME_ACTIVE",
+        "zoneType": "ZONE_ALL",
+        "persistent": false,
+        "frameDataParams": {
+         "frameRate": 0,
+         "intensity": 1
+        }
+       }
+      ]
+     },
+     "buttonMappings": [
+      {
+       "button": 1
+      },
+      {
+       "button": 2
+      },
+      {
+       "button": 3
+      },
+      {
+       "button": 4
+      },
+      {
+       "button": 0,
+       "macro": {
+        "type": "MOUSE",
+        "id": "",
+        "name": "",
+        "icon": "",
+        "actionName": "",
+        "onboardable": false,
+        "targetSignatures": [],
+        "mouse": {
+         "action": "DPI_SHIFT",
+         "hidUsage": 0
+        }
+       }
+      },
+      {
+       "button": 5
+      },
+      {
+       "button": 0,
+       "macro": {
+        "type": "MOUSE",
+        "id": "",
+        "name": "",
+        "icon": "",
+        "actionName": "",
+        "onboardable": false,
+        "targetSignatures": [],
+        "mouse": {
+         "action": "WHEEL_LEFT",
+         "hidUsage": 0
+        }
+       }
+      },
+      {
+       "button": 0,
+       "macro": {
+        "type": "MOUSE",
+        "id": "",
+        "name": "",
+        "icon": "",
+        "actionName": "",
+        "onboardable": false,
+        "targetSignatures": [],
+        "mouse": {
+         "action": "WHEEL_RIGHT",
+         "hidUsage": 0
+        }
+       }
+      },
+      {
+       "button": 0,
+       "macro": {
+        "type": "DEVICE",
+        "id": "",
+        "name": "",
+        "icon": "",
+        "actionName": "",
+        "onboardable": false,
+        "targetSignatures": [],
+        "device": {
+         "action": "PROFILE_CYCLE"
+        }
+       }
+      },
+      {
+       "button": 0,
+       "macro": {
+        "type": "MOUSE",
+        "id": "",
+        "name": "",
+        "icon": "",
+        "actionName": "",
+        "onboardable": false,
+        "targetSignatures": [],
+        "mouse": {
+         "action": "DPI_UP",
+         "hidUsage": 0
+        }
+       }
+      },
+      {
+       "button": 0,
+       "macro": {
+        "type": "MOUSE",
+        "id": "",
+        "name": "",
+        "icon": "",
+        "actionName": "",
+        "onboardable": false,
+        "targetSignatures": [],
+        "mouse": {
+         "action": "DPI_DOWN",
+         "hidUsage": 0
+        }
+       }
+      }
+     ],
+     "gshiftMappings": [],
+     "layerRemappings": {},
+     "gameModeKeys": []
+    }
+   ],
+   "activeProfile": "PROFILE_1"
+  }
+ },
+ "/onboard_profiles/dev00000001/active_profile": {
+  "msgId": "8",
+  "verb": "GET",
+  "path": "/onboard_profiles/dev00000001/active_profile",
+  "origin": "backend",
+  "result": {
+   "code": "SUCCESS",
+   "what": ""
+  },
+  "payload": {
+   "@type": "type.googleapis.com/logi.protocol.onboard_profiles.ProfileSlot"
+  }
+ },
+ "/battery/dev00000001/state": {
+  "msgId": "9",
+  "verb": "GET",
+  "path": "/battery/dev00000001/state",
+  "origin": "backend",
+  "result": {
+   "code": "SUCCESS",
+   "what": ""
+  },
+  "payload": {
+   "@type": "type.googleapis.com/logi.protocol.wireless.Battery",
+   "deviceId": "dev00000001",
+   "percentage": 36,
+   "mileage": 13.9761963,
+   "maxLifeSpan": 38.8227654,
+   "charging": false,
+   "consumption": {
+    "value": 13.6517839,
+    "details": {
+     "system": 5.73055553,
+     "sensor": 1.54555559,
+     "mcu": 2.306,
+     "roller": 0.994,
+     "reportRate": 7.80622244,
+     "lighting": 10.0894737,
+     "volume": 0,
+     "haptics": 0
+    },
+    "useMw": true
+   },
+   "batteryStateOfChargeSupport": "STATE_OF_CHARGE_SUPPORTED",
+   "criticalLevel": false,
+   "chargingError": false,
+   "componentType": "INVALID_TYPE",
+   "fullyCharged": false,
+   "isBatteryRemoved": false,
+   "batteryMileageSupport": "MILEAGE_SUPPORTED"
+  }
+ },
+ "/lighting/dev00000001/state": {
+  "msgId": "10",
+  "verb": "GET",
+  "path": "/lighting/dev00000001/state",
+  "origin": "backend",
+  "result": {
+   "code": "SUCCESS",
+   "what": ""
+  },
+  "payload": {
+   "@type": "type.googleapis.com/logi.protocol.lighting_support.Slots",
+   "infoMap": {
+    "PERKEY_COSMETIC": {
+     "perKeyMap": {
+      "colorCodeMap": {
+       "1": {
+        "rgba": {
+         "red": 0,
+         "green": 0,
+         "blue": 0,
+         "alpha": 0
+        },
+        "tag": ""
+       },
+       "2": {
+        "rgba": {
+         "red": 0,
+         "green": 0,
+         "blue": 0,
+         "alpha": 0
+        },
+        "tag": ""
+       },
+       "3": {
+        "rgba": {
+         "red": 0,
+         "green": 0,
+         "blue": 0,
+         "alpha": 0
+        },
+        "tag": ""
+       },
+       "4": {
+        "rgba": {
+         "red": 0,
+         "green": 0,
+         "blue": 0,
+         "alpha": 0
+        },
+        "tag": ""
+       },
+       "5": {
+        "rgba": {
+         "red": 0,
+         "green": 0,
+         "blue": 0,
+         "alpha": 0
+        },
+        "tag": ""
+       },
+       "6": {
+        "rgba": {
+         "red": 0,
+         "green": 0,
+         "blue": 0,
+         "alpha": 0
+        },
+        "tag": ""
+       },
+       "7": {
+        "rgba": {
+         "red": 0,
+         "green": 0,
+         "blue": 0,
+         "alpha": 0
+        },
+        "tag": ""
+       },
+       "8": {
+        "rgba": {
+         "red": 0,
+         "green": 0,
+         "blue": 0,
+         "alpha": 0
+        },
+        "tag": ""
+       }
+      }
+     }
+    }
+   },
+   "persistent": false
+  }
+ },
+ "/lighting/dev00000001/mode": {
+  "msgId": "13",
+  "verb": "GET",
+  "path": "/lighting/dev00000001/mode",
+  "origin": "backend",
+  "result": {
+   "code": "SUCCESS",
+   "what": ""
+  },
+  "payload": {
+   "@type": "type.googleapis.com/logi.protocol.lighting_support.Lighting.Mode",
+   "control": "POWER_SAVING",
+   "enabled": true,
+   "sources": [
+    "DEVICE_INACTIVITY"
+   ]
+  }
+ },
+ "/lighting/dev00000001/power_saving": {
+  "msgId": "11",
+  "verb": "GET",
+  "path": "/lighting/dev00000001/power_saving",
+  "origin": "backend",
+  "result": {
+   "code": "SUCCESS",
+   "what": ""
+  },
+  "payload": {
+   "@type": "type.googleapis.com/logi.protocol.firmware_lighting.Power.Saving",
+   "firmwareEffects": {
+    "effects": [
+     {
+      "id": "SIGNATURE_FRAME_INACTIVE",
+      "zoneType": "ZONE_ALL",
+      "persistent": false,
+      "frameDataParams": {
+       "frameRate": 32,
+       "intensity": 1
+      }
+     }
+    ]
+   },
+   "inactivity": {
+    "milliseconds": 0,
+    "seconds": 60,
+    "minutes": 0,
+    "hours": 0,
+    "days": 0,
+    "dateTime": "0"
+   },
+   "sleep": {
+    "milliseconds": 0,
+    "seconds": 300,
+    "minutes": 0,
+    "hours": 0,
+    "days": 0,
+    "dateTime": "0"
+   },
+   "brightness": 1
+  }
+ },
+ "/lighting/dev00000001/firmware/effects": {
+  "msgId": "12",
+  "verb": "GET",
+  "path": "/lighting/dev00000001/firmware/effects",
+  "origin": "backend",
+  "result": {
+   "code": "SUCCESS",
+   "what": ""
+  },
+  "payload": {
+   "@type": "type.googleapis.com/logi.protocol.firmware_lighting.Effects",
+   "effects": [
+    {
+     "id": "INVALID",
+     "zoneType": "ZONE_PRIMARY",
+     "persistent": false
+    },
+    {
+     "id": "SIGNATURE_FRAME_ACTIVE",
+     "zoneType": "ZONE_ALL",
+     "persistent": false,
+     "frameDataParams": {
+      "frameRate": 32,
+      "intensity": 1
+     }
+    }
+   ]
+  }
+ },
+ "/lighting/dev00000001/brightness": {
+  "msgId": "16",
+  "verb": "GET",
+  "path": "/lighting/dev00000001/brightness",
+  "origin": "backend",
+  "result": {
+   "code": "SUCCESS",
+   "what": ""
+  },
+  "payload": {
+   "@type": "type.googleapis.com/logi.protocol.util.Number",
+   "value": 1
+  }
+ },
+ "/lighting/dev00000001/custom/effects": {
+  "msgId": "17",
+  "verb": "GET",
+  "path": "/lighting/dev00000001/custom/effects",
+  "origin": "backend",
+  "result": {
+   "code": "SUCCESS",
+   "what": ""
+  },
+  "payload": {
+   "@type": "type.googleapis.com/logi.protocol.firmware_lighting.Effects",
+   "effects": [
+    {
+     "id": "CUSTOM",
+     "zoneType": "ZONE_ALL",
+     "persistent": false,
+     "customParams": {
+      "slot": 0,
+      "frameRate": 0,
+      "intensity": 0,
+      "name": "Freestyle effect (MOUSE_RGB_PER",
+      "softwareId": "aad4eecc-a2ef-464e-8222-8fbc789daab1"
+     }
+    },
+    {
+     "id": "CUSTOM",
+     "zoneType": "ZONE_ALL",
+     "persistent": false,
+     "customParams": {
+      "slot": 1,
+      "frameRate": 0,
+      "intensity": 0,
+      "name": "",
+      "softwareId": ""
+     }
+    },
+    {
+     "id": "CUSTOM",
+     "zoneType": "ZONE_ALL",
+     "persistent": false,
+     "customParams": {
+      "slot": 2,
+      "frameRate": 0,
+      "intensity": 0,
+      "name": "",
+      "softwareId": ""
+     }
+    },
+    {
+     "id": "CUSTOM",
+     "zoneType": "ZONE_ALL",
+     "persistent": false,
+     "customParams": {
+      "slot": 3,
+      "frameRate": 0,
+      "intensity": 0,
+      "name": "",
+      "softwareId": ""
+     }
+    },
+    {
+     "id": "CUSTOM",
+     "zoneType": "ZONE_ALL",
+     "persistent": false,
+     "customParams": {
+      "slot": 4,
+      "frameRate": 0,
+      "intensity": 0,
+      "name": "",
+      "softwareId": ""
+     }
+    },
+    {
+     "id": "CUSTOM",
+     "zoneType": "ZONE_ALL",
+     "persistent": false,
+     "customParams": {
+      "slot": 5,
+      "frameRate": 0,
+      "intensity": 0,
+      "name": "",
+      "softwareId": ""
+     }
+    }
+   ]
+  }
+ }
+}

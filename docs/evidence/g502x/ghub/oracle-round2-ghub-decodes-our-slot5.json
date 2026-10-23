@@ -1,0 +1,286 @@
+{
+ "onboardSlotId": "PROFILE_5",
+ "enabled": false,
+ "name": "Linux test",
+ "mouseSettings": {
+  "reportRate": {
+   "value": 250,
+   "deviceId": ""
+  },
+  "dpiTable": {
+   "levels": [
+    400,
+    800,
+    1600,
+    0,
+    0
+   ],
+   "defaultDpi": 800,
+   "shiftDpi": 400,
+   "activeDpi": 800
+  }
+ },
+ "angleSnapping": {
+  "enabled": false
+ },
+ "lighting": {
+  "effects": [
+   {
+    "id": "COLORWAVE",
+    "zoneType": "ZONE_ALL",
+    "persistent": false,
+    "colorwaveParams": {
+     "periodInMs": 7000,
+     "direction": "REVERSE_HORIZONTAL",
+     "intensity": 0.7,
+     "saturation": 0
+    }
+   }
+  ]
+ },
+ "buttonMappings": [
+  {
+   "button": 1
+  },
+  {
+   "button": 2
+  },
+  {
+   "button": 0,
+   "macro": {
+    "type": "KEYSTROKE",
+    "id": "",
+    "name": "",
+    "icon": "",
+    "actionName": "",
+    "onboardable": false,
+    "targetSignatures": [],
+    "keystroke": {
+     "code": 6,
+     "modifiers": [
+      1
+     ],
+     "displayCharacter": ""
+    }
+   }
+  },
+  {
+   "button": 0,
+   "macro": {
+    "type": "MEDIA",
+    "id": "",
+    "name": "",
+    "icon": "",
+    "actionName": "",
+    "onboardable": false,
+    "targetSignatures": [],
+    "media": {
+     "usage": "PLAY_PAUSE"
+    }
+   }
+  },
+  {
+   "button": 0,
+   "macro": {
+    "type": "DEVICE",
+    "id": "",
+    "name": "",
+    "icon": "",
+    "actionName": "",
+    "onboardable": false,
+    "targetSignatures": [],
+    "device": {
+     "action": "G_SHIFT"
+    }
+   }
+  },
+  {
+   "button": 6
+  },
+  {
+   "button": 7
+  },
+  {
+   "button": 0,
+   "macro": {
+    "type": "KEYSTROKE",
+    "id": "",
+    "name": "",
+    "icon": "",
+    "actionName": "",
+    "onboardable": false,
+    "targetSignatures": [],
+    "keystroke": {
+     "code": 0,
+     "modifiers": [
+      0
+     ],
+     "displayCharacter": ""
+    }
+   }
+  },
+  {
+   "button": 0,
+   "macro": {
+    "type": "DEVICE",
+    "id": "",
+    "name": "",
+    "icon": "",
+    "actionName": "",
+    "onboardable": false,
+    "targetSignatures": [],
+    "device": {
+     "action": "PROFILE_PREV"
+    }
+   }
+  },
+  {
+   "button": 10
+  },
+  {
+   "button": 11
+  }
+ ],
+ "gshiftMappings": [
+  {
+   "button": 0,
+   "macro": {
+    "type": "KEYSTROKE",
+    "id": "",
+    "name": "",
+    "icon": "",
+    "actionName": "",
+    "onboardable": false,
+    "targetSignatures": [],
+    "keystroke": {
+     "code": 4,
+     "modifiers": [
+      2
+     ],
+     "displayCharacter": ""
+    }
+   }
+  },
+  {
+   "button": 2
+  },
+  {
+   "button": 0,
+   "macro": {
+    "type": "MEDIA",
+    "id": "",
+    "name": "",
+    "icon": "",
+    "actionName": "",
+    "onboardable": false,
+    "targetSignatures": [],
+    "media": {
+     "usage": "MUTE"
+    }
+   }
+  },
+  {
+   "button": 4
+  },
+  {
+   "button": 0,
+   "macro": {
+    "type": "MOUSE",
+    "id": "",
+    "name": "",
+    "icon": "",
+    "actionName": "",
+    "onboardable": false,
+    "targetSignatures": [],
+    "mouse": {
+     "action": "DPI_SHIFT",
+     "hidUsage": 0
+    }
+   }
+  },
+  {
+   "button": 5
+  },
+  {
+   "button": 0,
+   "macro": {
+    "type": "MOUSE",
+    "id": "",
+    "name": "",
+    "icon": "",
+    "actionName": "",
+    "onboardable": false,
+    "targetSignatures": [],
+    "mouse": {
+     "action": "WHEEL_LEFT",
+     "hidUsage": 0
+    }
+   }
+  },
+  {
+   "button": 0,
+   "macro": {
+    "type": "MOUSE",
+    "id": "",
+    "name": "",
+    "icon": "",
+    "actionName": "",
+    "onboardable": false,
+    "targetSignatures": [],
+    "mouse": {
+     "action": "WHEEL_RIGHT",
+     "hidUsage": 0
+    }
+   }
+  },
+  {
+   "button": 0,
+   "macro": {
+    "type": "DEVICE",
+    "id": "",
+    "name": "",
+    "icon": "",
+    "actionName": "",
+    "onboardable": false,
+    "targetSignatures": [],
+    "device": {
+     "action": "PROFILE_PREV"
+    }
+   }
+  },
+  {
+   "button": 0,
+   "macro": {
+    "type": "MOUSE",
+    "id": "",
+    "name": "",
+    "icon": "",
+    "actionName": "",
+    "onboardable": false,
+    "targetSignatures": [],
+    "mouse": {
+     "action": "DPI_UP",
+     "hidUsage": 0
+    }
+   }
+  },
+  {
+   "button": 0,
+   "macro": {
+    "type": "MOUSE",
+    "id": "",
+    "name": "",
+    "icon": "",
+    "actionName": "",
+    "onboardable": false,
+    "targetSignatures": [],
+    "mouse": {
+     "action": "DPI_DOWN",
+     "hidUsage": 0
+    }
+   }
+  }
+ ],
+ "layerRemappings": {},
+ "gameModeKeys": []
+}

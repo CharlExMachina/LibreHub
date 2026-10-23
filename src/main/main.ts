@@ -18,6 +18,7 @@ import { APP_ID, APP_NAME, Autostart } from './autostart.js';
 import { loadPrefs, savePrefs, type Prefs } from './prefs.js';
 import { watchLinuxUnlock } from './session.js';
 import { Updates, type UpdateState } from './updates.js';
+import { registerMouse } from './mouse-ipc.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 // The app is called Libre Hub, but its files stay where they've always been (the CLI reads them too).
@@ -65,6 +66,7 @@ function lose(err: unknown): { connected: false; offline: Offline } {
   disconnect();
   return { connected: false, offline };
 }
+const mouse = registerMouse(ipcMain, () => window);
 
 async function connect(): Promise<A50XService | undefined> {
   if (service) return service;
@@ -540,8 +542,12 @@ function shutdown(reason: string): void {
   service = undefined;
   meters?.stop();
   tray?.destroy();
-  // app.exit skips the window-close dance; nothing else needs saving.
-  app.exit(0);
+  // Give the mouse a moment to stop reporting presses and take its LEDs back (a sleeping mouse
+  // would not answer; don't wait for it).
+  void Promise.race([mouse.close(), new Promise((r) => setTimeout(r, 1000))]).finally(() => {
+    // app.exit skips the window-close dance; nothing else needs saving.
+    app.exit(0);
+  });
 }
 
 app.on('window-all-closed', () => shutdown('window closed'));

@@ -127,3 +127,98 @@ During the investigation sidetone, volume, mute, balance, sleep, brightness, ton
 gate, routing and both EQs were changed briefly and restored. The final state was checked
 field by field against a snapshot taken beforehand, and the device's settings checksum
 returned to its original value (`f8 72 0e ad`).
+
+## G502 X PLUS
+
+The wire format and the full settings map are in [G502X-PROTOCOL.md](G502X-PROTOCOL.md). This
+section covers how G Hub handles the mouse and how that was established.
+
+### What G Hub exposes
+
+`/devices/list` reports the mouse as model `g502x_plus` (PID 0x4099, `LIGHTSPEED`) with
+capabilities `onboardProfiles.supportsOnboardMode`, `lightingSupport.deviceCategory =
+MOUSE_RGB_PER_KEY` (zones `ZONE_PRIMARY` and `ZONE_ALL`, 6 custom-effect slots), `dpiVersion 2`,
+`hasWiredReportRate`, `unifiedBattery`, `inputSupport.supportedLayers [LAYER_BASE, LAYER_G]`,
+`scrollControls {scrollUp: 13, scrollDown: 12}` and `dpiIndicatorLed` colours for five levels.
+Its slots are `g502x-plus_g1_m1` … `g11`, `scroll1`, `scroll2` (each with a `_shifted`
+twin), `mouse_settings`, `mouse_sensitivity` and `lighting_setting_firmware`.
+
+Mouse paths (`{id}` from `/devices/list`, `dev00000000` after an agent restart):
+
+| Path | Payload |
+|---|---|
+| `/mouse/{id}/info` | report rates, DPI range 100–25600 step 50, default 1600 |
+| `/mouse/{id}/dpi_shift` | DPI shift state |
+| `/onboard_profiles/{id}/onboard_mode` | on-board memory mode |
+| `/onboard_profiles/{id}/profiles` | **G Hub's decoding of the five onboard slots** (DPI table, report rate, lighting, `buttonMappings`, `gshiftMappings`) |
+| `/onboard_profiles/{id}/active_profile`, `…/profile`, `…/restore_defaults`, `…/enable_profile` | slot management |
+| `/lighting/{id}/state`, `…/power_saving`, `…/firmware/effects`, `…/custom/effects`, `…/brightness` | LIGHTSYNC, inactivity timers, stored animations |
+| `/battery/{id}/state` | percentage, mileage, per-component power consumption |
+
+G Hub's device depot for the model (`depots/<build>/<uuid>/` with `manifest.json` naming
+`g502x_plus`) holds `defaults_override.json` (default cards and the curated
+`MOUSE_SETTINGS_ADVANCED` DPI prefabs), `light_map.json` (8 per-key LEDs), `metadata.json`
+(button marker positions on the device image) and `lighting_effects.json`.
+
+The default cards encode the assignment in their last bytes, using the enums of
+`logi.protocol.macros.Macro` (`ghub-protos/macros.proto`): `…-0201…` = mouse button 1,
+`…-0403…` = Mouse action 3 (DPI_SHIFT), `…-0901…` = Device action 1 (PROFILE_CYCLE). Read
+alongside the button markers, this gives the slot-to-control map.
+
+### Method
+
+1. **Feature table and state**: `tools/re/hidpp.mjs features` and a handful of getters, read
+   non-exclusively next to G Hub (software id 0xB versus G Hub's 0xD).
+2. **G Hub's startup**: sniffing the receiver while restarting `lghub_agent` showed the whole
+   host-mode setup: `setMode(2)`, MouseButtonSpy start, the RGB software-control handshake,
+   DPI and report rate (`captures/sniff-ghub-agent-start.txt`).
+3. **Driving G Hub's UI over CDP** (`tools/re/cdp.mjs`) while sniffing, with a timestamped log of
+   each click (`captures/ui-actions-timeline.txt`): DPI, report rate, effects, the on-board
+   memory toggle. Replies to setters do not echo their parameters, so live captures show *which*
+   function G Hub calls but not always *what* it sends.
+4. **Letting G Hub write the onboard format**: in on-board mode, "Enable with new" / "Replace
+   with" on slot 3 makes G Hub convert its software profile and write the sector. Five rounds
+   (E0–E5), each changing a few things in G Hub first and reading the sector back afterwards,
+   pinned down the layouts: Fixed and Breathing (E0), Colour Wave and "Dim Active Effect" with
+   2 min / never (E1), wave direction and brightness, Neutron Null, 5 / 15 min (E2), Cycle (E3),
+   the split wave period (E4: 18500 ms = `44 … 48`), and Disable, macros, Double Click, Go to
+   DPI Shift and Cycle Maximum Brightness (E5, assigned with replayed HTML5 drags).
+5. **G Hub as an independent decoder**: write a deliberately varied profile into a spare slot
+   with this project's encoder, restart `lghub_agent` so it re-reads the memory, and compare
+   `/onboard_profiles/{id}/profiles` with what was meant (`ghub/oracle-round*.json`,
+   `tools/re/ghub-onboard-decode.mjs`). G Hub agreed on report rate, DPI levels, default and
+   shift, name, keystrokes, media keys, every firmware function, breathing and colour-wave
+   parameters.
+6. **Hardware tests** (`test/hardware/g502x.hw.test.ts`, run with G Hub quit): every setting is
+   changed, read back independently (including the sensor DPI and report rate the mouse
+   actually runs after a profile switch), and restored; all 16 sectors are compared at the end.
+
+Cross-checks: the onboard layout matches libratbag's `hidpp20` profile format and Solaar's
+`OnboardProfile`; button function codes and LED effect ids match both. Where they disagree
+with G Hub (Solaar's wave layout, the meaning of `FF FF FF FF`), G Hub's own writes win.
+
+### Dead ends and corrections
+
+- **"Disabled"**: `80 00 00 00` (a HID no-op) looked right but G Hub decodes it as "native
+  button"; G Hub's own Disable is `90 00 00 00`. `FF FF FF FF` is not "disabled" either: the
+  factory profiles leave the scroll wheel like that and it scrolls normally.
+- **Wave period**: Solaar assumes a contiguous big-endian period for effect 0x04; G Hub writes
+  the low byte at offset 7 and the high byte at offset 10. Two G Hub writes (5000 and 18500 ms)
+  and G Hub's decoding of a third (7000 ms) agree.
+- **Macros**: the mouse advertises macro format 1, but G Hub 2026.6 writes only a placeholder
+  binding for a macro and no macro data.
+- **Erasing a sector**: a write whose CRC is wrong fails at write end with error 04; since
+  write start erases the sector, writing all `FF` leaves it erased, which is how
+  `eraseSector()` works.
+- **Lighting enumeration**: `0x8071` getInfo for cluster 0xFF has no cluster record; its effects
+  are listed until the mouse answers "invalid argument".
+- **A sleeping mouse**: discovery originally pinged each receiver slot and stalled while the
+  mouse slept; the receiver's pairing register answers regardless, so discovery uses that.
+
+### Things that were touched and restored
+
+All 16 onboard sectors were backed up before the first experiment
+(`onboard/original-*.txt`) and restored byte for byte at the end with this project's own
+writer (the hardware suite re-checks this after every run). G Hub's software profile ("Desktop:
+Default") was put back to Pulsar Point 32 ms, Neutron Null, 1 min / 5 min, default
+assignments, and the test macro was deleted. The startup effect was toggled and returned to off.

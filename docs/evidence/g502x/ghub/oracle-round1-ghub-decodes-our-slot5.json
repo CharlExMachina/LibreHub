@@ -1,0 +1,222 @@
+{
+ "onboardSlotId": "PROFILE_5",
+ "enabled": false,
+ "name": "Linux test",
+ "mouseSettings": {
+  "reportRate": {
+   "value": 250,
+   "deviceId": ""
+  },
+  "dpiTable": {
+   "levels": [
+    400,
+    800,
+    1600,
+    0,
+    0
+   ],
+   "defaultDpi": 800,
+   "shiftDpi": 400,
+   "activeDpi": 800
+  }
+ },
+ "angleSnapping": {
+  "enabled": false
+ },
+ "lighting": {
+  "effects": [
+   {
+    "id": "OFF",
+    "zoneType": "ZONE_INVALID",
+    "persistent": false
+   },
+   {
+    "id": "BREATHING",
+    "zoneType": "ZONE_PRIMARY",
+    "persistent": false,
+    "breathingParams": {
+     "color": {
+      "rgba": {
+       "red": 1,
+       "green": 0,
+       "blue": 0,
+       "alpha": 1
+      },
+      "tag": ""
+     },
+     "periodInMs": 3000,
+     "intensity": 0.5
+    }
+   }
+  ]
+ },
+ "buttonMappings": [
+  {
+   "button": 1
+  },
+  {
+   "button": 2
+  },
+  {
+   "button": 0,
+   "macro": {
+    "type": "KEYSTROKE",
+    "id": "",
+    "name": "",
+    "icon": "",
+    "actionName": "",
+    "onboardable": false,
+    "targetSignatures": [],
+    "keystroke": {
+     "code": 6,
+     "modifiers": [
+      1
+     ],
+     "displayCharacter": ""
+    }
+   }
+  },
+  {
+   "button": 0,
+   "macro": {
+    "type": "MEDIA",
+    "id": "",
+    "name": "",
+    "icon": "",
+    "actionName": "",
+    "onboardable": false,
+    "targetSignatures": [],
+    "media": {
+     "usage": "PLAY_PAUSE"
+    }
+   }
+  },
+  {
+   "button": 0,
+   "macro": {
+    "type": "DEVICE",
+    "id": "",
+    "name": "",
+    "icon": "",
+    "actionName": "",
+    "onboardable": false,
+    "targetSignatures": [],
+    "device": {
+     "action": "G_SHIFT"
+    }
+   }
+  },
+  {
+   "button": 6
+  },
+  {
+   "button": 0,
+   "macro": {
+    "type": "MOUSE",
+    "id": "",
+    "name": "",
+    "icon": "",
+    "actionName": "",
+    "onboardable": false,
+    "targetSignatures": [],
+    "mouse": {
+     "action": "DPI_CYCLE",
+     "hidUsage": 0
+    }
+   }
+  },
+  {
+   "button": 0,
+   "macro": {
+    "type": "MOUSE",
+    "id": "",
+    "name": "",
+    "icon": "",
+    "actionName": "",
+    "onboardable": false,
+    "targetSignatures": [],
+    "mouse": {
+     "action": "DPI_DEFAULT",
+     "hidUsage": 0
+    }
+   }
+  },
+  {
+   "button": 0,
+   "macro": {
+    "type": "DEVICE",
+    "id": "",
+    "name": "",
+    "icon": "",
+    "actionName": "",
+    "onboardable": false,
+    "targetSignatures": [],
+    "device": {
+     "action": "PROFILE_NEXT"
+    }
+   }
+  },
+  {
+   "button": 0,
+   "macro": {
+    "type": "DEVICE",
+    "id": "",
+    "name": "",
+    "icon": "",
+    "actionName": "",
+    "onboardable": false,
+    "targetSignatures": [],
+    "device": {
+     "action": "BATTERY_LIFE"
+    }
+   }
+  },
+  {
+   "button": 11
+  }
+ ],
+ "gshiftMappings": [
+  {
+   "button": 0,
+   "macro": {
+    "type": "KEYSTROKE",
+    "id": "",
+    "name": "",
+    "icon": "",
+    "actionName": "",
+    "onboardable": false,
+    "targetSignatures": [],
+    "keystroke": {
+     "code": 4,
+     "modifiers": [
+      2
+     ],
+     "displayCharacter": ""
+    }
+   }
+  },
+  {
+   "button": 2
+  },
+  {
+   "button": 0,
+   "macro": {
+    "type": "MEDIA",
+    "id": "",
+    "name": "",
+    "icon": "",
+    "actionName": "",
+    "onboardable": false,
+    "targetSignatures": [],
+    "media": {
+     "usage": "MUTE"
+    }
+   }
+  },
+  {
+   "button": 4
+  }
+ ],
+ "layerRemappings": {},
+ "gameModeKeys": []
+}

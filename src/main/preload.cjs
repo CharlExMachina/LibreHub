@@ -26,3 +26,9 @@ contextBridge.exposeInMainWorld('a50x', {
     onEvent: (listener) => ipcRenderer.on('app:event', (_event, what, data) => listener(what, data)),
   },
 });
+
+contextBridge.exposeInMainWorld('g502x', {
+  snapshot: () => ipcRenderer.invoke('g502x:snapshot'),
+  apply: (action) => ipcRenderer.invoke('g502x:apply', action),
+  onChanged: (listener) => ipcRenderer.on('g502x:changed', (_event, what) => listener(what)),
+});
