@@ -1,0 +1,12 @@
+16:27:07.444 mode onboard profile 2
+16:27:07.454 swControl get ok 00 00 00 00 00 00 00 00
+16:27:07.464 swControl 3/5 ok 01 03 05 00 00 00 00 00
+16:27:07.474 setIndividual ok 00 01 02 03 00 00 00 00
+16:27:07.484 setIndividual ok 04 05 06 07 00 00 00 00
+16:27:07.494 setIndividual ok 08 00 00 00 00 00 00 00
+16:27:07.504 frameEnd ok 00 00 00 00 00 00 00 00
+16:27:28.528 ANSWER button returned:Yes, gave up:false
+16:27:28.529 ONBOARD flags 5 true
+16:27:29.576 release ok 01 00 00 00 00 00 00 00
+16:28:11.241 ZONE 0 nothing is lit
+16:28:44.181 ZONE 1 false

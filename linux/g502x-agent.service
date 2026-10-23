@@ -1,0 +1,21 @@
+# Runs `g502x agent` in your desktop session: the G502 X PLUS software actions (open:, run:) and
+# Freestyle lighting. Not needed for anything stored on the mouse, macros included.
+#
+#   npm link                       # puts g502x on your PATH
+#   mkdir -p ~/.config/systemd/user
+#   cp linux/g502x-agent.service ~/.config/systemd/user/
+#   systemctl --user daemon-reload && systemctl --user enable --now g502x-agent
+#
+# The app runs its own agent while it runs (also from the tray) and stands aside while this one runs.
+[Unit]
+Description=G502 X PLUS software actions and Freestyle lighting (logitech-manager)
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+ExecStart=/usr/bin/env g502x agent
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=graphical-session.target

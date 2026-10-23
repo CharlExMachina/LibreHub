@@ -155,7 +155,15 @@ export const MouseButtonSpy = {
   STOP_SPY: 2,
   GET_REMAPPING: 3,
   SET_REMAPPING: 4,
+  /** While spying, the mouse sends event 0 on every press and release. */
+  BUTTON_EVENT: 0,
   decodeButtonCount: (p: Uint8Array) => p[0],
+  /**
+   * Event 0: [mask u16 BE] of the controls held down. Bit k is control k in onboard order
+   * (G502X_CONTROLS): left 0x0001 ... DPI down 0x0400. Measured on the mouse, in onboard and
+   * host mode (docs/evidence/g502x/lab/lab.txt).
+   */
+  decodeButtons: (p: ArrayLike<number>) => (p[0] << 8) | p[1],
 };
 
 /** Feature 0x8100 OnboardProfiles: functions only; the memory layout is in onboard.ts. */

@@ -1,0 +1,26 @@
+16:47:33 mode host, active profile 0
+16:47:45 profile 1 (active)  PROFILE_NAME_DEFAULT
+  report rate  1000 Hz
+  DPI          800* 1200 [2100] 2400 3200     [default] *shift
+  lighting     pulsar-point:32:100; after 1 min idle: neutron-null:32:100; off after 5 min
+  freestyle    #ff0000,#ff8000,#ffff00,#00ff00,#00ffff,#0000ff,#8000ff,#ff00ff  (left to right; shown while the agent runs)
+  left        mouse:left               g-shift: mouse:left
+  right       mouse:right              g-shift: mouse:right
+  middle      mouse:middle             g-shift: mouse:middle
+  back        mouse:back               g-shift: mouse:back
+  sniper      fn:dpi-shift             g-shift: fn:dpi-shift
+  forward     mouse:forward            g-shift: mouse:forward
+  tilt-left   fn:wheel-left            g-shift: fn:wheel-left
+  tilt-right  fn:wheel-right           g-shift: fn:wheel-right
+  g9          text:Hello, World!       g-shift: fn:profile-cycle
+  dpi-up      double-click             g-shift: fn:dpi-up
+  dpi-down    run:touch '$TMPDIR/g502x-handson-Iow3YT/agent-ran' g-shift: fn:dpi-down
+  wheel-down  fn:scroll-down           g-shift: fn:scroll-down
+  wheel-up    fn:scroll-up             g-shift: fn:scroll-up
+16:47:46 agent: following profile 1
+16:47:46 agent: agent running; Ctrl-C to stop
+16:48:38 typed "alpha Hello, World! gamma" → OK; G7 action ran
+16:48:47 agent: dpi-down: run:touch '$TMPDIR/g502x-handson-Iow3YT/agent-ran'
+16:48:59 restored the onboard memory, mode and active profile
+16:48:59 RESULTS {"text":"alpha Hello, World! gamma","textOk":true,"actionOk":true,"freestyleOk":false,"releasedOk":true}
+exit 1

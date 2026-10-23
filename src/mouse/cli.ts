@@ -2,7 +2,9 @@
 // g502x: command-line control for the Logitech G502 X PLUS. Same code path as the Electron app.
 
 import { readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { acquireAgentLock, SoftwareAgent } from './agent.js';
 import type { HidTransport } from '../device/transport.js';
 import { featureName } from './features.js';
 import { G502X } from './g502x.js';
@@ -11,8 +13,9 @@ import { G502X_CONTROLS } from './onboard.js';
 import { DPI_PRESETS, EFFECT_DEFAULTS, parseEffect } from './presets.js';
 import { MouseService, type MouseAction, type MouseSnapshot } from './service.js';
 import { openReceiver } from './transport.js';
-import { KEYS, MEDIA, parseBinding } from './usages.js';
+import { KEYS, MEDIA } from './usages.js';
 import { ButtonFunction } from './onboard.js';
+import { defaultSoftwareFile, FREESTYLE_LEDS, formatSoftwareAction, parseFreestyle, SoftwareStore } from './software.js';
 
 const USAGE = `usage: g502x <command>
   status [--json]                         device, mode, live DPI/report rate, all five profiles
@@ -28,13 +31,16 @@ const USAGE = `usage: g502x <command>
                                           indexes are 0-based and default to the current ones
   profile <n> dpi-preset <name>           ${DPI_PRESETS.map((p) => p.name).join(', ')}
   profile <n> name <text|-->              -- clears the name
-  profile <n> button <control> <binding> [--gshift]
+  profile <n> button <control> <assignment> [--gshift]   see "controls"
+  profile <n> freestyle <#rrggbb|8 colours left to right|off>   per-LED colours (needs the agent)
   profile <n> lighting <effect>           what the LEDs do while you use the mouse
   profile <n> inactive-lighting <effect|dim[:percent]>
   profile <n> dim-after <seconds|never>   switch to the inactive lighting
   profile <n> off-after <seconds|never>   turn all LEDs off
 
-  controls                                list controls and the binding syntax
+  controls                                list controls and what they can be set to
+  agent                                   run software actions and Freestyle (until Ctrl-C);
+                                          the app does this itself while it runs
   backup <file.json>                      save all 16 onboard-memory sectors
   restore <file.json>                     write them back
   features | watch                        (add --debug to see raw HID traffic)
@@ -90,6 +96,7 @@ function printProfile(p: MouseSnapshot['profiles'][number], active: boolean): vo
   console.log(`  report rate  ${p.reportRateHz} Hz`);
   console.log(`  DPI          ${dpi}     [default] *shift`);
   console.log(`  lighting     ${p.lighting.active}; after ${fmtSeconds(p.dimAfterSeconds)} idle: ${p.lighting.inactive}; off after ${fmtSeconds(p.lightsOffAfterSeconds)}`);
+  if (p.freestyle !== 'off') console.log(`  freestyle    ${p.freestyle}  (left to right; shown while the agent runs)`);
   for (const b of p.buttons) console.log(`  ${b.control.padEnd(11)} ${b.binding.padEnd(24)} g-shift: ${b.gshift}`);
 }
 
@@ -114,7 +121,41 @@ function printControls(): void {
   media:<${Object.keys(MEDIA).join('|')}>
   fn:<${Object.keys(ButtonFunction).join('|')}>
   disabled      does nothing (G Hub's "Disable")
-  default       not remapped: the control keeps its native behaviour`);
+  default       not remapped: the control keeps its native behaviour
+
+stored on the mouse as macros (they work with nothing running):
+  text:<text>                  types it (printable ASCII, US layout; about 40 characters)
+  double-click
+  macro:<step>, <step>, ...    steps: ctrl+c (a key or combo)  50ms (a pause)  mouse:left
+                               media:mute  down:shift / up:shift  down:mouse:left  wheel:-3
+
+performed by the computer while the app or "g502x agent" runs (the mouse does nothing itself):
+  open:<app, file or URL>      e.g. open:/Applications/Calculator.app  open:https://example.com
+  run:<shell command>          e.g. run:firefox  run:loginctl lock-session
+
+Freestyle LEDs, left to right: ${FREESTYLE_LEDS.map((l) => `${l.led} (${l.where})`).join(', ')}`);
+}
+
+/** Run the agent in the foreground until interrupted. */
+async function runAgent(svc: MouseService, store: SoftwareStore): Promise<void> {
+  const lockFile = join(dirname(store.file), 'g502x-agent.lock');
+  const release = acquireAgentLock(lockFile);
+  if (!release) throw new Error(`another agent is running (the app, or "g502x agent"); see ${lockFile}`);
+  const agent = new SoftwareAgent(svc, store, { watch: true });
+  agent.on('action', (e) => console.log(`${e.control}${e.layer === 'gshift' ? ' (g-shift)' : ''}: ${formatSoftwareAction(e.action)}`));
+  agent.on('state', (s) => console.log(s.profile === null ? 'host mode: nothing to do until the mouse is in onboard mode' : `following profile ${s.profile}`));
+  agent.on('error', (err) => console.error(`agent: ${(err as Error).message}`));
+  try {
+    await agent.start();
+    console.log('agent running; Ctrl-C to stop');
+    await new Promise<void>((resolve) => {
+      process.once('SIGINT', resolve);
+      process.once('SIGTERM', resolve);
+    });
+  } finally {
+    await agent.stop().catch(() => undefined);
+    release();
+  }
 }
 
 /** Run one g502x command. `open` is injectable so tests can use a simulated receiver. */
@@ -130,7 +171,8 @@ export async function runCli(raw: string[], open: () => HidTransport = openRecei
     log: debug ? (dir, b) => console.error(`${dir === 'out' ? '>>' : '<<'} ${toHex(b)}`) : undefined,
   });
   mouse.on('waiting', () => process.stderr.write('The mouse is asleep; move it to wake it up...\n'));
-  const svc = new MouseService(mouse);
+  const store = new SoftwareStore(defaultSoftwareFile());
+  const svc = new MouseService(mouse, store);
   const apply = (a: MouseAction) => svc.apply(a);
   try {
     switch (cmd) {
@@ -175,6 +217,8 @@ export async function runCli(raw: string[], open: () => HidTransport = openRecei
       case 'features':
         for (const f of mouse.features) console.log(`${String(f.index).padStart(3)}  0x${f.id.toString(16).padStart(4, '0')}  v${f.version}  ${featureName(f.id)}`);
         return;
+      case 'agent':
+        return await runAgent(svc, store);
       case 'watch':
         for (const ev of ['battery', 'connection', 'onboard', 'activity']) mouse.on(ev, (v) => console.log(ev, JSON.stringify(v)));
         console.log('watching; Ctrl-C to stop');
@@ -225,8 +269,11 @@ async function profileCommand(svc: MouseService, profile: number, args: string[]
     case 'name':
       return await apply({ type: 'name', profile, name: rest[0] === '--' ? null : rest.join(' ') });
     case 'button':
-      if (rest.length < 2) throw new Error('usage: profile <n> button <control> <binding> [--gshift]');
-      return await apply({ type: 'button', profile, control: rest[0], layer: gshift ? 'gshift' : 'base', binding: parseBinding(rest[1]) });
+      if (rest.length < 2) throw new Error('usage: profile <n> button <control> <assignment> [--gshift]');
+      // Text and commands may contain spaces: everything after the control is the assignment.
+      return await apply({ type: 'button', profile, control: rest[0], layer: gshift ? 'gshift' : 'base', assignment: rest.slice(1).join(' ') });
+    case 'freestyle':
+      return await apply({ type: 'freestyle', profile, colors: parseFreestyle(rest.join('')) });
     case 'lighting':
       return await apply({ type: 'lighting', profile, target: 'active', effect: parseEffect(rest[0] ?? '') });
     case 'inactive-lighting': {

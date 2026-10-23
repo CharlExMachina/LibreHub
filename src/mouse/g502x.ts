@@ -241,7 +241,7 @@ export class G502X extends EventEmitter {
   }
 
   /** Like call(), but fails at once if the mouse is asleep (for steps that must not be repeated). */
-  private callOnce(featureId: number, fn: number, params: ArrayLike<number> = []): Promise<Uint8Array> {
+  callOnce(featureId: number, fn: number, params: ArrayLike<number> = []): Promise<Uint8Array> {
     const entry = this.byId.get(featureId);
     if (!entry) return Promise.reject(new Error(`feature ${featureName(featureId)} is not present on this device`));
     return this.requestOnce(entry.index, fn, params, featureId);

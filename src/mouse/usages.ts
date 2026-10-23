@@ -51,6 +51,31 @@ const MODIFIER_NAMES: [number, string][] = [
 const nameOf = (table: Record<string, number>, v: number) => Object.entries(table).find(([, n]) => n === v)?.[0];
 const MOUSE_NAMES: Record<string, number> = { ...MouseButton };
 
+/** "ctrl+shift+t" → modifiers and HID usage; modifiers alone ("shift") have usage 0. */
+export function parseKeySpec(spec: string): { modifiers: number; usage: number } {
+  const parts = spec.trim().toLowerCase().split('+').filter(Boolean);
+  if (parts.length && parts.every((m) => MODIFIER_WORDS[m] !== undefined)) {
+    return { modifiers: parts.reduce((acc, m) => acc | MODIFIER_WORDS[m], 0), usage: 0 };
+  }
+  const key = parts.pop();
+  if (!key) throw new Error('a key is needed, e.g. key:ctrl+c');
+  let modifiers = 0;
+  for (const m of parts) {
+    if (MODIFIER_WORDS[m] === undefined) throw new Error(`unknown modifier "${m}" (${Object.keys(MODIFIER_WORDS).join(', ')})`);
+    modifiers |= MODIFIER_WORDS[m];
+  }
+  const usage = KEYS[key] ?? (/^0x[0-9a-f]{1,2}$/.test(key) ? parseInt(key, 16) : undefined);
+  if (usage === undefined) throw new Error(`unknown key "${key}"`);
+  return { modifiers, usage };
+}
+
+export function formatKeySpec(modifiers: number, usage: number): string {
+  const mods = MODIFIER_NAMES.filter(([bit]) => modifiers & bit).map(([, n]) => n);
+  if (usage === 0 && mods.length) return mods.join('+');
+  const key = nameOf(KEYS, usage) ?? `0x${usage.toString(16).padStart(2, '0')}`;
+  return [...mods, key].join('+');
+}
+
 export function formatBinding(b: Binding): string {
   switch (b.type) {
     case 'unassigned':
@@ -64,11 +89,8 @@ export function formatBinding(b: Binding): string {
       }
       return `mouse:${names.join('+') || 'none'}`;
     }
-    case 'key': {
-      const mods = MODIFIER_NAMES.filter(([bit]) => b.modifiers & bit).map(([, n]) => n);
-      const key = nameOf(KEYS, b.usage) ?? `0x${b.usage.toString(16).padStart(2, '0')}`;
-      return `key:${[...mods, key].join('+')}`;
-    }
+    case 'key':
+      return `key:${formatKeySpec(b.modifiers, b.usage)}`;
     case 'consumer':
       return `media:${nameOf(MEDIA, b.usage) ?? `0x${b.usage.toString(16).padStart(4, '0')}`}`;
     case 'function':
@@ -97,19 +119,8 @@ export function parseBinding(text: string): Binding {
       }
       return { type: 'mouse', buttons };
     }
-    case 'key': {
-      const parts = rest.split('+').filter(Boolean);
-      const key = parts.pop();
-      if (!key) throw new Error('key binding needs a key, e.g. key:ctrl+c');
-      let modifiers = 0;
-      for (const m of parts) {
-        if (MODIFIER_WORDS[m] === undefined) throw new Error(`unknown modifier "${m}" (${Object.keys(MODIFIER_WORDS).join(', ')})`);
-        modifiers |= MODIFIER_WORDS[m];
-      }
-      const usage = KEYS[key] ?? (/^0x[0-9a-f]{1,2}$/.test(key) ? parseInt(key, 16) : undefined);
-      if (usage === undefined) throw new Error(`unknown key "${key}"`);
-      return { type: 'key', modifiers, usage };
-    }
+    case 'key':
+      return { type: 'key', ...parseKeySpec(rest) };
     case 'media': {
       const usage = MEDIA[rest] ?? (/^0x[0-9a-f]{1,4}$/.test(rest) ? parseInt(rest, 16) : undefined);
       if (usage === undefined) throw new Error(`unknown media key "${rest}" (${Object.keys(MEDIA).join(', ')})`);

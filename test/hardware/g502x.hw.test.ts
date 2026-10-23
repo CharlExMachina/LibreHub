@@ -10,6 +10,12 @@ import { toHex } from '../../src/mouse/hidpp.js';
 import { decodeProfile, encodeProfile, macroSector, Modifier, sectorCrcOk, type Profile } from '../../src/mouse/onboard.js';
 import { MouseService } from '../../src/mouse/service.js';
 import { openReceiver } from '../../src/mouse/transport.js';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { SoftwareAgent } from '../../src/mouse/agent.js';
+import { decodeMacro } from '../../src/mouse/onboard.js';
+import { SoftwareStore } from '../../src/mouse/software.js';
 
 const enabled = process.env.G502X_HARDWARE === '1';
 let mouse: G502X;
@@ -225,4 +231,37 @@ describe.skipIf(!enabled)('G502 X PLUS hardware', { timeout: 60000 }, () => {
     expect(w).toMatchObject({ multiplier: 8, hasInvert: true, hasRatchetSwitch: true });
     expect(['ratchet', 'free-spin']).toContain(w.ratchet);
   });
+
+  // Macros, software actions and Freestyle. That the mouse really types a macro, reports presses
+  // and shows per-LED colours was checked by hand (docs/evidence/g502x/lab); these check the
+  // writes and the protocol against the real firmware.
+  it('stores a text macro in slot 5\'s macro sectors and points G9 at it', async () => {
+    const store = new SoftwareStore(join(mkdtempSync(join(tmpdir(), 'g502x-hw-')), 'g502x.json'));
+    const svc = new MouseService(mouse, store);
+    await svc.apply({ type: 'button', profile: 5, control: 'g9', layer: 'base', assignment: 'text:Hello, World!' });
+    await svc.apply({ type: 'button', profile: 5, control: 'back', layer: 'gshift', assignment: 'double-click' });
+    const p = await mouse.readProfile(5);
+    expect(p.buttons[8]).toEqual({ type: 'macro', sector: 14, offset: 0 });
+    expect(p.gshift[3]).toEqual({ type: 'macro', sector: 14, offset: 79 });
+    expect(decodeMacro(await mouse.readSector(14))).toHaveLength(26);
+    const view = (await svc.snapshot()).profiles[4];
+    expect([view.buttons[8].binding, view.buttons[3].gshift]).toEqual(['text:Hello, World!', 'double-click']);
+  });
+
+  it('the agent starts and stops the button spy and paints Freestyle without errors', () =>
+    withOnboard(async () => {
+      const store = new SoftwareStore(join(mkdtempSync(join(tmpdir(), 'g502x-hw-')), 'g502x.json'));
+      const svc = new MouseService(mouse, store);
+      const active = await mouse.getActiveProfile();
+      await svc.apply({ type: 'freestyle', profile: active, colors: { 1: '#ff0000', 2: '#00ff00', 3: '#0000ff' } });
+      const agent = new SoftwareAgent(svc, store, { runner: () => undefined, repaintMs: 300 });
+      const errors: unknown[] = [];
+      agent.on('error', (e) => errors.push(e));
+      await agent.start();
+      expect(agent.state.profile).toBe(active);
+      await new Promise((r) => setTimeout(r, 500));
+      await agent.stop();
+      expect(errors).toEqual([]);
+      expect(await mouse.call(0x8071, 5, [0])).toBeDefined();
+    }));
 });

@@ -1,0 +1,20 @@
+16:25:16.561 mode host
+16:25:16.573 swControl 3/5 ok 01 03 05 00 00 00 00 00
+16:25:16.583 setEffect c0 fixed red ok 00 00 00 00 00 00 00 00
+16:25:48.557 ANSWER button returned:Yes, text returned:nope, still purple/pink in the left side to blue in the right side. Are you sure lights control work for in-memory mode?, gave up:false
+16:25:49.462 setIndividual ok 00 01 02 03 00 00 00 00
+16:25:49.472 setIndividual ok 04 05 06 07 00 00 00 00
+16:25:49.482 setIndividual ok 08 00 00 00 00 00 00 00
+16:25:49.492 frameEnd ok 00 00 00 00 00 00 00 00
+16:25:59.544 ANSWER button returned:Yes, text returned:Yes they are all green, it worked fine, gave up:false
+16:25:59.544 V2 true
+16:26:00.793 setIndividual ok 00 01 02 03 00 00 00 00
+16:26:00.802 setIndividual ok 04 05 06 07 00 00 00 00
+16:26:00.812 setIndividual ok 08 00 00 00 00 00 00 00
+16:26:00.822 frameEnd ok 00 00 00 00 00 00 00 00
+16:26:22.415 ANSWER button returned:Yes, text returned:it's with no color, blue and green, gave up:false
+16:26:23.875 setIndividual ok 00 01 02 03 00 00 00 00
+16:26:23.885 setIndividual ok 04 05 06 07 00 00 00 00
+16:26:23.894 setIndividual ok 08 00 00 00 00 00 00 00
+16:26:23.904 frameEnd ok 00 00 00 00 00 00 00 00
+16:26:32.907 ANSWER button returned:Yes, text returned:Yes it worked, gave up:false

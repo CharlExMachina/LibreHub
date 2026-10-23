@@ -142,6 +142,9 @@ with nothing running in the background, which is what you want on Linux.
 | Curated DPI presets (Default, First Person, Third Person, MMORPG, MOBA, RTS, Simulation, Productivity) | G Hub's sensitivity prefabs for this model | ✅ |
 | Report rate 125 / 250 / 500 / 1000 Hz | Report rate | ✅ verified on hardware and by G Hub |
 | All 13 controls on the default and G-Shift layers: mouse buttons, keys with modifiers, media keys, DPI up/down/cycle/default/shift, profile cycle/next/previous, G-Shift, wheel tilt, scroll, battery level, disable | Assignments | ✅ encodings match G Hub's writes; G Hub decodes ours |
+| Macros (keys, combos, pauses, mouse buttons, media keys, wheel), Text, Double Click, stored on the mouse and played by it | Assignments → Macros, Text & Emojis, Double Click | ✅ seen working on the mouse (it typed and double-clicked) |
+| Open an app, file or website; run a command (Launch Application, Lock screen, …) | Assignments → System, Launch Application | ✅ seen working, while the agent runs |
+| Freestyle: a colour per LED, per profile | LIGHTSYNC → Freestyle | ✅ seen on the mouse, while the agent runs |
 | Lighting: off, fixed, cycle, breathing, colour wave (both directions), Pulsar Point; brightness and rate | LIGHTSYNC presets | ✅ byte-identical to G Hub's writes |
 | Inactivity lighting (Neutron Null, breathing, dim active effect), start after, all lights off after | Settings → Inactivity lighting | ✅ byte-identical to G Hub's writes |
 | Profiles 1–5: switch, enable/disable, name, restore factory settings; current DPI level | On-board memory mode | ✅ verified on hardware |
@@ -150,11 +153,15 @@ with nothing running in the background, which is what you want on Linux.
 | Battery, firmware, serial, wheel ratchet state | Settings | ✅ read-only |
 | Backup / restore of the whole onboard memory | (none) | ✅ |
 
-**Not covered:** assignments G Hub can only perform in software (Launch Application, text,
-multi-step macros, Double Click, Go to DPI Shift, Lock screen), software-driven lighting
-(Freestyle, Screen Sampler, LIGHTSYNC sync), editing the stored animations, and firmware
-updates. G Hub itself cannot store these on the mouse either; see
-[docs/G502X-PROTOCOL.md](docs/G502X-PROTOCOL.md#what-is-not-possible).
+G Hub can't store macros, text or Double Click on this mouse: it plays them from the computer
+and writes placeholders to the on-board slots. The mouse can play macros itself, though, so
+here they are stored on the mouse and work with nothing running. Opening apps and running
+commands, and Freestyle lighting, do need the computer; the **agent** handles them (below).
+
+**Not covered:** emojis and non-ASCII text (the mouse can only send key presses; text uses a
+US layout), Screen Sampler and LIGHTSYNC sync, editing the stored animations, G Hub's own
+actions, and firmware updates. See
+[docs/G502X-PROTOCOL.md](docs/G502X-PROTOCOL.md#macros-software-actions-and-freestyle).
 
 The library also implements G Hub's software-mode calls (live DPI, report rate, lighting
 effects, per-LED colours, inactivity timers) for parity, but the CLI works in on-board mode.
@@ -236,6 +243,12 @@ g502x profile <n> dpi-preset first-person
 g502x profile <n> report-rate 1000
 g502x profile <n> button g9 key:ctrl+shift+t          (add --gshift for the G-Shift layer)
 g502x profile <n> button sniper fn:g-shift
+g502x profile <n> button g9 text:Hello, World!        stored on the mouse, works with nothing running
+g502x profile <n> button dpi-up double-click
+g502x profile <n> button back macro:ctrl+c, 50ms, ctrl+v
+g502x profile <n> button dpi-down open:https://example.com   needs the agent (run:<command> too)
+g502x profile <n> freestyle #ff0000,#ff8000,#ffff00,#00ff00,#00ffff,#0000ff,#8000ff,#ff00ff
+g502x agent                                performs open:/run: and paints Freestyle until Ctrl-C
 g502x profile <n> lighting wave:5000:horizontal:100   off | fixed:#00ffff | cycle | breathing | pulsar-point
 g502x profile <n> inactive-lighting dim:50            or neutron-null, breathing:#rrggbb
 g502x profile <n> dim-after 60 | off-after 300 | off-after never
@@ -247,6 +260,23 @@ g502x startup-effect on|off
 Run it with `npm run mouse -- <args>`, or `npm link` to get `g502x` on your `PATH`. If G Hub
 left the mouse in software mode, run `g502x mode onboard` once (the mouse also returns to
 on-board mode by itself after it has been asleep).
+
+### The agent: software actions and Freestyle
+
+`open:` / `run:` assignments and Freestyle colours are kept on the computer
+(`~/.config/logitech-manager/g502x.json`), like G Hub keeps them. The mouse stores those
+controls as "disabled" and reports each press; the agent performs the action and keeps the
+Freestyle colours painted after profile switches and wake-ups. The app runs the agent while it
+runs, also when it is hidden in the tray. Without the app, run `g502x agent`, or install it as a user service on Linux:
+
+```bash
+npm link
+mkdir -p ~/.config/systemd/user && cp linux/g502x-agent.service ~/.config/systemd/user/
+systemctl --user daemon-reload && systemctl --user enable --now g502x-agent
+```
+
+Quit G Hub while the agent runs: it takes the lighting back. On macOS G Hub can restart itself
+in the background.
 
 ## Releasing
 
@@ -266,9 +296,9 @@ installed copies don't update to.
 ## Tests
 
 ```bash
-npm test                       # unit + simulated-device tests (209), no hardware needed
+npm test                       # unit + simulated-device tests (238), no hardware needed
 npm run test:hardware          # 12 tests against a connected A50 X
-npm run test:hardware:mouse    # 13 tests against a G502 X PLUS (quit G Hub first)
+npm run test:hardware:mouse    # 15 tests against a G502 X PLUS (quit G Hub first)
 ```
 
 - **Unit tests** decode and encode real frames captured from the headset
@@ -284,12 +314,18 @@ npm run test:hardware:mouse    # 13 tests against a G502 X PLUS (quit G Hub firs
 
 ### Verification status
 
-- **G502 X PLUS, macOS, firmware 27.0.16:** all 13 hardware tests pass (three runs). They
+- **G502 X PLUS, macOS, firmware 27.0.16:** the first 13 hardware tests passed three runs. They
   write a full profile, switch to it and check that the sensor really runs its DPI and report
   rate, then restore all 16 onboard sectors byte for byte. Independently, G Hub decoded
   profiles written by this code with the intended values (see
   [GHUB-INTERNALS.md](docs/GHUB-INTERNALS.md#g502-x-plus)), and the encoder reproduces sectors
   G Hub wrote byte for byte. Lighting was checked by encoding, not by eye.
+- **G502 X PLUS macros, agent and Freestyle, macOS:** all 15 hardware tests pass. A hands-on
+  check through the CLI and `g502x agent`, with a person pressing the buttons
+  (`tools/re/g502x-handson.mjs`), passed: the mouse double-clicked a word and typed
+  `Hello, World!` over it by itself, the agent ran a command on G7, the Freestyle colours
+  showed and went away when the agent stopped. Results and the earlier experiments are in
+  [docs/evidence/g502x/lab/](docs/evidence/g502x/lab/).
 - **A50 X, macOS (Apple Silicon), firmware 1.2.18:** all 12 hardware tests pass. A full-state
   snapshot taken before matched one taken after, field for field. The Electron app was
   driven end to end over CDP (curated presets, sliders, saving, applying and deleting a
@@ -301,6 +337,16 @@ npm run test:hardware:mouse    # 13 tests against a G502 X PLUS (quit G Hub firs
   fresh read from the device, then restored. CI (Ubuntu) runs the unit/simulated tests.
 - **G502 X PLUS on Linux:** not run against the mouse on a Linux machine yet. It uses the same
   node-hid (hidraw) path as the A50 X; `npm run test:hardware:mouse` is the check to run first.
+
+## Adding a device
+
+The process that mapped both devices is packaged as an agent skill,
+[`reverse-engineer-device`](.agents/skills/reverse-engineer-device/SKILL.md) (also linked from
+`.claude/skills/`). Ask your coding agent to add a device or a missing G Hub setting and it
+follows the same steps: inventory what G Hub offers, analyse G Hub with
+[REA](https://github.com/morluto/rea), sniff while G Hub applies each setting, copy G Hub's
+bytes, test against the real device with everything restored, and document the evidence.
+It needs a machine with G Hub (macOS so far) and the device.
 
 ## Layout
 

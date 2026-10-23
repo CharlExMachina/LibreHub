@@ -39,8 +39,12 @@ const NAMES = {
 };
 export const featureName = (id) => NAMES[id] ?? `0x${id.toString(16).padStart(4, '0')}`;
 
-const info = HID.devices().find((d) => d.vendorId === 0x046d && d.usagePage === 0xff00 && d.usage === 0x02);
-if (!info) throw new Error('no Logitech HID++ receiver interface (usage page 0xFF00) found');
+// HIDPP_PRODUCT=c547 picks the receiver or cable (USB product id, hex) when several are plugged in;
+// HIDPP_DEVICE=ff sets the device index for `dump` (1 = first receiver slot, ff = on the cable).
+const wantPid = process.env.HIDPP_PRODUCT ? parseInt(process.env.HIDPP_PRODUCT, 16) : undefined;
+const info = HID.devices().find((d) => d.vendorId === 0x046d && d.usagePage === 0xff00 && d.usage === 0x02 && (wantPid === undefined || d.productId === wantPid));
+if (!info) throw new Error(`no Logitech HID++ interface (usage page 0xFF00)${wantPid === undefined ? '' : ` with product id ${process.env.HIDPP_PRODUCT}`} found`);
+const dumpDevice = parseInt(process.env.HIDPP_DEVICE ?? '1', 16);
 const dev = new HID.HID(info.path, { nonExclusive: true });
 const hex = (a) => [...a].map((x) => x.toString(16).padStart(2, '0')).join(' ');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -110,14 +114,14 @@ try {
   } else if (mode === 'dump') {
     // dump <featIdx of 0x8100> <sector>... : read whole onboard-memory sectors (read-only)
     const [fi, ...sectors] = args.map((x) => parseInt(x, 16));
-    const desc = await request(1, fi, 0);
+    const desc = await request(dumpDevice, fi, 0);
     const size = (desc[7] << 8) | desc[8];
     for (const s of sectors) {
       const bytes = [];
       try {
         for (let off = 0; off < size; off += 16) {
           const o = Math.min(off, size - 16);
-          const r = await request(1, fi, 5, [s >> 8, s & 0xff, o >> 8, o & 0xff]);
+          const r = await request(dumpDevice, fi, 5, [s >> 8, s & 0xff, o >> 8, o & 0xff]);
           bytes.splice(o, 16, ...r.slice(0, 16));
         }
         console.log(`sector ${s.toString(16).padStart(4, '0')}:`);
