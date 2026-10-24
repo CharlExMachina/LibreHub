@@ -4,7 +4,7 @@ Libre Hub follows [Semantic Versioning](https://semver.org): a **major** version
 that break something you rely on (a moved settings file, a dropped feature), a **minor** version
 for new features, a **patch** version for fixes. Each release is the tag `vX.Y.Z`.
 
-## Unreleased
+## 1.2.0 - 2026-10-24
 
 - **The G502 X PLUS in the app.** The sidebar now lists both devices; pick the mouse to see its
   pages: Overview, Sensitivity (DPI levels, presets, report rate), Buttons (every control on both
