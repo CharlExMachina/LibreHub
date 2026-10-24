@@ -7,6 +7,7 @@ import { eqGraph, miniCurve } from './eq.js';
 import { icon } from './icons.js';
 import { dbText, gateWatch, ledMeter, levelBar } from './meters.js';
 import { accessScreen, onAccessAllowed } from './access.js';
+import { startGlass } from './glass.js';
 import { createMouse, MOUSE_PAGES } from './mouse.js';
 import { appCard, initAppSettings, keepCard, updateCheckButton } from './prefs.js';
 import { choiceCards, createWriter, el, muteButton, prompt, segmented, slider, toast } from './ui.js';
@@ -1274,6 +1275,9 @@ initAppSettings({
   },
 });
 mouse.setActive(device === 'mouse');
+// Glass only where something floats over the page: toasts, and the mouse pages' profile bar, which the page
+// scrolls under. Everything else is the plain theme. styles.css sets how each looks (its --glass-* values).
+startGlass('.profile-bar, .toast');
 // Access was just allowed: connect both now instead of at the next check.
 onAccessAllowed(() => { void refresh(); void mouse.refresh(); });
 renderNav();

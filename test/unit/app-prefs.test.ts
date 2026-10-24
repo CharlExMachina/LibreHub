@@ -11,6 +11,20 @@ describe('preferences', () => {
     const p = normalize({ keepSettings: true, closeToTray: 'yes', keepGroups: { volume: true }, extra: 1 });
     expect(p).toEqual({ ...DEFAULT_PREFS, keepSettings: true });
   });
+
+  it('keeps a known appearance and falls back to the system one', () => {
+    expect(normalize({}).theme).toBe('system');
+    expect(normalize({ theme: 'light' }).theme).toBe('light');
+    expect(normalize({ theme: 'dark' }).theme).toBe('dark');
+    expect(normalize({ theme: 'sepia' }).theme).toBe('system');
+    expect(normalize({ theme: true }).theme).toBe('system');
+  });
+
+  it('keeps a known glass and falls back to clear', () => {
+    expect(normalize({}).glass).toBe('clear');
+    expect(normalize({ glass: 'tinted' }).glass).toBe('tinted');
+    expect(normalize({ glass: 'frosted' }).glass).toBe('clear');
+  });
 });
 
 describe('start at login', () => {

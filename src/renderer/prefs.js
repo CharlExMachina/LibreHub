@@ -1,8 +1,9 @@
 // The app's own settings, shown on the Settings page: keeping the headset's settings, starting at
-// login and updates. Kept apart from the headset settings because they live on this computer.
+// login, the appearance (light or dark, clear or tinted glass) and updates. Kept apart from the
+// headset settings because they live on this computer.
 import { icon } from './icons.js';
 import { accessSetting } from './access.js';
-import { el, toast, toggle } from './ui.js';
+import { el, segmented, toast, toggle } from './ui.js';
 
 const ic = (name, size) => el('span', { style: { display: 'contents' }, html: icon(name, size) });
 const list = (items) => (items.length < 2 ? items.join('') : `${items.slice(0, -1).join(', ')} and ${items.at(-1)}`);
@@ -46,6 +47,8 @@ async function change(patch) {
 
 /** `openSettings` shows the Settings page (the tray menu and notifications ask for it). */
 export function initAppSettings({ openSettings }) {
+  // Tinted glass is a stylesheet switch on the whole document (styles.css, :root[data-glass]).
+  syncs.add(() => { if (state) document.documentElement.dataset.glass = state.prefs.glass ?? 'clear'; });
   window.a50x.app.onEvent((what, entry) => {
     if (what === 'open-settings') openSettings();
     if (what === 'update' && state) {
@@ -188,6 +191,10 @@ export function updateCheckButton() {
 
 export function appCard() {
   const login = labelledToggle('s-login', (on) => void change({ openAtLogin: on }));
+  const theme = segmented({ label: 'Appearance', onChange: (v) => void change({ theme: v }),
+    options: [{ value: 'system', label: 'System' }, { value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }] });
+  const glass = segmented({ label: 'Liquid glass', onChange: (v) => void change({ glass: v }),
+    options: [{ value: 'clear', label: 'Clear' }, { value: 'tinted', label: 'Tinted' }] });
   const versionT = el('div', { class: 't', id: 's-version-t' });
   const versionD = el('div', { class: 'd', id: 's-version-d', 'aria-live': 'polite' });
   const updateBtn = el('button', { class: 'btn sm', type: 'button' });
@@ -202,12 +209,16 @@ export function appCard() {
     setting('s-login', 'Start when you log in',
       'Runs in the system tray without opening this window. Closing the window keeps it there too; to quit, right-click the tray icon.',
       login.el),
+    setting('s-theme', 'Appearance', 'Light or dark, or whichever your system uses.', theme.el),
+    setting('s-glass', 'Liquid glass', 'Clear lets more of what’s underneath show through. Tinted is more opaque, with more contrast.', glass.el),
     el('div', { class: 'setting' }, el('div', {}, versionT, versionD), el('div', { class: 'control' }, updateBtn)),
     accessSetting());
   syncs.add(() => {
     card.hidden = !state;
     if (!state) return;
     login.set(state.openAtLogin.enabled);
+    theme.set(state.prefs.theme ?? 'system');
+    glass.set(state.prefs.glass ?? 'clear');
     login.el.disabled = !state.openAtLogin.supported;
     versionT.textContent = `Version ${state.version}`;
     const [text, action] = updateLine(state.update);
