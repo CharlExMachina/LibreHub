@@ -1,7 +1,8 @@
 # LibreHub
 
 Control Logitech gear without G Hub: the **A50 X** headset and the **G502 X PLUS** mouse, from
-one desktop app, **Libre Hub**, or one command, `librehub`.
+one desktop app, **Libre Hub**, or one command, `librehub`. The AppImage has only the app; the
+command comes with a [build from source](#build-from-source-linux).
 The goal is Linux, where G Hub doesn't exist. Everything here also runs on macOS. The A50 X has
 been verified against the real headset on both platforms, the G502 X PLUS on macOS.
 
@@ -259,7 +260,8 @@ librehub headset <command>         the A50 X (alias: a50x)
 librehub mouse <command>           the G502 X PLUS (alias: g502x)
 ```
 
-Run it with `npm run cli -- <args>`, or `npm link` to get `librehub` on your `PATH`.
+It isn't part of the AppImage: build from source, then run it with `npm run cli -- <args>`, or
+`npm link` to get `librehub` on your `PATH`.
 `librehub headset help` and `librehub mouse help` list every command.
 
 ### A50 X
