@@ -382,8 +382,12 @@ npm run test:hardware:mouse    # 15 tests against a G502 X PLUS (quit G Hub firs
   end over CDP with real mouse and keyboard input: sliders, faders, mutes, noise gate,
   curated and custom EQ presets (save, apply, delete, undo). Every change was checked with a
   fresh read from the device, then restored. CI (Ubuntu) runs the unit/simulated tests.
-- **G502 X PLUS on Linux:** not run against the mouse on a Linux machine yet. It uses the same
-  node-hid (hidraw) path as the A50 X; `npm run test:hardware:mouse` is the check to run first.
+- **G502 X PLUS on Linux (CachyOS, KDE Plasma), firmware 27.0.16:** all 15 hardware tests pass,
+  three runs in a row, and the onboard memory matched its backup afterwards. Two tests were
+  corrected by what the mouse did: in onboard mode it refuses a live report-rate change (the
+  profile sets it; G Hub's live setter only works in host mode), and selecting the profile that is
+  already active keeps the current DPI level instead of starting at the default one. The app was
+  checked on the real mouse too: every page, and the demo in PR #5.
 
 ## Adding a device
 
