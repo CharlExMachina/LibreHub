@@ -28,7 +28,7 @@ export function openReceiver(path?: string): NodeHidTransport {
   const found = path ?? findReceiver()?.path;
   if (!found) {
     throw new Error(
-      'No Logitech Lightspeed receiver found (USB 046d:c547, HID++ interface on usage page 0xFF00). Is the receiver plugged in? On Linux, install linux/70-logitech-g502x.rules.',
+      'No Logitech Lightspeed receiver found (USB 046d:c547, HID++ interface on usage page 0xFF00). Is the receiver plugged in? On Linux, allow access in the app or install linux/70-libre-hub.rules.',
     );
   }
   return new NodeHidTransport(found);

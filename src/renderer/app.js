@@ -1,9 +1,13 @@
-// A50 X control panel. Pages are built once per device and then updated in place from device
-// snapshots, so sliders keep working while the headset reports changes (e.g. its volume wheel).
+// The window: a device list in the sidebar, and the pages of the device picked there. This file is
+// the shell and the A50 X control panel; the G502 X PLUS has its own (mouse.js). Pages are built
+// once per device and then updated in place from device snapshots, so sliders keep working while
+// the headset reports changes (e.g. its volume wheel).
 import { headsetArt } from './art.js';
 import { eqGraph, miniCurve } from './eq.js';
 import { icon } from './icons.js';
 import { dbText, gateWatch, ledMeter, levelBar } from './meters.js';
+import { accessScreen, onAccessAllowed } from './access.js';
+import { createMouse, MOUSE_PAGES } from './mouse.js';
 import { appCard, initAppSettings, keepCard, updateCheckButton } from './prefs.js';
 import { choiceCards, createWriter, el, muteButton, prompt, segmented, slider, toast } from './ui.js';
 
@@ -21,6 +25,8 @@ const PAGES = [
   { id: 'settings', label: 'Settings', icon: 'settings' },
 ];
 
+/** The device whose pages show: 'headset' or 'mouse'. */
+let device = localStorage.getItem('device') === 'mouse' ? 'mouse' : 'headset';
 let snap = null;
 let lastSnap = null; // shown dimmed while reconnecting
 let built = null;
@@ -100,7 +106,7 @@ let levelsSeq = 0;
 async function syncLevels() {
   levels.error = null;
   const state = levelsState();
-  const keys = state === 'live' ? PAGE_METERS[page] ?? [] : [];
+  const keys = state === 'live' && device === 'headset' ? PAGE_METERS[page] ?? [] : [];
   levels.listeners.forEach((fn) => fn(state));
   if (!window.a50x.meters) return;
   const seq = ++levelsSeq;
@@ -117,7 +123,7 @@ function pauseLevels(paused) {
 }
 
 // Frames sent just before the meters stopped can still arrive: only draw while live.
-window.a50x.meters?.onLevels((frame) => { if (levelsState() === 'live') built?.pages[page]?.levels?.(frame); });
+window.a50x.meters?.onLevels((frame) => { if (levelsState() === 'live' && device === 'headset') built?.pages[page]?.levels?.(frame); });
 // One meter stopped by itself: stop the rest too (the error hides them all) and offer to retry.
 window.a50x.meters?.onLost(() => {
   if (levelsState() !== 'live') return;
@@ -173,57 +179,177 @@ function levelsBar(text) {
 
 // ------------------------------------------------------------------ shell
 
-function renderNav(reconnecting = false) {
-  const online = !!snap;
-  $('#nav').replaceChildren(...PAGES.map((p, i) =>
-    el('button', { type: 'button', 'data-page': p.id, 'aria-current': online && page === p.id ? 'page' : false, disabled: !online,
-      title: `${p.label} (Ctrl+${i + 1})`, onclick: () => show(p.id, { focus: true }) },
-      ic(p.icon, 18), el('span', {}, p.label), el('span', { class: 'hint' }))));
-  updateNavHints(reconnecting ? lastSnap : snap);
+const mouse = createMouse({
+  changed: (what) => {
+    if (what === 'card') renderDevices();
+    if (device !== 'mouse') return;
+    if (what === 'nav') {
+      renderNav();
+      renderFoot();
+    }
+    if (what === 'main') mountMouse();
+  },
+});
+
+/** Show another device's pages. */
+function selectDevice(id) {
+  if (id === device) return;
+  device = id;
+  localStorage.setItem('device', id);
+  const main = $('#main');
+  main.classList.remove('reconnecting');
+  main.inert = false;
+  $('#reconnect')?.remove();
+  mouse.setActive(id === 'mouse');
+  renderDevices();
+  renderNav();
+  renderFoot();
+  if (id === 'mouse') mountMouse();
+  else mountHeadset();
+  void syncLevels();
 }
 
-function updateNavHints(s = snap) {
-  if (!s) return;
-  const snap = s;
-  const [mic, hp] = snap.equalizers;
-  const hints = {
-    headphones: [hp.matches ?? 'Custom', 'Headphones EQ preset'],
-    microphone: [mic.matches ?? 'Custom', 'Mic EQ preset'],
-    mix: [snap.routing.output.muted ? 'Muted' : pct(snap.routing.output.gain, snap.routing.maxGain), 'Stream output level'],
-  };
+/** The status pill over a dimmed page (headset reconnecting, mouse asleep). */
+function statusPill(text) {
+  const pill = $('#reconnect') ?? document.body.appendChild(el('div', { id: 'reconnect', class: 'reconnect-pill', role: 'status' }));
+  if (pill.dataset.text !== text) {
+    pill.dataset.text = text;
+    pill.replaceChildren(el('span', { class: 'spinner' }), text);
+  }
+}
+
+function mountMouse() {
+  const main = $('#main');
+  const node = mouse.node();
+  if (main.firstElementChild !== node) {
+    main.replaceChildren(node);
+    node.style.animation = 'none';
+    void node.offsetWidth;
+    node.style.animation = '';
+    main.scrollTop = 0;
+  }
+  // Asleep: keep the pages, dimmed, until it answers again.
+  main.classList.toggle('reconnecting', mouse.asleep);
+  main.inert = mouse.asleep;
+  if (mouse.asleep) statusPill('The mouse is asleep. Move it to wake it up.');
+  else $('#reconnect')?.remove();
+}
+
+/** Put the headset's current state back in the page area (after looking at the mouse). */
+function mountHeadset() {
+  const main = $('#main');
+  if (snap) return show(page);
+  if (graceTimer && built) {
+    main.replaceChildren(built.pages[page].el);
+    main.classList.add('reconnecting');
+    main.inert = true;
+    statusPill('Reconnecting to the headset…');
+    return;
+  }
+  if (offlineInfo) {
+    offlineKey = '';
+    return showOffline(offlineInfo);
+  }
+  main.replaceChildren(el('div', { class: 'empty' }, el('div', { class: 'empty-box' }, el('div', { class: 'status' }, el('span', { class: 'spinner' }), 'Connecting…'))));
+}
+
+let navSig = '';
+function renderNav(reconnecting = false) {
+  const mine = device === 'mouse';
+  const pages = mine ? MOUSE_PAGES : PAGES;
+  const online = mine ? mouse.online : !!snap;
+  const current = mine ? mouse.page : page;
+  // Rebuilt only when the buttons change, so focus and hover survive snapshots.
+  const sig = `${device}|${online}`;
+  if (sig !== navSig) {
+    navSig = sig;
+    $('#nav').replaceChildren(...pages.map((p, i) =>
+      el('button', { type: 'button', 'data-page': p.id, disabled: !online, title: `${p.label} (Ctrl+${i + 1})`,
+        onclick: () => (device === 'mouse' ? mouse.show(p.id, { focus: true }) : show(p.id, { focus: true })) },
+        ic(p.icon, 18), el('span', {}, p.label), el('span', { class: 'hint' }))));
+  }
+  for (const b of document.querySelectorAll('#nav button')) b.setAttribute('aria-current', online && b.dataset.page === current ? 'page' : 'false');
+  if (mine) paintHints(mouse.hints());
+  else updateNavHints(reconnecting ? lastSnap : snap);
+}
+
+function paintHints(hints) {
   for (const b of document.querySelectorAll('#nav button')) {
     const [text, what] = hints[b.dataset.page] ?? ['', ''];
     const h = b.querySelector('.hint');
-    h.textContent = text;
+    if (h.textContent !== text) h.textContent = text;
     h.title = text ? `${what}: ${text}` : '';
   }
 }
 
+function updateNavHints(s = snap) {
+  if (!s || device !== 'headset') return;
+  const snap = s;
+  const [mic, hp] = snap.equalizers;
+  paintHints({
+    headphones: [hp.matches ?? 'Custom', 'Headphones EQ preset'],
+    microphone: [mic.matches ?? 'Custom', 'Mic EQ preset'],
+    mix: [snap.routing.output.muted ? 'Muted' : pct(snap.routing.output.gain, snap.routing.maxGain), 'Stream output level'],
+  });
+}
+
 const OFFLINE_STATUS = { 'not-found': 'Searching…', permission: 'No access', unresponsive: 'Headset not answering', error: 'Not connected' };
 
+let headsetReconnecting = false;
+let devicesSig = '';
 function renderDeviceCard(reconnecting = false) {
+  headsetReconnecting = reconnecting;
+  renderDevices();
+}
+
+/** The device list: one entry per device, the one whose pages show marked. */
+function renderDevices() {
   const online = !!snap;
-  const shown = online ? snap : reconnecting ? lastSnap : null;
-  $('#device-card').replaceChildren(
-    el('div', { class: 'thumb', html: headsetArt('thumb', { glow: false, lit: online, small: true }) }),
+  const shown = online ? snap : headsetReconnecting ? lastSnap : null;
+  const headset = {
+    name: shown?.device.name || 'A50 X',
+    status: online ? 'Connected' : headsetReconnecting ? 'Reconnecting…' : OFFLINE_STATUS[offlineInfo?.reason] ?? 'Connecting…',
+    dot: online ? 'on' : 'wait',
+    battery: shown ? `${shown.battery}%` : null,
+    batteryTitle: 'Battery',
+    dimBattery: !online,
+    art: headsetArt('thumb', { glow: false, lit: online, small: true }),
+  };
+  const host = $('#devices');
+  const card = mouse.card();
+  // Rebuilt only when it changes: the headset reports often (its volume wheel), and a rebuild
+  // between pressing and releasing would lose the click.
+  const sig = JSON.stringify([device, headset, card]);
+  if (sig === devicesSig) return;
+  devicesSig = sig;
+  const focused = host.contains(document.activeElement) ? document.activeElement.dataset.device : null;
+  host.replaceChildren(deviceEntry('headset', headset), deviceEntry('mouse', card));
+  if (focused) host.querySelector(`[data-device="${focused}"]`)?.focus();
+}
+
+function deviceEntry(id, d) {
+  return el('button', { type: 'button', class: 'device-card', 'data-device': id, 'aria-current': device === id ? 'true' : 'false',
+    title: `${d.name}: ${d.status}`, onclick: () => selectDevice(id) },
+    el('div', { class: 'thumb', html: d.art }),
     el('div', { style: { minWidth: 0 } },
-      el('div', { class: 'name', title: shown?.device.name ?? '' }, shown?.device.name || 'A50 X'),
+      el('div', { class: 'name' }, d.name),
       el('div', { class: 'meta' },
-        el('span', { class: `dot ${online ? 'on' : 'wait'}` }),
-        el('span', {}, online ? 'Connected' : reconnecting ? 'Reconnecting…' : OFFLINE_STATUS[offlineInfo?.reason] ?? 'Connecting…'),
-        shown ? el('span', { class: `num${online ? '' : ' dim'}`, style: { marginLeft: 'auto' }, title: 'Battery' }, `${shown.battery}%`) : null)));
+        el('span', { class: `dot ${d.dot}` }),
+        el('span', { class: 'status' }, d.status),
+        d.battery ? el('span', { class: `num${d.dimBattery ? ' dim' : ''}`, style: { marginLeft: 'auto' }, title: d.batteryTitle }, d.battery) : null)));
 }
 
 const updateCheck = updateCheckButton();
 function renderFoot() {
   const foot = $('#sidebar-foot');
-  foot.hidden = !snap;
-  if (snap) foot.replaceChildren(el('div', { class: 'row' }, el('span', {}, `Firmware ${snap.device.firmware.version}`), updateCheck));
+  const firmware = device === 'mouse' ? mouse.firmware() : snap ? `Firmware ${snap.device.firmware.version}` : null;
+  foot.hidden = !firmware;
+  if (firmware) foot.replaceChildren(el('div', { class: 'row' }, el('span', {}, firmware), updateCheck));
 }
 
 function show(id, { focus = false } = {}) {
-  if (!built) return;
   page = id;
+  if (!built || device !== 'headset') return;
   const main = $('#main');
   const node = built.pages[id].el;
   if (main.firstElementChild !== node) {
@@ -247,12 +373,14 @@ function receive(res) {
     const wasOnline = !!snap;
     clearTimeout(graceTimer);
     graceTimer = 0;
-    $('#main').classList.remove('reconnecting');
-    $('#main').inert = false;
+    if (device === 'headset') {
+      $('#main').classList.remove('reconnecting');
+      $('#main').inert = false;
+    }
     snap = res.snapshot;
     lastSnap = snap;
     offlineInfo = null;
-    $('#reconnect')?.remove();
+    if (device === 'headset') $('#reconnect')?.remove();
     offlineKey = '';
     // Same headset after a dropout: keep the pages (and whatever the user had open).
     if (!built || built.serial !== snap.device.serial) built = build(snap.device.serial);
@@ -274,9 +402,11 @@ function receive(res) {
     snap = null;
     writer.reset();
     offlineInfo = info;
-    $('#main').classList.add('reconnecting');
-    $('#main').inert = true;
-    if (!$('#reconnect')) document.body.append(el('div', { id: 'reconnect', class: 'reconnect-pill', role: 'status' }, el('span', { class: 'spinner' }), 'Reconnecting to the headset…'));
+    if (device === 'headset') {
+      $('#main').classList.add('reconnecting');
+      $('#main').inert = true;
+      statusPill('Reconnecting to the headset…');
+    }
     renderNav(true);
     renderDeviceCard(true);
     renderFoot();
@@ -292,13 +422,14 @@ function showOffline(info) {
   const key = `${info.reason}|${info.error ?? ''}`;
   if (key === offlineKey) return;
   offlineKey = key;
-  $('#main').classList.remove('reconnecting');
-  $('#main').inert = false;
-  $('#reconnect')?.remove();
   lastSnap = null;
   renderNav();
   renderDeviceCard();
   renderFoot();
+  if (device !== 'headset') return;
+  $('#main').classList.remove('reconnecting');
+  $('#main').inert = false;
+  $('#reconnect')?.remove();
   $('#main').replaceChildren(offlineView(info));
 }
 
@@ -330,14 +461,25 @@ window.a50x.onChanged(() => {
 setInterval(() => { if (!snap) void refresh(); }, 2500);
 
 window.addEventListener('keydown', (e) => {
-  if (!(e.ctrlKey || e.metaKey) || e.altKey || !snap || document.querySelector('dialog[open]')) return;
+  if (!(e.ctrlKey || e.metaKey) || e.altKey || document.querySelector('dialog[open]')) return;
   const n = Number(e.key);
+  // Mute is the headset's, whichever device shows.
+  if (e.key.toLowerCase() === 'm' && !e.repeat && snap) {
+    e.preventDefault();
+    built?.pages.overview.toggleMute();
+    return;
+  }
+  if (device === 'mouse') {
+    if (mouse.online && n >= 1 && n <= MOUSE_PAGES.length) {
+      e.preventDefault();
+      mouse.show(MOUSE_PAGES[n - 1].id, { focus: true });
+    }
+    return;
+  }
+  if (!snap) return;
   if (n >= 1 && n <= PAGES.length) {
     e.preventDefault();
     show(PAGES[n - 1].id, { focus: true });
-  } else if (e.key.toLowerCase() === 'm' && !e.repeat) {
-    e.preventDefault();
-    built?.pages.overview.toggleMute();
   }
 });
 
@@ -1092,22 +1234,6 @@ function audioCard() {
 
 // ------------------------------------------------------------------ offline
 
-function codeBlock(text) {
-  const done = el('span', { class: 'sr-only', role: 'status' });
-  const btn = el('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Copy commands', title: 'Copy', html: icon('copy', 16) });
-  btn.addEventListener('click', async () => {
-    try {
-      await navigator.clipboard.writeText(text);
-      btn.innerHTML = icon('check', 16);
-      done.textContent = 'Copied';
-    } catch {
-      done.textContent = 'Couldn’t copy. Select the text instead.';
-    }
-    setTimeout(() => { btn.innerHTML = icon('copy', 16); done.textContent = ''; }, 1500);
-  });
-  return el('div', { class: 'code' }, el('pre', {}, text), btn, done);
-}
-
 function offlineView(info) {
   const searching = el('div', { class: 'status' }, el('span', { class: 'spinner' }), 'Looking for the base station');
   const box = (title, body, ...extra) =>
@@ -1115,14 +1241,10 @@ function offlineView(info) {
       el('div', { html: headsetArt('empty', { lit: false }) }),
       el('h1', {}, title), el('p', {}, body), ...extra));
   switch (info.reason) {
-    case 'permission': {
-      const rule = info.rulePath ?? 'linux/70-logitech-a50x.rules';
-      return box('Allow access to the base station',
-        'The base station is plugged in, but your user can’t open it yet. Install this project’s udev rule once:',
-        window.a50x.platform === 'linux' ? codeBlock(`sudo cp \\\n  ${rule} \\\n  /etc/udev/rules.d/\nsudo udevadm control --reload-rules && sudo udevadm trigger`) : null,
-        el('p', { class: 'small' }, 'The app connects by itself once it has access. If it doesn’t, unplug and replug the base station.'),
+    case 'permission':
+      if (window.a50x.platform === 'linux') return accessScreen();
+      return box('Allow access to the base station', info.error ?? 'Your user can’t open the base station.',
         el('div', { class: 'status' }, el('span', { class: 'spinner' }), 'Waiting for access'));
-    }
     case 'unresponsive':
       return box('The headset isn’t answering',
         'The base station is connected but the headset didn’t respond. Turn it on and keep it in range of the base station.',
@@ -1138,11 +1260,27 @@ function offlineView(info) {
 
 // ------------------------------------------------------------------ start
 
-initAppSettings({ openSettings: () => { if (snap) show('settings', { focus: true }); } });
+// The tray's "Settings…" and the keep-settings notifications: the headset's Settings page has the
+// app settings and what was restored, so it goes first; the mouse's has the app settings too.
+initAppSettings({
+  openSettings: () => {
+    if (snap) {
+      selectDevice('headset');
+      show('settings', { focus: true });
+    } else if (mouse.online) {
+      selectDevice('mouse');
+      mouse.show('settings', { focus: true });
+    }
+  },
+});
+mouse.setActive(device === 'mouse');
+// Access was just allowed: connect both now instead of at the next check.
+onAccessAllowed(() => { void refresh(); void mouse.refresh(); });
 renderNav();
 renderDeviceCard();
 renderFoot();
-$('#main').replaceChildren(el('div', { class: 'empty' }, el('div', { class: 'empty-box' }, el('div', { class: 'status' }, el('span', { class: 'spinner' }), 'Connecting…'))));
+if (device === 'mouse') mountMouse();
+else mountHeadset();
 void refresh();
 // Fresh battery reading every minute; everything else arrives as device events.
 setInterval(() => { if (snap && writer.idle) void refresh(); }, 60000);

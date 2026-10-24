@@ -69,7 +69,7 @@ export function openA50X(path?: string): NodeHidTransport {
   const found = path ?? findA50X()?.path;
   if (!found) {
     throw new Error(
-      'A50 X base station not found (USB 046d:0b0b, usage page 0xFF32). Is it plugged in over USB? On Linux, install linux/70-logitech-a50x.rules.',
+      'A50 X base station not found (USB 046d:0b0b, usage page 0xFF32). Is it plugged in over USB? On Linux, allow access in the app or install linux/70-libre-hub.rules.',
     );
   }
   return new NodeHidTransport(found);

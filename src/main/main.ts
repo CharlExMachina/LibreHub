@@ -19,6 +19,7 @@ import { loadPrefs, savePrefs, type Prefs } from './prefs.js';
 import { watchLinuxUnlock } from './session.js';
 import { Updates, type UpdateState } from './updates.js';
 import { registerMouse } from './mouse-ipc.js';
+import { DeviceAccess, RULE_FILE } from '../access/udev.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 // The app is called Libre Hub, but its files stay where they've always been (the CLI reads them too).
@@ -34,7 +35,7 @@ const EVENTS = ['sidetone', 'volume', 'balance', 'sleep', 'tones', 'noiseGate', 
 /** Why there is no device, so the window can say what to do about it. */
 type Offline =
   | { reason: 'not-found' }
-  | { reason: 'permission'; error: string; rulePath: string }
+  | { reason: 'permission'; error: string }
   | { reason: 'unresponsive'; error: string }
   | { reason: 'error'; error: string };
 
@@ -50,7 +51,7 @@ let retryAt = 0;
 function classify(err: unknown): Offline {
   const error = (err as Error)?.message ?? String(err);
   if (/permission denied|EACCES|cannot open device/i.test(error)) {
-    return { reason: 'permission', error, rulePath: join(linuxFiles(), '70-logitech-a50x.rules') };
+    return { reason: 'permission', error };
   }
   if (err instanceof TimeoutError) return { reason: 'unresponsive', error };
   return { reason: 'error', error };
@@ -66,11 +67,29 @@ function lose(err: unknown): { connected: false; offline: Offline } {
   disconnect();
   return { connected: false, offline };
 }
-const mouse = registerMouse(ipcMain, () => window);
+const mouse = registerMouse(ipcMain, () => window, { onStatus: () => refreshTray() });
+
+// Linux: let this user open the devices, after asking for the password once (see src/access/udev.ts).
+const access = new DeviceAccess({ shippedRule: join(linuxFiles(), RULE_FILE) });
+ipcMain.handle('access:status', () => access.status());
+ipcMain.handle('access:manual', () => access.manual());
+ipcMain.handle('access:remove', () => access.remove());
+ipcMain.handle('access:allow', async () => {
+  const result = await access.allow();
+  if (result.outcome === 'done') {
+    // Connect now rather than at the next poll.
+    retryAt = 0;
+    void connect();
+    mouse.retry();
+  }
+  return result;
+});
 
 async function connect(): Promise<A50XService | undefined> {
   if (service) return service;
   if (Date.now() < retryAt) return undefined;
+  // Cleared once settled, not in a `finally` inside: when the body fails before its first await,
+  // that would run before the assignment and leave this settled promise in place for good.
   connecting ??= (async () => {
     try {
       if (!findA50X()) {
@@ -95,10 +114,10 @@ async function connect(): Promise<A50XService | undefined> {
       offline = next;
       if (next.reason === 'unresponsive') retryAt = Date.now() + 5000;
       return undefined;
-    } finally {
-      connecting = undefined;
     }
-  })();
+  })().finally(() => {
+    connecting = undefined;
+  });
   return connecting;
 }
 
@@ -372,10 +391,13 @@ function refreshTray(): void {
   if (!tray || shuttingDown) return;
   const s = lastSnapshot;
   const status = !service ? 'Headset not connected' : s ? `${s.battery}% battery` : 'Connected';
-  tray.setToolTip(`${APP_NAME}: ${status}`);
+  const m = mouse.status;
+  const mouseStatus = !m.connected ? 'Not connected' : m.asleep ? 'Asleep' : m.battery ? `${m.battery.percent}% battery${m.battery.charging === 'charging' ? ', charging' : ''}` : 'Connected';
+  tray.setToolTip(`${APP_NAME}: ${status}${m.connected ? `\nG502 X PLUS: ${mouseStatus.toLowerCase()}` : ''}`);
   const visible = !!window?.isVisible();
   tray.setContextMenu(Menu.buildFromTemplate([
     { label: `A50 X · ${status}`, enabled: false },
+    ...(m.connected ? [{ label: `G502 X PLUS · ${mouseStatus}`, enabled: false }] : []),
     ...(prefs.keepSettings && lastCheck ? [{ label: checkLine(lastCheck), enabled: false }] : []),
     { type: 'separator' },
     ...(updates.state.status === 'ready' ? [{ label: `Restart to update to ${updates.state.version}`, click: () => updates.install() }] : []),

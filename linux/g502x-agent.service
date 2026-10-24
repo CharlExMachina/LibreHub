@@ -1,7 +1,7 @@
-# Runs `g502x agent` in your desktop session: the G502 X PLUS software actions (open:, run:) and
+# Runs `librehub mouse agent` in your desktop session: the G502 X PLUS software actions (open:, run:) and
 # Freestyle lighting. Not needed for anything stored on the mouse, macros included.
 #
-#   npm link                       # puts g502x on your PATH
+#   npm link                       # puts librehub on your PATH
 #   mkdir -p ~/.config/systemd/user
 #   cp linux/g502x-agent.service ~/.config/systemd/user/
 #   systemctl --user daemon-reload && systemctl --user enable --now g502x-agent
@@ -13,7 +13,7 @@ After=graphical-session.target
 PartOf=graphical-session.target
 
 [Service]
-ExecStart=/usr/bin/env g502x agent
+ExecStart=/usr/bin/env librehub mouse agent
 Restart=on-failure
 RestartSec=5
 

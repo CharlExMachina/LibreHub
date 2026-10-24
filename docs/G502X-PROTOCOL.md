@@ -325,7 +325,7 @@ Emojis and other non-ASCII text are not possible from the mouse: it can only sen
 
 ### The agent
 
-`g502x agent` (or the app, while it runs, also from the tray) does the part that needs the computer:
+`librehub mouse agent` (or the app, while it runs, also from the tray) does the part that needs the computer:
 
 1. Starts MouseButtonSpy. In onboard mode the profile keeps working normally (G9 still
    switched profile while spied, [lab.txt](evidence/g502x/lab/lab.txt) test 1), and every press
@@ -341,7 +341,7 @@ Emojis and other non-ASCII text are not possible from the mouse: it can only sen
 
 Software actions and Freestyle are kept in `g502x.json` next to the app's other settings
 (`~/.config/logitech-manager/` on Linux, `~/Library/Application Support/logitech-manager/` on
-macOS). A lock file next to it keeps the app and `g502x agent` from both acting.
+macOS). A lock file next to it keeps the app and `librehub mouse agent` from both acting.
 
 ### Freestyle
 

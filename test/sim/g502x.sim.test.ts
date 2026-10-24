@@ -195,11 +195,63 @@ describe('service actions', () => {
     expect(toHex(p.raw.slice(208, 253))).toBe(toHex(fromHex(SECTORS.ghubFixed).slice(208, 253)));
   });
 
+  it('takes lighting effects in their text form, as the app sends them', async () => {
+    const { mouse, svc } = await setup();
+    await svc.apply({ type: 'lighting', profile: 1, target: 'active', effect: 'breathing:#ff8000:3000:60' });
+    expect((await mouse.readProfile(1)).lighting.active.primary).toEqual({ type: 'breathing', color: [255, 128, 0], periodMs: 3000, waveform: 0, brightness: 60 });
+    await expect(svc.apply({ type: 'lighting', profile: 1, target: 'active', effect: 'wave:500' })).rejects.toThrow(/period must be 1000..20000/);
+  });
+
+  it('keeps a dimmed idle lighting dimming the active effect when that changes', async () => {
+    const { mouse, svc } = await setup();
+    await svc.apply({ type: 'lighting', profile: 1, target: 'active', effect: 'fixed:#ff0000' });
+    await svc.apply({ type: 'lighting', profile: 1, target: 'inactive', effect: 'dim', dimPercent: 50 });
+    await svc.apply({ type: 'lighting', profile: 1, target: 'active', effect: 'fixed:#0000ff' });
+    expect((await mouse.readProfile(1)).lighting.inactive.primary).toEqual({ type: 'fixed', color: [0, 0, 128] });
+    await svc.apply({ type: 'lighting', profile: 1, target: 'inactive', effect: 'neutron-null' });
+    await svc.apply({ type: 'lighting', profile: 1, target: 'active', effect: 'fixed:#00ff00' });
+    expect((await mouse.readProfile(1)).lighting.inactive.all.type).toBe('signature');
+  });
+
+  it('writes nothing when a change changes nothing', async () => {
+    const { sim, svc } = await setup();
+    await svc.apply({ type: 'reportRate', profile: 1, hz: 500 });
+    const before = sim.written.length;
+    await svc.apply({ type: 'reportRate', profile: 1, hz: 500 });
+    expect(sent(sim, before).some(([id, fn]) => id === 0x8100 && fn === 6)).toBe(false);
+  });
+
+  it('reads what the buttons on the mouse change, and fails fast while it sleeps', async () => {
+    const { sim, svc } = await setup();
+    await svc.apply({ type: 'mode', mode: 'onboard' });
+    sim.cycleProfile();
+    sim.dpiIndex = 3;
+    sim.dpi = 2400;
+    expect(await svc.live()).toEqual({ mode: 'onboard', activeProfile: 2, dpi: { current: 2400, level: 3 }, battery: expect.objectContaining({ percent: 36 }) });
+    sim.asleepFor = 1;
+    await expect(svc.live()).rejects.toBeInstanceOf(MouseUnavailableError);
+  });
+
+  it('checks a whole backup before writing any of it', async () => {
+    const { sim, svc } = await setup();
+    const backup = await svc.backup();
+    expect(Object.keys(backup.sectors)).toHaveLength(16);
+    const before = sim.written.length;
+    await expect(svc.restore({ ...backup, sectors: { ...backup.sectors, 3: 'ff ff' } })).rejects.toThrow(/sector 3 in the backup is 2 bytes/);
+    await expect(svc.restore({ ...backup, sectors: { ...backup.sectors, 16: backup.sectors[0] } })).rejects.toThrow(/has sector 16/);
+    await expect(svc.restore({} as never)).rejects.toThrow(/not a mouse backup/);
+    await expect(svc.restore({ ...backup, sectors: { ...backup.sectors, 4: backup.sectors[4].replace(/^../, 'zz') } })).rejects.toThrow(/sector 4 in the backup is not hex/);
+    expect(sent(sim, before).some(([id, fn]) => id === 0x8100 && fn === 6)).toBe(false);
+    expect(await svc.restore(backup)).toEqual([]);
+  });
+
   it('snapshot lists every profile with readable bindings and lighting', async () => {
     const { svc } = await setup();
     const s = await svc.snapshot();
     expect(s.mode).toBe('host');
-    expect(s.capabilities).toEqual({ dpi: { min: 100, max: 25600, step: 50 }, reportRatesHz: [1000, 500, 250, 125], dpiPresets: expect.any(Array) });
+    expect(s.capabilities).toMatchObject({ dpi: { min: 100, max: 25600, step: 50 }, reportRatesHz: [1000, 500, 250, 125] });
+    expect(s.capabilities.dpiPresets[1]).toEqual({ name: 'first-person', levels: [400, 800, 1600], defaultIndex: 1, shiftIndex: 0 });
+    expect(s.capabilities.lighting).toMatchObject({ periodMs: { min: 1000, max: 20000 }, inactivity: [null, 60, 120, 300, 600, 900] });
     expect(s.profiles[1].buttons.find((b) => b.control === 'middle')).toEqual({ control: 'middle', label: 'Middle Click', binding: 'mouse:middle', gshift: 'key:ctrl+t' });
     expect(s.profiles[0].lighting).toEqual({ active: 'pulsar-point:32:100', inactive: 'neutron-null:32:100' });
     expect(s.profiles[0].reportRateHz).toBe(1000);
@@ -291,7 +343,7 @@ describe('robustness (review findings)', () => {
   });
 });
 
-describe('g502x CLI', () => {
+describe('librehub mouse CLI', () => {
   const cli = async (sim: SimulatedG502X, ...args: string[]) => {
     const log = console.log;
     console.log = () => undefined;

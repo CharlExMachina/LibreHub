@@ -7,7 +7,7 @@ tell from G Hub's (`0xD`, `0xA` and `0xE` were seen). Unsolicited events use sof
 
 Find the interface with `node-hid`: list `HID.devices()` for vendor `0x046d` and look at
 the usage pages. Open it non-exclusively, so G Hub can keep running while you read. On Linux
-it is a hidraw node; add a udev rule like `linux/70-logitech-*.rules` (the `70-` prefix must
+it is a hidraw node; add the device to `linux/70-libre-hub.rules` (the `70-` prefix must
 sort before systemd's `73-seat-late.rules`).
 
 ## Centurion (A50 X base station, `046d:0b0b`)

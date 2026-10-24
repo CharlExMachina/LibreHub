@@ -10,7 +10,7 @@
 //
 // The agent follows the active onboard profile. In host mode (G Hub's software mode) it does
 // nothing: there is no active profile to follow. Run one agent per mouse: the app runs one while
-// it runs, `g502x agent` runs one without the app; a lock file keeps them from both acting.
+// it runs, `librehub mouse agent` runs one without the app; a lock file keeps them from both acting.
 
 import { EventEmitter } from 'node:events';
 import { closeSync, mkdirSync, openSync, readFileSync, unlinkSync, unwatchFile, watchFile, writeSync } from 'node:fs';

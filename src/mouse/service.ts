@@ -7,14 +7,15 @@
 // sectors (macros.ts). Software actions and Freestyle lighting can't live on the mouse; they go to
 // the settings file (software.ts) and need the agent (agent.ts) running.
 
-import { msToHz, hzToMs } from './codecs.js';
+import { msToHz, hzToMs, OnboardProfiles } from './codecs.js';
+import { Feature } from './features.js';
 import type { G502X } from './g502x.js';
 import { formatMacro, macroSectorsFor, packMacros, readMacro } from './macros.js';
-import { controlIndex, G502X_CONTROLS, type Binding, type ControlId, type LedEffect, type MacroStep, type Profile } from './onboard.js';
-import { DPI_PRESETS, formatEffect, isPrimaryZoneEffect } from './presets.js';
+import { controlIndex, encodeProfile, G502X_CONTROLS, withCrc, type Binding, type ControlId, type LedEffect, type MacroStep, type Profile } from './onboard.js';
+import { DPI_PRESETS, EFFECT_LIMITS, formatEffect, INACTIVITY_CHOICES, isPrimaryZoneEffect, parseEffect } from './presets.js';
 import { formatFreestyle, formatSoftwareAction, parseAssignment, profileSoftware, type Assignment, type Freestyle, type Layer, type ProfileSoftware, type SoftwareConfig, type SoftwareStore } from './software.js';
 import { formatBinding } from './usages.js';
-import { toHex } from './hidpp.js';
+import { fromHex, toHex } from './hidpp.js';
 
 export interface ProfileView {
   slot: number;
@@ -44,10 +45,33 @@ export interface MouseSnapshot {
   wheel: Awaited<ReturnType<G502X['getWheel']>>;
   startupEffect: boolean;
   profiles: ProfileView[];
-  capabilities: { dpi: { min: number; max: number; step: number }; reportRatesHz: number[]; dpiPresets: string[] };
+  capabilities: {
+    dpi: { min: number; max: number; step: number };
+    reportRatesHz: number[];
+    /** G Hub's curated DPI tables, for the app to show and match. */
+    dpiPresets: { name: string; levels: number[]; defaultIndex: number; shiftIndex: number }[];
+    /** G Hub's lighting ranges and inactivity choices (seconds, null = never). */
+    lighting: typeof EFFECT_LIMITS & { inactivity: (number | null)[] };
+  };
 }
 
 export type LightingTarget = 'active' | 'inactive';
+
+/** The whole onboard memory, as `librehub mouse backup` and the app save it. */
+export interface MouseBackup {
+  device: string;
+  savedAt: string;
+  /** Sector number → its bytes in hex. */
+  sectors: Record<string, string>;
+}
+
+/** What changes from moment to moment (the mouse's own buttons switch profile and DPI level). */
+export interface MouseLive {
+  mode: string;
+  activeProfile: number;
+  dpi: { current: number; level: number | null };
+  battery: MouseSnapshot['battery'];
+}
 
 export type MouseAction =
   | { type: 'mode'; mode: 'onboard' | 'host' }
@@ -64,7 +88,8 @@ export type MouseAction =
   | { type: 'button'; profile: number; control: string; layer: Layer; assignment: Assignment | string }
   /** Freestyle per-LED colours for a profile (null = off). Shown while the agent runs. */
   | { type: 'freestyle'; profile: number; colors: Freestyle | null }
-  | { type: 'lighting'; profile: number; target: LightingTarget; effect: LedEffect | 'dim'; dimPercent?: number }
+  /** An effect, or its text form as in parseEffect (e.g. "wave:5000:horizontal:100"). */
+  | { type: 'lighting'; profile: number; target: LightingTarget; effect: LedEffect | string | 'dim'; dimPercent?: number }
   | { type: 'inactivity'; profile: number; dimAfterSeconds?: number | null; lightsOffAfterSeconds?: number | null }
   | { type: 'startupEffect'; enabled: boolean };
 
@@ -84,6 +109,14 @@ export function dimmed(e: LedEffect, percent: number): LedEffect {
     default:
       return e;
   }
+}
+
+/** The percentage `idle` dims `active` by (G Hub's "Dim Active Effect"), or null if it is something else. */
+export function dimPercentOf(active: LedEffect, idle: LedEffect): number | null {
+  if (active.type === 'off' || active.type !== idle.type) return null;
+  const want = JSON.stringify(idle);
+  for (let pct = 100; pct >= 1; pct--) if (JSON.stringify(dimmed(active, pct)) === want) return pct;
+  return null;
 }
 
 /** Put an effect in the LED slot G Hub would use and switch the other slot off. */
@@ -192,8 +225,71 @@ export class MouseService {
         const sw = await this.software();
         return profiles.map((p, k) => this.view(k + 1, p, sectors, profileSoftware(sw, k + 1)));
       })(),
-      capabilities: { dpi: range, reportRatesHz: (await m.getReportRates()).map(msToHz), dpiPresets: DPI_PRESETS.map((p) => p.name) },
+      capabilities: {
+        dpi: range,
+        reportRatesHz: (await m.getReportRates()).map(msToHz),
+        dpiPresets: DPI_PRESETS.map(({ name, levels, defaultIndex, shiftIndex }) => ({ name, levels, defaultIndex, shiftIndex })),
+        lighting: { ...EFFECT_LIMITS, inactivity: INACTIVITY_CHOICES },
+      },
     };
+  }
+
+  /**
+   * The few readings that change while the mouse is used. Fails fast with MouseUnavailableError
+   * while it sleeps, instead of waiting for it to wake.
+   */
+  live(): Promise<MouseLive> {
+    return this.exclusive(async () => {
+      const m = this.mouse;
+      const mode = OnboardProfiles.decodeMode(await m.callOnce(Feature.ONBOARD_PROFILES, OnboardProfiles.GET_MODE));
+      const dpi = await m.getDpi();
+      return {
+        mode,
+        activeProfile: await m.getActiveProfile(),
+        dpi: { current: dpi.dpi, level: mode === 'onboard' ? await m.getDpiIndex() : null },
+        battery: await m.getBattery(),
+      };
+    });
+  }
+
+  /** Read every user sector of the onboard memory. */
+  backup(): Promise<MouseBackup> {
+    return this.exclusive(async () => {
+      const { sectorCount } = await this.mouse.getOnboardDescription();
+      const sectors: Record<string, string> = {};
+      for (let s = 0; s < sectorCount; s++) sectors[s] = toHex(await this.mouse.readSector(s));
+      return { device: (await this.mouse.getInfo()).name, savedAt: new Date().toISOString(), sectors };
+    });
+  }
+
+  /**
+   * Write a backup back: only the sectors that differ, then reload the active profile. The whole
+   * file is checked before anything is written.
+   */
+  restore(backup: MouseBackup, onSector?: (sector: number) => void): Promise<number[]> {
+    return this.exclusive(async () => {
+      const { sectorCount, sectorSize } = await this.mouse.getOnboardDescription();
+      const entries = Object.entries(backup?.sectors ?? {});
+      if (!entries.length) throw new Error('this is not a mouse backup (no sectors)');
+      const wanted = entries.map(([s, hex]) => {
+        const sector = Number(s);
+        if (!Number.isInteger(sector) || sector < 0 || sector >= sectorCount) throw new Error(`the backup has sector ${s}; the mouse has 0..${sectorCount - 1}`);
+        if (!/^[0-9a-f]{2}( [0-9a-f]{2})*$/i.test(String(hex))) throw new Error(`sector ${s} in the backup is not hex bytes`);
+        const bytes = fromHex(String(hex));
+        if (bytes.length !== sectorSize) throw new Error(`sector ${s} in the backup is ${bytes.length} bytes, not ${sectorSize}`);
+        return { sector, bytes };
+      });
+      const restored: number[] = [];
+      for (const { sector, bytes } of wanted) {
+        if (toHex(await this.mouse.readSector(sector)) === toHex(bytes)) continue;
+        if (bytes.every((b) => b === 0xff)) await this.mouse.eraseSector(sector);
+        else await this.mouse.writeSector(sector, bytes);
+        restored.push(sector);
+        onSector?.(sector);
+      }
+      if ((await this.mouse.getMode()) === 'onboard') await this.mouse.setActiveProfile(await this.mouse.getActiveProfile()).catch(() => undefined);
+      return restored;
+    });
   }
 
   private async assign(slot: number, control: string, layer: Layer, a: Assignment): Promise<void> {
@@ -262,9 +358,12 @@ export class MouseService {
   }
 
   /** Read a profile, change it, write it back. */
+  /** Read a profile, change it, write it back; a change that changes nothing writes nothing (flash wears). */
   async editProfile(slot: number, change: (p: Profile) => Profile | void): Promise<void> {
     const p = await this.mouse.readProfile(slot);
+    const before = toHex(p.raw);
     const next = change(p) ?? p;
+    if (toHex(withCrc(encodeProfile(next))) === before) return;
     await this.mouse.writeProfile(slot, next);
   }
 
@@ -329,16 +428,21 @@ export class MouseService {
           s.freestyle = a.colors;
         });
       }
-      case 'lighting':
+      case 'lighting': {
+        const effect = typeof a.effect === 'string' && a.effect !== 'dim' ? parseEffect(a.effect) : a.effect;
         return this.editProfile(a.profile, (p) => {
-          if (a.effect === 'dim') {
+          if (effect === 'dim') {
             p.lighting.inactive = placeEffect(dimmed(activeOf(p.lighting.active), a.dimPercent ?? 50));
           } else if (a.target === 'active') {
-            p.lighting.active = placeEffect(a.effect);
+            // An idle lighting that dims the active effect keeps dimming it, not a copy of the old one.
+            const dim = dimPercentOf(activeOf(p.lighting.active), activeOf(p.lighting.inactive));
+            p.lighting.active = placeEffect(effect);
+            if (dim !== null && effect.type !== 'off') p.lighting.inactive = placeEffect(dimmed(effect, dim));
           } else {
-            p.lighting.inactive = placeEffect(a.effect);
+            p.lighting.inactive = placeEffect(effect);
           }
         });
+      }
       case 'inactivity':
         return this.editProfile(a.profile, (p) => {
           if (a.dimAfterSeconds !== undefined) p.dimAfterSeconds = a.dimAfterSeconds;

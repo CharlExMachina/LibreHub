@@ -6,6 +6,12 @@ contextBridge.exposeInMainWorld('a50x', {
   snapshot: () => ipcRenderer.invoke('a50x:snapshot'),
   apply: (action) => ipcRenderer.invoke('a50x:apply', action),
   onChanged: (listener) => ipcRenderer.on('a50x:changed', (_event, what) => listener(what)),
+  access: {
+    status: () => ipcRenderer.invoke('access:status'),
+    allow: () => ipcRenderer.invoke('access:allow'),
+    remove: () => ipcRenderer.invoke('access:remove'),
+    manual: () => ipcRenderer.invoke('access:manual'),
+  },
   audio: {
     status: () => ipcRenderer.invoke('audio:status'),
     setup: () => ipcRenderer.invoke('audio:setup'),
@@ -29,6 +35,9 @@ contextBridge.exposeInMainWorld('a50x', {
 
 contextBridge.exposeInMainWorld('g502x', {
   snapshot: () => ipcRenderer.invoke('g502x:snapshot'),
+  live: () => ipcRenderer.invoke('g502x:live'),
   apply: (action) => ipcRenderer.invoke('g502x:apply', action),
+  backup: () => ipcRenderer.invoke('g502x:backup'),
+  restore: () => ipcRenderer.invoke('g502x:restore'),
   onChanged: (listener) => ipcRenderer.on('g502x:changed', (_event, what) => listener(what)),
 });

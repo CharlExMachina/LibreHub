@@ -1,7 +1,7 @@
 # LibreHub
 
-Control Logitech gear without G Hub: the **A50 X** headset and the **G502 X PLUS** mouse. Each
-has a small library and a CLI (`a50x`, `g502x`), and the A50 X has a desktop app, **Libre Hub**.
+Control Logitech gear without G Hub: the **A50 X** headset and the **G502 X PLUS** mouse, from
+one desktop app, **Libre Hub**, or one command, `librehub`.
 The goal is Linux, where G Hub doesn't exist. Everything here also runs on macOS. The A50 X has
 been verified against the real headset on both platforms, the G502 X PLUS on macOS.
 
@@ -39,6 +39,11 @@ normal system input volume (PipeWire/PulseAudio/ALSA on Linux).
 
 ## The app
 
+The sidebar lists both devices; pick one to see its pages. Each shows whether it's connected and
+its battery. The tray menu shows both batteries too.
+
+### A50 X
+
 - **Overview:** battery, Bluetooth, volume and mute (`Ctrl+M`), game/voice balance, sidetone,
   and one-click EQ presets and noise gate.
 - **Headphones / Microphone:** a 10-band EQ you draw on directly. Drag a point, or focus it
@@ -52,8 +57,32 @@ normal system input volume (PipeWire/PulseAudio/ALSA on Linux).
 
 Every change applies immediately and is stored on the headset. Changes made on the headset
 itself (such as its volume wheel) show up in the app as they happen. If the app can't reach
-the headset it says why: base station not plugged in, no permission (with the udev commands
-to copy), or the headset not answering. `Ctrl+1`…`Ctrl+5` switch pages.
+the headset it says why: base station not plugged in, no permission (with a button that allows
+access, see below), or the headset not answering. `Ctrl+1`…`Ctrl+5` switch pages.
+
+### G502 X PLUS
+
+- **Overview:** battery, the active profile and DPI level (switch either with one click), the
+  lighting at a glance, and whether computer actions are running. If G Hub left the mouse in
+  software mode, a banner puts it back on its saved profiles.
+- **Sensitivity:** up to five DPI levels (100–25600 in steps of 50), which one the profile starts
+  at and which one the sniper button holds, G Hub's DPI presets, and the report rate.
+- **Buttons:** what each of the 13 controls does, on the normal layer and while G-Shift is held:
+  mouse buttons, keys and key combinations (press them to record them), media keys, DPI and
+  profile functions, macros (typed, or recorded from your keyboard), text, double click, opening
+  an app, file or website, running a command, default or disabled.
+- **Lighting:** the effect (fixed, breathing, colour cycle, colour wave, Pulsar Point, off) with
+  its colour, speed, brightness and direction; what happens when idle (dimmed, breathing, Neutron
+  Null or off) and when; and Freestyle, a colour per LED.
+- **Settings:** the five profiles (switch, enable, rename, restore factory settings), on-board
+  memory mode, the startup effect, whether computer actions are running, backup and restore of
+  the mouse's whole memory, and device details.
+
+Sensitivity, Buttons and Lighting edit one profile at a time; tabs at the top pick which. Every
+change is written to that profile on the mouse, so it keeps working with nothing running (sliders
+write when you let go). The page follows the mouse: switching profile or DPI level with its own
+buttons shows up within a couple of seconds. When the mouse sleeps the page dims until you move
+it.
 
 ## Tray, start at login and keeping your settings
 
@@ -75,7 +104,7 @@ window back. These options are on the **Settings** page:
   Both point at this checkout and are refreshed on every launch.
 
 Turning "Keep" on saves what the headset has at that moment. After that, every change you make
-in the app or with `a50x set` updates the saved settings, as do volume wheel changes while the
+in the app or with `librehub headset set` updates the saved settings, as do volume wheel changes while the
 app runs. Changes made on the headset while the app isn't running count as drift and get put
 back. Saved settings live in `restore.json` next to `presets.json`.
 
@@ -90,7 +119,7 @@ Game/Voice balance mixes. PipeWire's default profile only exposes the Voice one,
 all desktop audio lands in the chat channel, and sliding the balance toward Game just turns
 everything down.
 
-**Settings → Game and chat audio → Split** (or `a50x audio setup`) fixes this for your user,
+**Settings → Game and chat audio → Split** (or `librehub headset audio setup`) fixes this for your user,
 with no root needed:
 
 - **A50 X Game** becomes the default output: games, browser, music.
@@ -105,7 +134,7 @@ Under the hood it installs `linux/wireplumber/51-logitech-a50x.conf` into
 `~/.config/wireplumber/wireplumber.conf.d/` and `logitech-a50x-chat.lua` into
 `~/.local/share/wireplumber/scripts/`. The first switches the card to its Pro Audio profile and
 names the devices; the second routes chat apps. It needs PipeWire with WirePlumber 0.5 or newer.
-**Turn off** (or `a50x audio undo`) removes both files and puts the card back on its normal
+**Turn off** (or `librehub headset audio undo`) removes both files and puts the card back on its normal
 profile.
 
 ### Live levels
@@ -133,7 +162,7 @@ nothing.
 ## G502 X PLUS: what it controls
 
 The mouse keeps five profiles in its own memory, and G Hub's "on-board memory mode" runs from
-them. `g502x` edits those profiles directly. Settings take effect at once and stay on the mouse,
+them. Libre Hub and `librehub mouse` edit those profiles directly. Settings take effect at once and stay on the mouse,
 with nothing running in the background, which is what you want on Linux.
 
 | Setting | G Hub equivalent | Status |
@@ -185,8 +214,17 @@ chmod +x ~/Applications/Libre-Hub-x86_64.AppImage
 ~/Applications/Libre-Hub-x86_64.AppImage
 ```
 
-It doesn't need FUSE 2. On first run it adds Libre Hub to your application menu. If it can't open
-the base station yet, it shows the one-time udev command to copy (see below for what it does).
+It doesn't need FUSE 2. On first run it adds Libre Hub to your application menu.
+
+**Device access.** Linux only lets an app open the headset's base station and the mouse's
+receiver after you allow it, once. The first time, Libre Hub shows **Allow access**: click it and
+your desktop asks for your password (KDE, GNOME and most desktops have this dialog). It installs
+one udev rule, `/etc/udev/rules.d/70-libre-hub.rules` (from
+[linux/70-libre-hub.rules](linux/70-libre-hub.rules)), and the devices connect right away, with no
+replugging. **Settings → Libre Hub → Device access** shows whether it's set up, and updates or
+removes it. On a desktop without a password dialog, the app shows the equivalent commands instead.
+Under the hood it runs a small helper, `~/.local/share/libre-hub/allow-device-access`, through
+`pkexec`; that's the program the password dialog names.
 
 **Updates** install themselves. Libre Hub checks GitHub every few hours, downloads a new
 release in the background, and installs it when you quit. To update right away, use
@@ -200,66 +238,75 @@ git clone git@github.com:CharlExMachina/LibreHub.git
 cd LibreHub
 npm ci
 
-# let your desktop user open the devices' HID interfaces (once)
-sudo cp linux/70-logitech-a50x.rules linux/70-logitech-g502x.rules /etc/udev/rules.d/
+# let your desktop user open the devices' HID interfaces (once; the app's Allow access does the same)
+sudo cp linux/70-libre-hub.rules /etc/udev/rules.d/
 sudo udevadm control --reload-rules && sudo udevadm trigger
-# unplug and replug the base station / receiver
-# (the rules must sort before systemd's 73-seat-late.rules, hence the 70- prefix)
+# (the rule must sort before systemd's 73-seat-late.rules, hence the 70- prefix)
 
 npm run build
-npm run cli -- status     # A50 X CLI
-npm run mouse -- status   # G502 X PLUS CLI
+npm run cli -- status     # the librehub command: both devices
 npm start                 # Electron app
 npm run dist              # AppImage in release/
 ```
 
-## A50 X CLI
+## CLI
+
+`librehub` controls both devices, through the same code as the app:
 
 ```
-a50x status [--json]
-a50x set sidetone <0-6> | volume <0-21> | mute <on|off> | balance <0-12>
-a50x set sleep <0|15|30|60> | brightness <0-100> | tones <none|all|minimal>
-a50x set noise-gate <off|home|night|tournament>
-a50x routing output <0-32> | output-mute <on|off> | <mic|game|bluetooth|voice> <0-32> | <input>-mute <on|off>
-a50x eq <mic|headphones> [preset <name> | gains g1,...,g10]
-a50x features | watch       (add --debug to see raw HID traffic)
-a50x audio [status|setup|undo]   Linux: split game and chat audio (see above)
+librehub status [--json]           both devices, whichever are connected
+librehub headset <command>         the A50 X (alias: a50x)
+librehub mouse <command>           the G502 X PLUS (alias: g502x)
 ```
 
-Run it with `npm run cli -- <args>`, or `npm link` to get `a50x` on your `PATH`. Custom EQ
-presets created in the app are stored in Electron's user-data folder
+Run it with `npm run cli -- <args>`, or `npm link` to get `librehub` on your `PATH`.
+`librehub headset help` and `librehub mouse help` list every command.
+
+### A50 X
+
+```
+librehub headset status [--json]
+librehub headset set sidetone <0-6> | volume <0-21> | mute <on|off> | balance <0-12>
+librehub headset set sleep <0|15|30|60> | brightness <0-100> | tones <none|all|minimal>
+librehub headset set noise-gate <off|home|night|tournament>
+librehub headset routing output <0-32> | output-mute <on|off> | <mic|game|bluetooth|voice> <0-32> | <input>-mute <on|off>
+librehub headset eq <mic|headphones> [preset <name> | gains g1,...,g10]
+librehub headset features | watch       (add --debug to see raw HID traffic)
+librehub headset audio [status|setup|undo]   Linux: split game and chat audio (see above)
+```
+
+Custom EQ presets created in the app are stored in Electron's user-data folder
 (`~/.config/logitech-manager/presets.json` on Linux). The CLI reads the same file, so
-`a50x eq headphones preset "<your preset>"` works too.
+`librehub headset eq headphones preset "<your preset>"` works too.
 
-## G502 X PLUS CLI
+### G502 X PLUS
 
 ```
-g502x status [--json]                      device, mode, live DPI/report rate, all five profiles
-g502x backup <file.json> | restore <file.json>   do this before experimenting
-g502x mode onboard                         run from the saved profiles (needed after G Hub)
-g502x profile <1-5>                        switch profile;  g502x dpi-level <0-4>
-g502x profile <n> dpi 800,1600,3200 --default 1 --shift 0
-g502x profile <n> dpi-preset first-person
-g502x profile <n> report-rate 1000
-g502x profile <n> button g9 key:ctrl+shift+t          (add --gshift for the G-Shift layer)
-g502x profile <n> button sniper fn:g-shift
-g502x profile <n> button g9 text:Hello, World!        stored on the mouse, works with nothing running
-g502x profile <n> button dpi-up double-click
-g502x profile <n> button back macro:ctrl+c, 50ms, ctrl+v
-g502x profile <n> button dpi-down open:https://example.com   needs the agent (run:<command> too)
-g502x profile <n> freestyle #ff0000,#ff8000,#ffff00,#00ff00,#00ffff,#0000ff,#8000ff,#ff00ff
-g502x agent                                performs open:/run: and paints Freestyle until Ctrl-C
-g502x profile <n> lighting wave:5000:horizontal:100   off | fixed:#00ffff | cycle | breathing | pulsar-point
-g502x profile <n> inactive-lighting dim:50            or neutron-null, breathing:#rrggbb
-g502x profile <n> dim-after 60 | off-after 300 | off-after never
-g502x profile <n> name "Linux" | enable | disable | restore
-g502x controls                             control names and binding syntax
-g502x startup-effect on|off
+librehub mouse status [--json]                      device, mode, live DPI/report rate, all five profiles
+librehub mouse backup <file.json> | restore <file.json>   do this before experimenting
+librehub mouse mode onboard                         run from the saved profiles (needed after G Hub)
+librehub mouse profile <1-5>                        switch profile;  librehub mouse dpi-level <0-4>
+librehub mouse profile <n> dpi 800,1600,3200 --default 1 --shift 0
+librehub mouse profile <n> dpi-preset first-person
+librehub mouse profile <n> report-rate 1000
+librehub mouse profile <n> button g9 key:ctrl+shift+t          (add --gshift for the G-Shift layer)
+librehub mouse profile <n> button sniper fn:g-shift
+librehub mouse profile <n> button g9 text:Hello, World!        stored on the mouse, works with nothing running
+librehub mouse profile <n> button dpi-up double-click
+librehub mouse profile <n> button back macro:ctrl+c, 50ms, ctrl+v
+librehub mouse profile <n> button dpi-down open:https://example.com   needs the agent (run:<command> too)
+librehub mouse profile <n> freestyle #ff0000,#ff8000,#ffff00,#00ff00,#00ffff,#0000ff,#8000ff,#ff00ff
+librehub mouse agent                                performs open:/run: and paints Freestyle until Ctrl-C
+librehub mouse profile <n> lighting wave:5000:horizontal:100   off | fixed:#00ffff | cycle | breathing | pulsar-point
+librehub mouse profile <n> inactive-lighting dim:50            or neutron-null, breathing:#rrggbb
+librehub mouse profile <n> dim-after 60 | off-after 300 | off-after never
+librehub mouse profile <n> name "Linux" | enable | disable | restore
+librehub mouse controls                             control names and binding syntax
+librehub mouse startup-effect on|off
 ```
 
-Run it with `npm run mouse -- <args>`, or `npm link` to get `g502x` on your `PATH`. If G Hub
-left the mouse in software mode, run `g502x mode onboard` once (the mouse also returns to
-on-board mode by itself after it has been asleep).
+If G Hub left the mouse in software mode, run `librehub mouse mode onboard` once, or use the
+banner in the app (the mouse also returns to on-board mode by itself after it has been asleep).
 
 ### The agent: software actions and Freestyle
 
@@ -267,12 +314,12 @@ on-board mode by itself after it has been asleep).
 (`~/.config/logitech-manager/g502x.json`), like G Hub keeps them. The mouse stores those
 controls as "disabled" and reports each press; the agent performs the action and keeps the
 Freestyle colours painted after profile switches and wake-ups. The app runs the agent while it
-runs, also when it is hidden in the tray. Without the app, run `g502x agent`, or install it as a user service on Linux:
+runs, also when it is hidden in the tray. Without the app, run `librehub mouse agent`, or install it as a user service on Linux:
 
 ```bash
 npm link
 mkdir -p ~/.config/systemd/user && cp linux/g502x-agent.service ~/.config/systemd/user/
-systemctl --user daemon-reload && systemctl --user enable --now g502x-agent
+systemctl --user daemon-reload && systemctl --user enable --now g502x-agent   # runs `librehub mouse agent`
 ```
 
 Quit G Hub while the agent runs: it takes the lighting back. On macOS G Hub can restart itself
@@ -296,7 +343,7 @@ installed copies don't update to.
 ## Tests
 
 ```bash
-npm test                       # unit + simulated-device tests (238), no hardware needed
+npm test                       # unit + simulated-device tests (241), no hardware needed
 npm run test:hardware          # 12 tests against a connected A50 X
 npm run test:hardware:mouse    # 15 tests against a G502 X PLUS (quit G Hub first)
 ```
@@ -321,7 +368,7 @@ npm run test:hardware:mouse    # 15 tests against a G502 X PLUS (quit G Hub firs
   [GHUB-INTERNALS.md](docs/GHUB-INTERNALS.md#g502-x-plus)), and the encoder reproduces sectors
   G Hub wrote byte for byte. Lighting was checked by encoding, not by eye.
 - **G502 X PLUS macros, agent and Freestyle, macOS:** all 15 hardware tests pass. A hands-on
-  check through the CLI and `g502x agent`, with a person pressing the buttons
+  check through the CLI and its agent, with a person pressing the buttons
   (`tools/re/g502x-handson.mjs`), passed: the mouse double-clicked a word and typed
   `Hello, World!` over it by itself, the agent ran a command on G7, the Freestyle colours
   showed and went away when the agent stopped. Results and the earlier experiments are in
@@ -360,10 +407,12 @@ src/presets/    custom EQ preset store (JSON)
 src/restore/    keeping settings: compare, restore and verify; when to check; saved state
 src/main/       Electron main process, sandboxed preload (window.a50x, window.g502x), tray, preferences,
                 desktop entries
-src/renderer/   UI: plain ES modules and CSS, no build step (fonts: Geist, OFL-1.1)
-src/cli.ts      a50x command
+src/renderer/   UI: plain ES modules and CSS, no build step (fonts: Geist, OFL-1.1); app.js is the
+                shell and the A50 X pages, mouse.js the G502 X PLUS pages
+src/cli.ts      the librehub command; src/headset-cli.ts and src/mouse/cli.ts are its two halves
 test/           unit, simulated-device and hardware tests; fixtures are real captures
-linux/          udev rules; WirePlumber rule and chat-routing script
+linux/          udev rule; WirePlumber rule and chat-routing script; agent service
+src/access/     Linux device access: the udev rule, installed through pkexec
 build/          packaging resources (the 1024 px app icon)
 docs/           protocol spec, G Hub internals and method, raw evidence
 tools/re/       the scripts used for the reverse engineering

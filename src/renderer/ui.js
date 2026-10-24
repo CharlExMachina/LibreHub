@@ -8,7 +8,13 @@ export function el(tag, attrs = {}, ...children) {
     if (v === undefined || v === null || v === false) continue;
     if (k.startsWith('on') && typeof v === 'function') node.addEventListener(k.slice(2), v);
     else if (k === 'html') node.innerHTML = v;
-    else if (k === 'style' && typeof v === 'object') Object.assign(node.style, v);
+    else if (k === 'style' && typeof v === 'object') {
+      // Custom properties (--x) only take effect through setProperty.
+      for (const [prop, val] of Object.entries(v)) {
+        if (prop.startsWith('--')) node.style.setProperty(prop, String(val));
+        else node.style[prop] = val;
+      }
+    }
     else node.setAttribute(k, v === true ? '' : String(v));
   }
   node.append(...children.flat(Infinity).filter((c) => c !== null && c !== undefined && c !== false));
@@ -20,12 +26,12 @@ export const iconEl = (name, size) => el('span', { class: 'icon-wrap', style: { 
 // ------------------------------------------------------------------ device writes
 
 /**
- * Sends actions to the headset, one at a time per control ("key"). By default only the newest value
+ * Sends actions to a device, one at a time per control ("key"). By default only the newest value
  * waits while a write is in flight, so dragging a slider streams changes at the device's pace without
  * a backlog. Discrete actions (saving or deleting presets) pass `{ coalesce: false }` so none is lost.
  * `send` resolves with the main process's answer for that action ({ superseded } / { dropped } if it never ran).
  */
-export function createWriter(onResult) {
+export function createWriter(onResult, apply = (action) => window.a50x.apply(action)) {
   const keys = new Map();
   let epoch = 0;
   const slot = (key) => keys.get(key) ?? keys.set(key, { busy: false, queue: [], touched: 0 }).get(key);
@@ -37,7 +43,7 @@ export function createWriter(onResult) {
     const mine = epoch;
     let res;
     try {
-      res = await window.a50x.apply(job.action);
+      res = await apply(job.action);
     } catch (err) {
       res = { connected: true, error: String(err?.message ?? err) };
     }
@@ -129,10 +135,11 @@ export function toast(message, { kind = 'info', action, timeout = 4200 } = {}) {
 // ------------------------------------------------------------------ controls
 
 /**
- * A slider bound to a device setting. `send(value)` runs on every change; the device's value is
- * shown again only when the user isn't holding the slider and its writes have settled.
+ * A slider bound to a device setting. `onChange(value)` runs on every change; `onCommit(value)` only
+ * when the user lets go (or per key press), for settings that shouldn't be written while dragging.
+ * The device's value is shown again only when the user isn't holding the slider and its writes have settled.
  */
-export function slider({ min, max, step = 1, label, className = 'range', quiet, onChange, onPreview, valueText }) {
+export function slider({ min, max, step = 1, label, className = 'range', quiet, onChange, onCommit, onPreview, valueText }) {
   const input = el('input', { type: 'range', class: className, min, max, step, 'aria-label': label });
   let held = false;
   let lastKey = -Infinity;
@@ -152,6 +159,19 @@ export function slider({ min, max, step = 1, label, className = 'range', quiet, 
     deferred = undefined;
     api.set(v);
   };
+  // Before the listeners below: the user's value replaces any device value that arrived meanwhile.
+  // From the keyboard each key press is a change; those are sent once the keys pause.
+  let commitTimer = 0;
+  const commit = () => { clearTimeout(commitTimer); commitTimer = 0; onCommit(Number(input.value)); };
+  if (onCommit) {
+    input.addEventListener('change', () => {
+      deferred = undefined;
+      clearTimeout(commitTimer);
+      if (performance.now() - lastKey < 600) commitTimer = setTimeout(commit, 450);
+      else commit();
+    });
+    input.addEventListener('blur', () => { if (commitTimer) commit(); });
+  }
   input.addEventListener('pointerdown', () => (held = true));
   for (const ev of ['pointerup', 'pointercancel', 'lostpointercapture', 'change']) input.addEventListener(ev, () => { held = false; flush(); });
   input.addEventListener('blur', () => { lastKey = -Infinity; flush(); });
@@ -162,7 +182,7 @@ export function slider({ min, max, step = 1, label, className = 'range', quiet, 
   });
   input.addEventListener('input', () => {
     paint();
-    onChange(Number(input.value));
+    onChange?.(Number(input.value));
   });
   const api = {
     el: input,
@@ -304,4 +324,36 @@ export function prompt({ title, body, label = 'Name', placeholder, initial = '',
     dlg.showModal();
     input.select();
   });
+}
+
+/** A yes/no question. Resolves true when confirmed. */
+export function confirmDialog({ title, body, confirm, danger = false }) {
+  return new Promise((resolve) => {
+    const dlg = el('dialog', { 'aria-labelledby': 'confirm-t' },
+      el('form', { method: 'dialog' },
+        el('h2', { id: 'confirm-t' }, title), el('p', {}, body),
+        el('div', { class: 'dialog-actions' },
+          el('button', { class: 'btn ghost', type: 'button', onclick: () => dlg.close('') }, 'Cancel'),
+          el('button', { class: `btn ${danger ? 'danger' : 'primary'}`, value: 'yes' }, confirm))));
+    dlg.addEventListener('close', () => { resolve(dlg.returnValue === 'yes'); dlg.remove(); });
+    document.body.append(dlg);
+    dlg.showModal();
+  });
+}
+
+/** Commands to copy, with a copy button. */
+export function codeBlock(text) {
+  const done = el('span', { class: 'sr-only', role: 'status' });
+  const btn = el('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Copy commands', title: 'Copy', html: icon('copy', 16) });
+  btn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      btn.innerHTML = icon('check', 16);
+      done.textContent = 'Copied';
+    } catch {
+      done.textContent = 'Couldn’t copy. Select the text instead.';
+    }
+    setTimeout(() => { btn.innerHTML = icon('copy', 16); done.textContent = ''; }, 1500);
+  });
+  return el('div', { class: 'code' }, el('pre', {}, text), btn, done);
 }

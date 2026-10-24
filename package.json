@@ -8,8 +8,7 @@
   "type": "module",
   "main": "dist/main/main.js",
   "bin": {
-    "a50x": "dist/cli.js",
-    "g502x": "dist/mouse/cli.js"
+    "librehub": "dist/cli.js"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json && node scripts/copy-static.mjs",
@@ -18,7 +17,6 @@
     "test": "vitest run test/unit test/sim",
     "test:hardware": "A50X_HARDWARE=1 vitest run test/hardware/a50x.hw.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "mouse": "node dist/mouse/cli.js",
     "test:hardware:mouse": "G502X_HARDWARE=1 vitest run test/hardware/g502x.hw.test.ts",
     "dist": "npm run build && electron-builder --linux AppImage --publish never"
   },
