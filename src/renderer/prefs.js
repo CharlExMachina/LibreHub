@@ -1,6 +1,7 @@
 // The app's own settings, shown on the Settings page: keeping the headset's settings, starting at
 // login and updates. Kept apart from the headset settings because they live on this computer.
 import { icon } from './icons.js';
+import { accessSetting } from './access.js';
 import { el, toast, toggle } from './ui.js';
 
 const ic = (name, size) => el('span', { style: { display: 'contents' }, html: icon(name, size) });
@@ -201,7 +202,8 @@ export function appCard() {
     setting('s-login', 'Start when you log in',
       'Runs in the system tray without opening this window. Closing the window keeps it there too; to quit, right-click the tray icon.',
       login.el),
-    el('div', { class: 'setting' }, el('div', {}, versionT, versionD), el('div', { class: 'control' }, updateBtn)));
+    el('div', { class: 'setting' }, el('div', {}, versionT, versionD), el('div', { class: 'control' }, updateBtn)),
+    accessSetting());
   syncs.add(() => {
     card.hidden = !state;
     if (!state) return;

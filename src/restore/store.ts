@@ -1,5 +1,5 @@
 // The settings the app keeps for each headset (by serial number), and a short history of checks.
-// Shared with the CLI, so a change made with `a50x set` is kept too.
+// Shared with the CLI, so a change made with `librehub headset set` is kept too.
 
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';

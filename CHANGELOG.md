@@ -4,6 +4,26 @@ Libre Hub follows [Semantic Versioning](https://semver.org): a **major** version
 that break something you rely on (a moved settings file, a dropped feature), a **minor** version
 for new features, a **patch** version for fixes. Each release is the tag `vX.Y.Z`.
 
+## Unreleased
+
+- **The G502 X PLUS in the app.** The sidebar now lists both devices; pick the mouse to see its
+  pages: Overview, Sensitivity (DPI levels, presets, report rate), Buttons (every control on both
+  layers: mouse buttons, keys, media keys, DPI and profile functions, macros you can type or
+  record, text, double click, opening apps and running commands), Lighting (effects, idle
+  lighting and timers, Freestyle) and Settings (profiles, on-board mode, startup effect, backup
+  and restore). Changes are saved on the mouse. The tray menu shows the mouse's battery too.
+- **One command, `librehub`,** replaces `a50x` and `g502x`: `librehub headset …` and
+  `librehub mouse …` take the same commands as before, and `librehub status` shows both devices.
+  If you run `librehub mouse agent` as a service, copy `linux/g502x-agent.service` again.
+- **Allow access with one click (Linux).** The first time, instead of commands to paste into a
+  terminal, Libre Hub shows **Allow access**: your desktop asks for your password, and both
+  devices connect right away, without replugging. Settings → Libre Hub shows whether access is set
+  up, and updates or removes it. One rule, `70-libre-hub.rules`, now covers both devices and
+  replaces `70-logitech-a50x.rules` and `70-logitech-g502x.rules` (the app removes those when it
+  installs it). If you already had them, nothing changes until you choose to update.
+- Libre Hub now connects to a device that is plugged in, or gets its udev permission, after the
+  app started. Before, it kept looking without ever retrying.
+
 ## 1.1.0 - 2026-10-22
 
 - **Check for updates now:** a small refresh button next to the firmware version, at the bottom

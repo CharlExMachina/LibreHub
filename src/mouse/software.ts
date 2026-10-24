@@ -1,7 +1,7 @@
 // The G Hub features that need the computer: actions it performs when you press a button
 // (open an app, file or URL; run a command) and Freestyle per-LED lighting. Like G Hub, these
 // live on the computer, in a small JSON file next to the app's other settings, and only work
-// while the app or `g502x agent` runs (see agent.ts). Everything else, macros included, is
+// while the app or `librehub mouse agent` runs (see agent.ts). Everything else, macros included, is
 // stored on the mouse.
 
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';

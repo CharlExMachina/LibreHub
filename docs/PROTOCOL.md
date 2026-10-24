@@ -20,7 +20,7 @@ The base station relays everything to the headset over Lightspeed.
 | Reports | report ID `0x02`; 63-byte input (usage 0x75) and 63-byte output (usage 0x76), i.e. 64 bytes on the wire |
 
 Opening the interface non-exclusively works on macOS while G Hub is running; on Linux it
-is a plain hidraw node (see `linux/70-logitech-a50x.rules`).
+is a plain hidraw node (see `linux/70-libre-hub.rules`).
 
 ## Framing
 

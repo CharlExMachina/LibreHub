@@ -2,7 +2,7 @@
 // real CLI and agent, with a person pressing buttons and looking at the LEDs (macOS: the prompts
 // are osascript dialogs). Quit G Hub first, then:  npm run build && node tools/re/g502x-handson.mjs
 //
-// It backs up the onboard memory, sets profile 1 up as below, runs `g502x agent`, asks you to
+// It backs up the onboard memory, sets profile 1 up as below, runs `librehub mouse agent`, asks you to
 // press buttons, checks the results, and restores everything (memory, mode, active profile).
 //
 //   G8 (DPI up)    double-click            stored on the mouse
@@ -15,14 +15,14 @@ import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-const cli = join(import.meta.dirname, '../../dist/mouse/cli.js');
+const cli = join(import.meta.dirname, '../../dist/cli.js');
 const dir = mkdtempSync(join(tmpdir(), 'g502x-handson-'));
 const env = { ...process.env, G502X_CONFIG: join(dir, 'g502x.json') };
 const marker = join(dir, 'agent-ran');
 const backup = join(dir, 'backup.json');
 const results = {};
 
-const g502x = (...args) => execFileSync('node', [cli, ...args], { env, encoding: 'utf8' });
+const g502x = (...args) => execFileSync('node', [cli, 'mouse', ...args], { env, encoding: 'utf8' });
 const log = (...a) => console.log(`${new Date().toISOString().slice(11, 19)} ${a.join(' ')}`);
 const esc = (s) => s.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 function dialog(text, { answer, buttons = ['OK'] } = {}) {
@@ -45,7 +45,7 @@ try {
   g502x('profile', '1', 'freestyle', '#ff0000,#ff8000,#ffff00,#00ff00,#00ffff,#0000ff,#8000ff,#ff00ff');
   log(g502x('profile', '1', 'show').trim());
 
-  agent = spawn('node', [cli, 'agent'], { env, stdio: ['ignore', 'pipe', 'pipe'] });
+  agent = spawn('node', [cli, 'mouse', 'agent'], { env, stdio: ['ignore', 'pipe', 'pipe'] });
   agent.stdout.on('data', (d) => log('agent:', d.toString().trim()));
   agent.stderr.on('data', (d) => log('agent err:', d.toString().trim()));
   await new Promise((r) => setTimeout(r, 3000));

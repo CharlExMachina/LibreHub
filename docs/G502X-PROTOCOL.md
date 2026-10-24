@@ -56,7 +56,7 @@ Every control G Hub shows for this mouse, where it lives, and how it was verifie
 | DPI speeds (up to 5) | 100–25600, step 50 | profile bytes 3–12: 5 × u16 LE, 0 = deleted level | G Hub wrote; G Hub decoded ours (`400/800/1600/0/0`) |
 | Current DPI speed (underlined) | one of the levels | profile byte 1 (default index); live: `0x8100` fn12 `setCurrentDpiIndex` | hardware test: sensor follows |
 | DPI shift speed | one of the levels | profile byte 2 (shift index) | G Hub decoded ours |
-| Report rate | 1000/500/250/125 Hz | profile byte 0 = interval in ms (1/2/4/8); live: `0x8060` fn2 | G Hub wrote and decoded; hardware test |
+| Report rate | 1000/500/250/125 Hz | profile byte 0 = interval in ms (1/2/4/8); live: `0x8060` fn2, host mode only (onboard mode answers INVALID_ARGUMENT) | G Hub wrote and decoded; hardware test |
 | Restore default settings | | copy factory profile (sector 0x0101/0x0102) | hardware test |
 | Curated sensitivity presets | Default, First Person, Third Person, MMORPG, MOBA, RTS, Simulation, Productivity | DPI table as above | from G Hub's device depot (`defaults_override.json`, model `g502x_plus`) |
 
@@ -229,7 +229,7 @@ answers every request with `8F … 08`. The client retries for a configurable ti
 |---|---|---|---|
 | 0 | getDescription | | `01 05 01 05 02 0b 10 00 ff 0a 04`: memory model 1, profile format 5, macro format 1, 5 profiles, 2 factory profiles, 11 buttons, 16 sectors of 0x00FF bytes, layout 0x0a (G-Shift), info 4 |
 | 1 / 2 | set / get mode | `[1 onboard / 2 host]` | |
-| 3 / 4 | set / get current profile | `[00][n]` (1-based) | `[00][n]`, 0 in host mode |
+| 3 / 4 | set / get current profile | `[00][n]` (1-based) | `[00][n]`, 0 in host mode. Selecting another profile starts at its default DPI level; selecting the active one again keeps the current level |
 | 5 | read | `[sector u16][offset u16]` | 16 bytes (offset + 16 must stay inside the sector, so read the last chunk at size − 16) |
 | 6 | write start | `[sector u16][offset u16][length u16]` | erases the sector |
 | 7 | write | 16 bytes | `[00][chunk count]` |
@@ -281,7 +281,8 @@ sector u16   enabled      (reserved FF)
 | 253–254 | CRC |
 
 After writing the active profile, re-select it (fn3) and the mouse applies the new settings
-immediately (hardware test: the sensor DPI changes).
+immediately (hardware test: the sensor DPI changes). It stays on its current DPI level; if that
+level was removed, it moves to the last one left (checked on Linux, 2026-10-24).
 
 ### Macros
 
@@ -325,7 +326,7 @@ Emojis and other non-ASCII text are not possible from the mouse: it can only sen
 
 ### The agent
 
-`g502x agent` (or the app, while it runs, also from the tray) does the part that needs the computer:
+`librehub mouse agent` (or the app, while it runs, also from the tray) does the part that needs the computer:
 
 1. Starts MouseButtonSpy. In onboard mode the profile keeps working normally (G9 still
    switched profile while spied, [lab.txt](evidence/g502x/lab/lab.txt) test 1), and every press
@@ -341,7 +342,7 @@ Emojis and other non-ASCII text are not possible from the mouse: it can only sen
 
 Software actions and Freestyle are kept in `g502x.json` next to the app's other settings
 (`~/.config/logitech-manager/` on Linux, `~/Library/Application Support/logitech-manager/` on
-macOS). A lock file next to it keeps the app and `g502x agent` from both acting.
+macOS). A lock file next to it keeps the app and `librehub mouse agent` from both acting.
 
 ### Freestyle
 

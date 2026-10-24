@@ -1,8 +1,14 @@
-// The A50 X product image (assets/headset.png is the full-size source; the app loads the WebP sizes).
-// `lit: false` shows it desaturated for offline states; `glow` adds the soft accent backlight.
-export function headsetArt(id, { glow = true, lit = true, small = false } = {}) {
-  const src = small ? 'assets/headset-160.webp' : 'assets/headset-640.webp';
-  return `<div class="headset-art${glow ? ' glow' : ''}${lit ? '' : ' offline'}" data-art="${id}">
+// Product images. assets/headset.png and assets/mouse.webp are the full-size sources; the app loads
+// the 640 px and 160 px WebP sizes. `lit: false` shows the device desaturated for offline states;
+// `glow` adds the soft accent backlight.
+function productArt(kind, id, { glow = true, lit = true, small = false } = {}) {
+  const src = `assets/${kind}-${small ? 160 : 640}.webp`;
+  return `<div class="product-art ${kind}-art${glow ? ' glow' : ''}${lit ? '' : ' offline'}" data-art="${id}">
     <img src="${src}" alt="" draggable="false" decoding="async" />
   </div>`;
 }
+
+/** The A50 X. */
+export const headsetArt = (id, opts) => productArt('headset', id, opts);
+/** The G502 X PLUS. */
+export const mouseArt = (id, opts) => productArt('mouse', id, opts);

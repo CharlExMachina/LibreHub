@@ -1,14 +1,12 @@
-#!/usr/bin/env node
-// g502x: command-line control for the Logitech G502 X PLUS. Same code path as the Electron app.
+// `librehub mouse`: command-line control for the Logitech G502 X PLUS. Same code path as the Electron app.
 
-import { readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { acquireAgentLock, SoftwareAgent } from './agent.js';
 import type { HidTransport } from '../device/transport.js';
 import { featureName } from './features.js';
 import { G502X } from './g502x.js';
-import { fromHex, toHex } from './hidpp.js';
+import { toHex } from './hidpp.js';
 import { G502X_CONTROLS } from './onboard.js';
 import { DPI_PRESETS, EFFECT_DEFAULTS, parseEffect } from './presets.js';
 import { MouseService, type MouseAction, type MouseSnapshot } from './service.js';
@@ -17,7 +15,7 @@ import { KEYS, MEDIA } from './usages.js';
 import { ButtonFunction } from './onboard.js';
 import { defaultSoftwareFile, FREESTYLE_LEDS, formatSoftwareAction, parseFreestyle, SoftwareStore } from './software.js';
 
-const USAGE = `usage: g502x <command>
+const USAGE = `usage: librehub mouse <command>
   status [--json]                         device, mode, live DPI/report rate, all five profiles
   mode <onboard|host>                     onboard = run from saved profiles (use this on Linux)
   profile <1-5>                           make a profile active (onboard mode)
@@ -100,7 +98,7 @@ function printProfile(p: MouseSnapshot['profiles'][number], active: boolean): vo
   for (const b of p.buttons) console.log(`  ${b.control.padEnd(11)} ${b.binding.padEnd(24)} g-shift: ${b.gshift}`);
 }
 
-function printStatus(s: MouseSnapshot): void {
+export function printStatus(s: MouseSnapshot): void {
   const fw = s.device.firmware.map((f) => `${f.name} ${f.version}`).join(', ');
   console.log(`${s.device.name}  serial ${s.device.serial}  firmware ${fw}  HID++ ${s.device.protocol}`);
   console.log(`battery        ${s.battery.percent}% (${s.battery.charging})`);
@@ -129,7 +127,7 @@ stored on the mouse as macros (they work with nothing running):
   macro:<step>, <step>, ...    steps: ctrl+c (a key or combo)  50ms (a pause)  mouse:left
                                media:mute  down:shift / up:shift  down:mouse:left  wheel:-3
 
-performed by the computer while the app or "g502x agent" runs (the mouse does nothing itself):
+performed by the computer while the app or "librehub mouse agent" runs (the mouse does nothing itself):
   open:<app, file or URL>      e.g. open:/Applications/Calculator.app  open:https://example.com
   run:<shell command>          e.g. run:firefox  run:loginctl lock-session
 
@@ -140,7 +138,7 @@ Freestyle LEDs, left to right: ${FREESTYLE_LEDS.map((l) => `${l.led} (${l.where}
 async function runAgent(svc: MouseService, store: SoftwareStore): Promise<void> {
   const lockFile = join(dirname(store.file), 'g502x-agent.lock');
   const release = acquireAgentLock(lockFile);
-  if (!release) throw new Error(`another agent is running (the app, or "g502x agent"); see ${lockFile}`);
+  if (!release) throw new Error(`another agent is running (the app, or "librehub mouse agent"); see ${lockFile}`);
   const agent = new SoftwareAgent(svc, store, { watch: true });
   agent.on('action', (e) => console.log(`${e.control}${e.layer === 'gshift' ? ' (g-shift)' : ''}: ${formatSoftwareAction(e.action)}`));
   agent.on('state', (s) => console.log(s.profile === null ? 'host mode: nothing to do until the mouse is in onboard mode' : `following profile ${s.profile}`));
@@ -158,7 +156,17 @@ async function runAgent(svc: MouseService, store: SoftwareStore): Promise<void> 
   }
 }
 
-/** Run one g502x command. `open` is injectable so tests can use a simulated receiver. */
+/** Connect and read everything (for `librehub status`); a sleeping mouse fails after `wakeTimeoutMs`. */
+export async function readMouseStatus(open: () => HidTransport = openReceiver, wakeTimeoutMs = 3000): Promise<MouseSnapshot> {
+  const mouse = await G502X.connect(open(), { wakeTimeoutMs });
+  try {
+    return await new MouseService(mouse, new SoftwareStore(defaultSoftwareFile())).snapshot();
+  } finally {
+    mouse.close();
+  }
+}
+
+/** Run one `librehub mouse` command. `open` is injectable so tests can use a simulated receiver. */
 export async function runCli(raw: string[], open: () => HidTransport = openReceiver): Promise<void> {
   const { args: argv, opts } = parseArgs(raw);
   const { json, debug } = opts;
@@ -194,24 +202,14 @@ export async function runCli(raw: string[], open: () => HidTransport = openRecei
         return await profileCommand(svc, int(args[0], 'profile'), args.slice(1), opts);
       case 'backup': {
         if (!args[0]) throw new Error('backup needs a file name');
-        const { sectorCount } = await mouse.getOnboardDescription();
-        const sectors: Record<string, string> = {};
-        for (let s = 0; s < sectorCount; s++) sectors[s] = toHex(await mouse.readSector(s));
-        writeFileSync(args[0], JSON.stringify({ device: (await mouse.getInfo()).name, savedAt: new Date().toISOString(), sectors }, null, 1));
-        console.log(`saved ${sectorCount} sectors to ${args[0]}`);
+        const backup = await svc.backup();
+        writeFileSync(args[0], JSON.stringify(backup, null, 1));
+        console.log(`saved ${Object.keys(backup.sectors).length} sectors to ${args[0]}`);
         return;
       }
       case 'restore': {
         if (!args[0]) throw new Error('restore needs a file name');
-        const saved = JSON.parse(readFileSync(args[0], 'utf8')) as { sectors: Record<string, string> };
-        for (const [s, hex] of Object.entries(saved.sectors)) {
-          const want = fromHex(hex);
-          if (toHex(await mouse.readSector(+s)) === hex) continue;
-          if (want.every((b) => b === 0xff)) await mouse.eraseSector(+s);
-          else await mouse.writeSector(+s, want);
-          console.log(`sector ${s} restored`);
-        }
-        if ((await mouse.getMode()) === 'onboard') await mouse.setActiveProfile(await mouse.getActiveProfile()).catch(() => undefined);
+        await svc.restore(JSON.parse(readFileSync(args[0], 'utf8')), (s) => console.log(`sector ${s} restored`));
         return;
       }
       case 'features':
@@ -288,12 +286,4 @@ async function profileCommand(svc: MouseService, profile: number, args: string[]
     default:
       throw new Error(`unknown profile command "${sub}"\n\n${USAGE}`);
   }
-}
-
-const invokedDirectly = process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url));
-if (invokedDirectly) {
-  runCli(process.argv.slice(2)).catch((err) => {
-    console.error((err as Error).message);
-    process.exit(1);
-  });
 }

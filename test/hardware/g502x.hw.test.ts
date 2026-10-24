@@ -96,17 +96,22 @@ describe.skipIf(!enabled)('G502 X PLUS hardware', { timeout: 60000 }, () => {
     expect((await mouse.getDpi()).dpi).toBe(dpi);
   });
 
-  it('live report rate: set, read back, restore', async () => {
-    const rate = await mouse.getReportRate();
-    const alt = rate === 2 ? 4 : 2;
-    try {
-      await mouse.setReportRate(alt);
-      expect(await mouse.getReportRate()).toBe(alt);
-    } finally {
-      await mouse.setReportRate(rate);
-    }
-    expect(await mouse.getReportRate()).toBe(rate);
-  });
+  it('live report rate: refused in onboard mode; in host mode set, read back, restore', () =>
+    withOnboard(async () => {
+      // The active profile sets the report rate in onboard mode (Linux, 2026-10-24: INVALID_ARGUMENT).
+      await expect(mouse.setReportRate((await mouse.getReportRate()) === 2 ? 4 : 2)).rejects.toThrow(/INVALID_ARGUMENT/);
+      await mouse.setMode('host');
+      const rate = await mouse.getReportRate();
+      const alt = rate === 2 ? 4 : 2;
+      try {
+        await mouse.setReportRate(alt);
+        expect(await mouse.getReportRate()).toBe(alt);
+      } finally {
+        await mouse.setReportRate(rate);
+      }
+      expect(await mouse.getReportRate()).toBe(rate);
+      await mouse.setMode('onboard');
+    }));
 
   it('onboard mode: switching profiles and DPI levels changes what the sensor runs', () =>
     withOnboard(async () => {
@@ -115,6 +120,9 @@ describe.skipIf(!enabled)('G502 X PLUS hardware', { timeout: 60000 }, () => {
       const enabledSlots = profiles.map((p, k) => (p.enabled ? k + 1 : 0)).filter(Boolean);
       expect(enabledSlots.length).toBeGreaterThan(1);
       for (const slot of enabledSlots) {
+        // Selecting the profile that is already active keeps the current DPI level; selecting
+        // another one starts at its default level. Come from another profile, as a switch does.
+        if ((await mouse.getActiveProfile()) === slot) await mouse.setActiveProfile(enabledSlots.find((s) => s !== slot)!);
         await mouse.setActiveProfile(slot);
         const p = profiles[slot - 1];
         expect(await mouse.getActiveProfile()).toBe(slot);
@@ -125,6 +133,8 @@ describe.skipIf(!enabled)('G502 X PLUS hardware', { timeout: 60000 }, () => {
           expect(await mouse.getDpiIndex()).toBe(level);
           expect((await mouse.getDpi()).dpi).toBe(p.dpiLevels[level]);
         }
+        await mouse.setActiveProfile(slot);
+        expect(await mouse.getDpiIndex()).toBe(p.dpiLevels.length - 1);
       }
       await expect(mouse.setActiveProfile(profiles.findIndex((p) => !p.enabled) + 1)).rejects.toThrow(/disabled/);
     }));

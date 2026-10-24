@@ -1,0 +1,13 @@
+# Libre Hub: let the person logged in at this computer open the Logitech devices it manages,
+# without root. The app installs this itself (Settings → Libre Hub → Device access), after
+# asking for your password. To install it by hand:
+#   sudo cp linux/70-libre-hub.rules /etc/udev/rules.d/
+#   sudo udevadm control --reload-rules && sudo udevadm trigger
+# The file must sort before systemd's 73-seat-late.rules, which turns the uaccess tag into an
+# ACL for the active user; a tag added later (e.g. in a 99- file) is silently ignored.
+
+# A50 X base station (vendor HID interface)
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="0b0b", TAG+="uaccess"
+# G502 X PLUS: its Lightspeed receiver, and the mouse itself on its cable
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="c547", TAG+="uaccess"
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="c095", TAG+="uaccess"
