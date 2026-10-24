@@ -4,7 +4,7 @@ Libre Hub follows [Semantic Versioning](https://semver.org): a **major** version
 that break something you rely on (a moved settings file, a dropped feature), a **minor** version
 for new features, a **patch** version for fixes. Each release is the tag `vX.Y.Z`.
 
-## Unreleased
+## 1.3.0 - 2026-10-24
 
 - **A new look:** neutral greys with a blue accent, in a dark and a light version. Settings →
   Libre Hub → Appearance picks light, dark or whichever your system uses.
