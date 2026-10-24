@@ -6,7 +6,10 @@ command comes with a [build from source](#build-from-source-linux).
 The goal is Linux, where G Hub doesn't exist. Everything here also runs on macOS. The A50 X has
 been verified against the real headset on both platforms, the G502 X PLUS on macOS.
 
-![The app's overview page](docs/screenshots/app-overview.png)
+<picture>
+  <source media="(prefers-color-scheme: light)" srcset="docs/screenshots/a50x-overview-light.webp">
+  <img alt="Libre Hub's overview page for the A50 X headset" src="docs/screenshots/a50x-overview.webp">
+</picture>
 
 The protocols were reverse-engineered from G Hub and the devices themselves:
 
@@ -54,7 +57,15 @@ its battery. The tray menu shows both batteries too.
   output level, i.e. what the base station sends to a capture card or streaming PC. On Linux,
   with game and chat audio split, each strip has a live level meter (see below).
 - **Settings:** sleep timer, headset tones, base station brightness, keeping your settings,
-  start at login, and device details.
+  start at login, appearance (light, dark or the system's, and clear or tinted glass) and device
+  details.
+
+| | |
+|---|---|
+| ![Headphones: the 10-band EQ with the Gaming preset](docs/screenshots/a50x-headphones.webp) | ![Microphone: noise gate, live level and mic EQ](docs/screenshots/a50x-microphone.webp) |
+| **Headphones:** draw the EQ, or pick a preset | **Microphone:** noise gate with the live mic level |
+| ![Stream Mix: a channel strip per source with live meters](docs/screenshots/a50x-stream-mix.webp) | ![Settings: headset, base station and app settings](docs/screenshots/a50x-settings.webp) |
+| **Stream Mix:** what your stream gets, metered live | **Settings:** the headset, the base station and the app |
 
 Every change applies immediately and is stored on the headset. Changes made on the headset
 itself (such as its volume wheel) show up in the app as they happen. If the app can't reach
@@ -78,6 +89,15 @@ access, see below), or the headset not answering. `Ctrl+1`…`Ctrl+5` switch pag
 - **Settings:** the five profiles (switch, enable, rename, restore factory settings), on-board
   memory mode, the startup effect, whether computer actions are running, backup and restore of
   the mouse's whole memory, and device details.
+
+| | |
+|---|---|
+| ![G502 X PLUS overview: battery, profile, DPI and lighting](docs/screenshots/g502x-overview.webp) | ![Sensitivity: DPI levels, presets and report rate](docs/screenshots/g502x-sensitivity.webp) |
+| **Overview:** profile, DPI level and lighting at a glance | **Sensitivity:** DPI levels, G Hub's presets, report rate |
+| ![Buttons: what every control does](docs/screenshots/g502x-buttons.webp) | ![Assigning a button: mouse buttons, keys, media keys, macros and more](docs/screenshots/g502x-button-dialog.webp) |
+| **Buttons:** every control, on both layers | **Assigning a button:** keys, macros, text, apps and more |
+| ![Lighting: effects, idle lighting and Freestyle, scrolled under the profile bar](docs/screenshots/g502x-lighting.webp) | |
+| **Lighting:** effects, idle lighting and Freestyle | |
 
 Sensitivity, Buttons and Lighting edit one profile at a time; tabs at the top pick which. Every
 change is written to that profile on the mouse, so it keeps working with nothing running (sliders

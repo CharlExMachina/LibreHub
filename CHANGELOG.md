@@ -4,6 +4,16 @@ Libre Hub follows [Semantic Versioning](https://semver.org): a **major** version
 that break something you rely on (a moved settings file, a dropped feature), a **minor** version
 for new features, a **patch** version for fixes. Each release is the tag `vX.Y.Z`.
 
+## Unreleased
+
+- **A new look:** neutral greys with a blue accent, in a dark and a light version. Settings →
+  Libre Hub → Appearance picks light, dark or whichever your system uses.
+- **Liquid glass where something floats over the page.** Toasts, and the profile bar on the mouse's
+  pages, which stays in view while the page scrolls under it, are glass that bends what's behind
+  it. Settings → Libre Hub → Liquid glass makes it Clear or Tinted (more opaque, more contrast);
+  it's Tinted on its own when the system asks for reduced transparency. The glass is drawn by
+  Chromium's compositor, so it costs nothing while nothing on screen changes.
+
 ## 1.2.0 - 2026-10-24
 
 - **The G502 X PLUS in the app.** The sidebar now lists both devices; pick the mouse to see its

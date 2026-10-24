@@ -1,4 +1,4 @@
-// App preferences (not headset settings): notifications and keeping the headset's settings.
+// App preferences (not headset settings): notifications, keeping the headset's settings and the appearance.
 
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
@@ -10,12 +10,23 @@ export interface Prefs {
   notifyRestores: boolean;
   /** The one-time "still running in the tray" notice has been shown. */
   trayHintShown: boolean;
+  /** Light or dark, or whatever the system uses. */
+  theme: Theme;
+  /** Liquid glass that lets the content through, or a more opaque one with more contrast. */
+  glass: Glass;
 }
+
+export type Theme = 'system' | 'light' | 'dark';
+export const THEMES: readonly Theme[] = ['system', 'light', 'dark'];
+export type Glass = 'clear' | 'tinted';
+export const GLASSES: readonly Glass[] = ['clear', 'tinted'];
 
 export const DEFAULT_PREFS: Prefs = {
   keepSettings: false,
   notifyRestores: true,
   trayHintShown: false,
+  theme: 'system',
+  glass: 'clear',
 };
 
 const bool = (v: unknown, fallback: boolean) => (typeof v === 'boolean' ? v : fallback);
@@ -27,6 +38,8 @@ export function normalize(raw: unknown): Prefs {
     keepSettings: bool(r.keepSettings, DEFAULT_PREFS.keepSettings),
     notifyRestores: bool(r.notifyRestores, DEFAULT_PREFS.notifyRestores),
     trayHintShown: bool(r.trayHintShown, DEFAULT_PREFS.trayHintShown),
+    theme: THEMES.includes(r.theme as Theme) ? (r.theme as Theme) : DEFAULT_PREFS.theme,
+    glass: GLASSES.includes(r.glass as Glass) ? (r.glass as Glass) : DEFAULT_PREFS.glass,
   };
 }
 

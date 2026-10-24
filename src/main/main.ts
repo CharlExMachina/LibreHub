@@ -1,6 +1,6 @@
 // Electron main process: owns the device connection and exposes it to the window over IPC.
 
-import { app, BrowserWindow, ipcMain, Menu, nativeImage, Notification, powerMonitor, screen, shell, Tray } from 'electron';
+import { app, BrowserWindow, ipcMain, Menu, nativeImage, nativeTheme, Notification, powerMonitor, screen, shell, Tray } from 'electron';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -15,7 +15,7 @@ import { ALL_GROUPS, GROUPS, type Group } from '../restore/settings.js';
 import { RestoreStore, type HistoryEntry, type Trigger } from '../restore/store.js';
 import { A50XService, type Action, type Snapshot } from '../service.js';
 import { APP_ID, APP_NAME, Autostart } from './autostart.js';
-import { loadPrefs, savePrefs, type Prefs } from './prefs.js';
+import { GLASSES, loadPrefs, savePrefs, THEMES, type Glass, type Prefs, type Theme } from './prefs.js';
 import { watchLinuxUnlock } from './session.js';
 import { Updates, type UpdateState } from './updates.js';
 import { registerMouse } from './mouse-ipc.js';
@@ -220,6 +220,12 @@ const setPrefs = (next: Prefs) => {
   savePrefs(userFile('preferences.json'), prefs);
 };
 
+// Light or dark: the window's CSS follows nativeTheme (prefers-color-scheme), and so does the colour the
+// window shows before the page paints (the window background in each).
+nativeTheme.themeSource = prefs.theme;
+const windowColor = () => (nativeTheme.shouldUseDarkColors ? '#0a0a0a' : '#f4f4f4');
+nativeTheme.on('updated', () => window?.setBackgroundColor(windowColor()));
+
 const store = new RestoreStore(userFile('restore.json'));
 const keeper = new SettingsKeeper({
   store,
@@ -308,7 +314,7 @@ function appState() {
   return {
     version: app.getVersion(),
     update: updates.state,
-    prefs: { keepSettings: prefs.keepSettings, notifyRestores: prefs.notifyRestores },
+    prefs: { keepSettings: prefs.keepSettings, notifyRestores: prefs.notifyRestores, theme: prefs.theme, glass: prefs.glass },
     openAtLogin: { supported: autostart.supported, enabled: autostart.enabled },
     tray: !!tray,
     connected: !!service,
@@ -321,6 +327,11 @@ ipcMain.handle('app:set', async (_e, patch: Record<string, unknown>) => {
     if (typeof patch.openAtLogin === 'boolean') autostart.set(patch.openAtLogin);
     const next = { ...prefs };
     for (const k of ['keepSettings', 'notifyRestores'] as const) if (typeof patch[k] === 'boolean') next[k] = patch[k];
+    if (THEMES.includes(patch.theme as Theme)) {
+      next.theme = patch.theme as Theme;
+      nativeTheme.themeSource = next.theme;
+    }
+    if (GLASSES.includes(patch.glass as Glass)) next.glass = patch.glass as Glass;
     const turnedOn = next.keepSettings && !prefs.keepSettings;
     setPrefs(next);
     // Turning it on keeps what the headset has now, not whatever was saved last time.
@@ -461,7 +472,7 @@ function createWindow(): void {
     minWidth: 920,
     minHeight: 640,
     show: false,
-    backgroundColor: '#0b0c0f',
+    backgroundColor: windowColor(),
     title: APP_NAME,
     icon: iconPath,
     webPreferences: { preload: join(here, 'preload.cjs'), contextIsolation: true, sandbox: true, nodeIntegration: false },
