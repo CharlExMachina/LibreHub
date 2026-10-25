@@ -33,7 +33,7 @@
     "@types/node": "^26.6.5",
     "electron": "^44.9.1",
     "electron-builder": "^26.15.3",
-    "liquid-glass-electron": "https://codeload.github.com/CharlExMachina/liquid-glass-electron/tar.gz/55f35dab1cd7767f4f405294d372f6c6ba988029",
+    "liquid-glass-electron": "github:CharlExMachina/liquid-glass-electron",
     "typescript": "^7.0.2",
     "vitest": "^5.0.5"
   },

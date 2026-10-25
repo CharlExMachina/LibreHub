@@ -140,10 +140,11 @@
      which is clearer still so the page reads through it as it scrolls under. Clear lets the content through;
      Tinted (Settings, or the system's reduce-transparency) is more opaque, with more contrast. The glass is
      liquid-glass-electron; its options are the --glass-* properties on each glass element (--glass-backdrop
-     takes the frost). It brightens glass by 6%, as liquidglass does; this look never did. */
-  --glass-brightness: -0.0566;
-  --glass-tint: color-mix(in oklch, var(--card) 40%, transparent);
-  --glass-frost: blur(16px) saturate(1.8);
+     takes the frost). These custom properties inherit, so the app's own names stay out of --glass-*. It brightens
+     glass by 6%, as liquidglass does; this look never did, so that is off. */
+  --glass-base-brightness: 0;
+  --toast-tint: color-mix(in oklch, var(--card) 40%, transparent);
+  --toast-frost: blur(16px) saturate(1.8);
   --bar-tint: color-mix(in oklch, var(--card) 18%, transparent);
   --bar-frost: blur(2px) saturate(1.4);
   --shadow-card: 0 1px 2px oklch(0.3 0.02 265 / 0.06);
@@ -162,7 +163,7 @@
     --warn: oklch(0.82 0.15 75);
     --neg: oklch(0.74 0.15 305);
     --bg: var(--background);
-    --glass-tint: color-mix(in oklch, var(--popover) 45%, transparent);
+    --toast-tint: color-mix(in oklch, var(--popover) 45%, transparent);
     --bar-tint: color-mix(in oklch, var(--popover) 14%, transparent);
     --shadow-card: none;
     --shadow-float: 0 1px 3px rgb(0 0 0 / 0.3), 0 24px 56px -18px rgb(0 0 0 / 0.85);
@@ -170,15 +171,15 @@
   }
 }
 
-:root[data-glass='tinted'] { --glass-tint: color-mix(in oklch, var(--card) 82%, transparent); --glass-frost: blur(24px) saturate(1.4);
+:root[data-glass='tinted'] { --toast-tint: color-mix(in oklch, var(--card) 82%, transparent); --toast-frost: blur(24px) saturate(1.4);
   --bar-tint: color-mix(in oklch, var(--card) 70%, transparent); --bar-frost: blur(12px) saturate(1.4); }
-@media (prefers-color-scheme: dark) { :root[data-glass='tinted'] { --glass-tint: color-mix(in oklch, var(--popover) 85%, transparent); --bar-tint: color-mix(in oklch, var(--popover) 75%, transparent); } }
+@media (prefers-color-scheme: dark) { :root[data-glass='tinted'] { --toast-tint: color-mix(in oklch, var(--popover) 85%, transparent); --bar-tint: color-mix(in oklch, var(--popover) 75%, transparent); } }
 @media (prefers-reduced-transparency: reduce) {
-  :root { --glass-tint: color-mix(in oklch, var(--card) 82%, transparent); --glass-frost: blur(24px) saturate(1.4);
+  :root { --toast-tint: color-mix(in oklch, var(--card) 82%, transparent); --toast-frost: blur(24px) saturate(1.4);
     --bar-tint: color-mix(in oklch, var(--card) 70%, transparent); --bar-frost: blur(12px) saturate(1.4); }
 }
 @media (prefers-reduced-transparency: reduce) and (prefers-color-scheme: dark) {
-  :root { --glass-tint: color-mix(in oklch, var(--popover) 85%, transparent); --bar-tint: color-mix(in oklch, var(--popover) 75%, transparent); }
+  :root { --toast-tint: color-mix(in oklch, var(--popover) 85%, transparent); --bar-tint: color-mix(in oklch, var(--popover) 75%, transparent); }
 }
 
 /* A control's face, registered so that hover can fade it. */
@@ -669,11 +670,11 @@ dialog p { margin: 0 0 16px; color: var(--text-2); font-size: 13px; }
 /* Floating glass over the page: what scrolls under it bends at its edge. */
 .toast {
   display: flex; align-items: center; gap: 12px; min-width: 260px; max-width: 420px;
-  padding: 11px 11px 11px 16px; border: 0 solid; border-radius: 22px; background: var(--glass-tint);
-  --glass-backdrop: var(--glass-frost); --glass-refraction: 0.6; --glass-bevel: 20;
+  padding: 11px 11px 11px 16px; border: 0 solid; border-radius: 22px; background: var(--toast-tint);
+  --glass-backdrop: var(--toast-frost); --glass-refraction: 0.6; --glass-bevel: 20;
   box-shadow: var(--shadow-float); animation: toast-in 0.4s var(--spring);
 }
-.toast.error { background: color-mix(in oklch, var(--danger) 16%, var(--glass-tint)); }
+.toast.error { background: color-mix(in oklch, var(--danger) 16%, var(--toast-tint)); }
 .toast.error > .icon { color: var(--danger); }
 .toast > .icon { color: var(--brand-text); }
 .toast .msg { flex: 1; font-size: 13px; }
