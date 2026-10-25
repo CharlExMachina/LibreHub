@@ -138,8 +138,10 @@
 
   /* Glass is only for the two things that float over the content: toasts, and the mouse pages' profile bar,
      which is clearer still so the page reads through it as it scrolls under. Clear lets the content through;
-     Tinted (Settings, or the system's reduce-transparency) is more opaque, with more contrast. See glass.js for
-     the --glass-* settings. */
+     Tinted (Settings, or the system's reduce-transparency) is more opaque, with more contrast. The glass is
+     liquid-glass-electron; its options are the --glass-* properties on each glass element (--glass-backdrop
+     takes the frost). It brightens glass by 6%, as liquidglass does; this look never did. */
+  --glass-brightness: -0.0566;
   --glass-tint: color-mix(in oklch, var(--card) 40%, transparent);
   --glass-frost: blur(16px) saturate(1.8);
   --bar-tint: color-mix(in oklch, var(--card) 18%, transparent);
@@ -668,7 +670,7 @@ dialog p { margin: 0 0 16px; color: var(--text-2); font-size: 13px; }
 .toast {
   display: flex; align-items: center; gap: 12px; min-width: 260px; max-width: 420px;
   padding: 11px 11px 11px 16px; border: 0 solid; border-radius: 22px; background: var(--glass-tint);
-  backdrop-filter: var(--glass-frost) var(--glass-filter, ); --glass-refraction: 0.6; --glass-bevel: 20;
+  --glass-backdrop: var(--glass-frost); --glass-refraction: 0.6; --glass-bevel: 20;
   box-shadow: var(--shadow-float); animation: toast-in 0.4s var(--spring);
 }
 .toast.error { background: color-mix(in oklch, var(--danger) 16%, var(--glass-tint)); }
@@ -800,8 +802,7 @@ dialog p { margin: 0 0 16px; color: var(--text-2); font-size: 13px; }
    and bending it at the edges. Only the bar is glass; the tabs on it are the usual controls. */
 .profile-bar { position: sticky; top: 12px; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 16px;
   padding: 6px 8px 6px 6px; border: 0 solid; border-radius: 20px; background: var(--bar-tint);
-  backdrop-filter: var(--bar-frost) var(--glass-filter, ); box-shadow: var(--shadow-float);
-  --glass-refraction: 0.69; --glass-bevel: 20; }
+  box-shadow: var(--shadow-float); --glass-backdrop: var(--bar-frost); --glass-refraction: 0.69; --glass-bevel: 20; }
 .profile-tabs { display: flex; gap: 4px; padding: 3px; border-radius: 14px; background: var(--well); border: 1px solid var(--line); min-width: 0; overflow-x: auto; }
 .profile-tab {
   display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px; border: 0; border-radius: 9px;

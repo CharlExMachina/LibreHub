@@ -3,6 +3,7 @@
 // headset settings because they live on this computer.
 import { icon } from './icons.js';
 import { accessSetting } from './access.js';
+import { refreshAll } from './liquid-glass.js';
 import { el, segmented, toast, toggle } from './ui.js';
 
 const ic = (name, size) => el('span', { style: { display: 'contents' }, html: icon(name, size) });
@@ -47,8 +48,13 @@ async function change(patch) {
 
 /** `openSettings` shows the Settings page (the tray menu and notifications ask for it). */
 export function initAppSettings({ openSettings }) {
-  // Tinted glass is a stylesheet switch on the whole document (styles.css, :root[data-glass]).
-  syncs.add(() => { if (state) document.documentElement.dataset.glass = state.prefs.glass ?? 'clear'; });
+  // Tinted glass is a stylesheet switch on the whole document (styles.css, :root[data-glass]); the glass
+  // then reads its CSS again, for the frost.
+  syncs.add(() => {
+    if (!state) return;
+    document.documentElement.dataset.glass = state.prefs.glass ?? 'clear';
+    refreshAll();
+  });
   window.a50x.app.onEvent((what, entry) => {
     if (what === 'open-settings') openSettings();
     if (what === 'update' && state) {

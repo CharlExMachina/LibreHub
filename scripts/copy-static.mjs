@@ -1,5 +1,6 @@
 // Copy the hand-written renderer and preload files next to the compiled main process,
-// plus the bundled fonts (latin subsets of Geist and Geist Mono, OFL-1.1).
+// plus the bundled fonts (latin subsets of Geist and Geist Mono, OFL-1.1) and the glass
+// (liquid-glass-electron, MIT), which the renderer loads as ./liquid-glass.js.
 import { cpSync, mkdirSync } from 'node:fs';
 mkdirSync('dist/renderer/fonts', { recursive: true });
 cpSync('src/renderer', 'dist/renderer', { recursive: true });
@@ -10,3 +11,5 @@ for (const [font, subsets] of [['geist', ['latin', 'latin-ext']], ['geist-mono',
     cpSync(`node_modules/@fontsource-variable/${font}/files/${file}`, `dist/renderer/fonts/${file}`);
   }
 }
+cpSync('node_modules/liquid-glass-electron/dist/liquid-glass.js', 'dist/renderer/liquid-glass.js');
+cpSync('node_modules/liquid-glass-electron/LICENSE', 'dist/renderer/liquid-glass.LICENSE');
