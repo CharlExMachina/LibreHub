@@ -103,5 +103,8 @@ specific to one device (see `tools/re/README.md`), so copy and adapt them for a 
   chunk of a multi-step write; restart the whole write session instead.
 - After a mode or profile change the device repaints its own state shortly after; anything
   you set live right before it can be overwritten (G502 per-LED colours).
+- Not every device has reports to sniff. A UVC camera's settings are control requests with no
+  echo: read every control before and after each G Hub SET and diff (MX Brio). And G Hub can't
+  decode for you if it writes its own profile whenever it sees the device.
 - Write findings to the docs as you go: the session that finds them may not be the one that
   finishes.

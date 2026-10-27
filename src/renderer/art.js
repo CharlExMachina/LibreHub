@@ -1,4 +1,4 @@
-// Product images. assets/headset.png and assets/mouse.webp are the full-size sources; the app loads
+// Product images. assets/headset.png, assets/mouse.webp and assets/camera.webp are the full-size sources; the app loads
 // the 640 px and 160 px WebP sizes. `lit: false` shows the device desaturated for offline states;
 // `glow` adds the soft accent backlight.
 function productArt(kind, id, { glow = true, lit = true, small = false } = {}) {
@@ -12,3 +12,5 @@ function productArt(kind, id, { glow = true, lit = true, small = false } = {}) {
 export const headsetArt = (id, opts) => productArt('headset', id, opts);
 /** The G502 X PLUS. */
 export const mouseArt = (id, opts) => productArt('mouse', id, opts);
+/** The MX Brio (G Hub's own picture of it, from its depot). */
+export const cameraArt = (id, opts) => productArt('camera', id, opts);

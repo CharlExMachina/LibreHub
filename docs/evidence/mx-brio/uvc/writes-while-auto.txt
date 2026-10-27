@@ -1,0 +1,9 @@
+# 2026-10-27, G Hub quit. SET_CUR on manual-value controls while their auto mode is on
+# (CT AE mode 1:2 = 08 aperture priority, CT focus auto 1:8 = 01, PU WB auto 3:11 = 01).
+# Tool: tools/re/uvc.cjs set UNIT SEL HEX; values put back afterwards.
+set 1:4 (exposure time) 38010000   -> ERR LIBUSB_TRANSFER_STALL
+set 3:4 (gain)          2000       -> ok   (read back 2000)
+set 1:6 (focus)         2800       -> ERR LIBUSB_TRANSFER_STALL
+set 3:10 (WB temp)      a00f       -> ERR LIBUSB_TRANSFER_STALL
+# restore
+set 1:4 9c000000 -> STALL (unchanged anyway), set 3:4 0000 -> ok, set 1:6 0000 -> STALL, set 3:10 8813 -> STALL

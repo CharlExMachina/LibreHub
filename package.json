@@ -4,7 +4,7 @@
   "desktopName": "com.charlexmachina.LibreHub.desktop",
   "version": "1.3.0",
   "private": true,
-  "description": "Libre Hub: manage Logitech gear without G Hub: the A50 X headset and the G502 X PLUS mouse (Linux first, works on macOS).",
+  "description": "Libre Hub: manage Logitech gear without G Hub: the A50 X headset, the G502 X PLUS mouse and the MX Brio webcam (Linux first, works on macOS).",
   "type": "module",
   "main": "dist/main/main.js",
   "bin": {
@@ -18,6 +18,7 @@
     "test:hardware": "A50X_HARDWARE=1 vitest run test/hardware/a50x.hw.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test:hardware:mouse": "G502X_HARDWARE=1 vitest run test/hardware/g502x.hw.test.ts",
+    "test:hardware:camera": "MXBRIO_HARDWARE=1 vitest run test/hardware/mxbrio.hw.test.ts",
     "dist": "npm run build && electron-builder --linux AppImage --publish never"
   },
   "engines": {
@@ -25,7 +26,9 @@
   },
   "dependencies": {
     "electron-updater": "^6.8.9",
-    "node-hid": "^3.4.0"
+    "koffi": "^3.3.4",
+    "node-hid": "^3.4.0",
+    "usb": "^2.19.1"
   },
   "devDependencies": {
     "@fontsource-variable/geist": "^5.3.0",

@@ -18,6 +18,7 @@ import { APP_ID, APP_NAME, Autostart } from './autostart.js';
 import { GLASSES, loadPrefs, savePrefs, THEMES, type Glass, type Prefs, type Theme } from './prefs.js';
 import { watchLinuxUnlock } from './session.js';
 import { Updates, type UpdateState } from './updates.js';
+import { registerCamera } from './camera-ipc.js';
 import { registerMouse } from './mouse-ipc.js';
 import { DeviceAccess, RULE_FILE } from '../access/udev.js';
 
@@ -68,6 +69,9 @@ function lose(err: unknown): { connected: false; offline: Offline } {
   return { connected: false, offline };
 }
 const mouse = registerMouse(ipcMain, () => window, { onStatus: () => refreshTray() });
+// Putting the framing back after the camera restarts is routine (G Hub does it silently too), so it
+// doesn't notify; the window says so if it's open.
+const camera = registerCamera(ipcMain, () => window, { onStatus: () => refreshTray() });
 
 // Linux: let this user open the devices, after asking for the password once (see src/access/udev.ts).
 const access = new DeviceAccess({ shippedRule: join(linuxFiles(), RULE_FILE) });
@@ -81,6 +85,7 @@ ipcMain.handle('access:allow', async () => {
     retryAt = 0;
     void connect();
     mouse.retry();
+    camera.retry();
   }
   return result;
 });
@@ -404,11 +409,13 @@ function refreshTray(): void {
   const status = !service ? 'Headset not connected' : s ? `${s.battery}% battery` : 'Connected';
   const m = mouse.status;
   const mouseStatus = !m.connected ? 'Not connected' : m.asleep ? 'Asleep' : m.battery ? `${m.battery.percent}% battery${m.battery.charging === 'charging' ? ', charging' : ''}` : 'Connected';
-  tray.setToolTip(`${APP_NAME}: ${status}${m.connected ? `\nG502 X PLUS: ${mouseStatus.toLowerCase()}` : ''}`);
+  const cam = camera.status.connected;
+  tray.setToolTip(`${APP_NAME}: ${status}${m.connected ? `\nG502 X PLUS: ${mouseStatus.toLowerCase()}` : ''}${cam ? '\nMX Brio: connected' : ''}`);
   const visible = !!window?.isVisible();
   tray.setContextMenu(Menu.buildFromTemplate([
     { label: `A50 X · ${status}`, enabled: false },
     ...(m.connected ? [{ label: `G502 X PLUS · ${mouseStatus}`, enabled: false }] : []),
+    ...(cam ? [{ label: 'MX Brio · Connected', enabled: false }] : []),
     ...(prefs.keepSettings && lastCheck ? [{ label: checkLine(lastCheck), enabled: false }] : []),
     { type: 'separator' },
     ...(updates.state.status === 'ready' ? [{ label: `Restart to update to ${updates.state.version}`, click: () => updates.install() }] : []),
@@ -577,7 +584,7 @@ function shutdown(reason: string): void {
   tray?.destroy();
   // Give the mouse a moment to stop reporting presses and take its LEDs back (a sleeping mouse
   // would not answer; don't wait for it).
-  void Promise.race([mouse.close(), new Promise((r) => setTimeout(r, 1000))]).finally(() => {
+  void Promise.race([Promise.all([mouse.close(), camera.close()]), new Promise((r) => setTimeout(r, 1000))]).finally(() => {
     // app.exit skips the window-close dance; nothing else needs saving.
     app.exit(0);
   });

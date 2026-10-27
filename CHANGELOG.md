@@ -4,6 +4,16 @@ Libre Hub follows [Semantic Versioning](https://semver.org): a **major** version
 that break something you rely on (a moved settings file, a dropped feature), a **minor** version
 for new features, a **patch** version for fixes. Each release is the tag `vX.Y.Z`.
 
+## Unreleased
+
+- **The MX Brio webcam.** The sidebar lists it next to the headset and the mouse, with a live
+  preview and everything G Hub sets on it: field of view, zoom, pan and tilt, Show Mode; auto or
+  manual exposure (shutter speed, ISO), compensation, HDR and priority; brightness, contrast,
+  saturation, vibrance, sharpness, tint, white balance and temperature; auto or manual focus;
+  anti-flicker; and the microphones on or off. Each card has G Hub's presets and your own. The
+  camera forgets its framing when it restarts, so Libre Hub puts your settings back whenever it
+  connects, like G Hub. `librehub camera …` does the same from a terminal.
+
 ## 1.3.0 - 2026-10-24
 
 - **A new look:** neutral greys with a blue accent, in a dark and a light version. Settings →

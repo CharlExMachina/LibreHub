@@ -1,0 +1,9 @@
+# 2026-10-27, G Hub quit (LogiRightSight still running). HID input reports from the MX Brio (node-hid, whole device) while a person
+# tilted the camera down and back (step 1) and closed and opened the privacy shutter (step 2). Person answered Yes: both done as asked.
+# Result: no input reports at all. Compare hid-tilt-*.txt, captured while G Hub's agent ran: 0x55 reports then.
+    24 MARK step 1 tilt
+307055 ANSWER button returned:OK, gave up:false
+319056 MARK step 2 shutter
+331733 ANSWER button returned:OK, gave up:false
+343733 MARK end
+354905 ANSWER button returned:Yes, gave up:false

@@ -2,7 +2,7 @@
 
 The scripts used to work out the protocol. Rerun them after a firmware or G Hub update.
 They run with Node from a directory that has `ws` and `node-hid` installed
-(`npm i ws node-hid`), on macOS with G Hub installed unless noted.
+(`npm i ws node-hid`; add `usb@2` for the MX Brio scripts), on macOS with G Hub installed unless noted.
 
 | Script | Purpose |
 |---|---|
@@ -18,6 +18,8 @@ They run with Node from a directory that has `ws` and `node-hid` installed
 | `ghub-onboard-decode.mjs [--restart] [slot]` | Prints how G Hub decodes the mouse's onboard slots; `--restart` makes G Hub re-read the memory. Used as an independent check of what this project writes |
 | `extract_protos.py BINARY OUT.pb` | Finds serialized `FileDescriptorProto`s in a binary (`pip install protobuf`) |
 | `render_protos.py OUT.pb DIR` | Renders those descriptors as `.proto` text |
+| `uvc.cjs dump\|cur\|get\|set` | MX Brio: raw UVC control requests through libusb (`usb@2`). `dump` reads GET_LEN/INFO/CUR/MIN/MAX/RES/DEF of every control, `cur` every current value, `set` **writes to the camera**. Works on macOS alongside G Hub and LogiRightSight |
+| `mxbrio-ghub-diff.sh NAME PATH JSON` | MX Brio: reads every control, has G Hub SET one settings card over the websocket, reads again and prints what changed. This is how the settings map was built |
 | `lldb-hidtrace.py` | LLDB breakpoint script that logs `IOHIDDeviceSetReport` buffers (needs an ad-hoc re-signed agent copy; see GHUB-INTERNALS.md) |
 
 Safety: read with function 0 getters first. Restore anything you change, and compare

@@ -1,0 +1,20 @@
+# 2026-10-27, G Hub quit. Each line pair: controls written (raw values) and read before toggling the
+# microphone switch (peripheral XU 16), then read again once the camera had left USB and come back.
+# Names are src/camera/uvc.ts CONTROLS; values are raw (aeMode 8 = auto, 1 = manual; fov 0 = 90°).
+on  write {"zoom":150,"pan":7200,"tilt":-3600,"fov":1}
+before {"zoom":150,"pan":7200,"tilt":-3600,"fov":1,"aeMode":8,"exposureTime":156,"aePriority":1,"brightness":128}
+after  {"zoom":100,"pan":0,"tilt":0,"fov":0,"aeMode":8,"exposureTime":156,"aePriority":0,"brightness":128} gone true 4149 ms
+off write {"zoom":150,"fov":1}
+before {"zoom":150,"pan":0,"tilt":0,"fov":1,"aeMode":8,"exposureTime":156,"aePriority":0,"brightness":128}
+after  {"zoom":100,"pan":0,"tilt":0,"fov":0,"aeMode":8,"exposureTime":156,"aePriority":0,"brightness":128} gone true 6521 ms
+on  write {"zoom":150,"fov":1,"aeMode":1,"exposureTime":78}
+before {"zoom":150,"pan":0,"tilt":0,"fov":1,"aeMode":1,"exposureTime":78,"aePriority":0,"brightness":128}
+after  {"zoom":100,"pan":0,"tilt":0,"fov":0,"aeMode":8,"exposureTime":156,"aePriority":0,"brightness":128} gone true 7413 ms
+off write {"aeMode":8}
+before {"zoom":100,"pan":0,"tilt":0,"fov":0,"aeMode":8,"exposureTime":156,"aePriority":0,"brightness":128}
+after  {"zoom":100,"pan":0,"tilt":0,"fov":0,"aeMode":8,"exposureTime":156,"aePriority":0,"brightness":128} gone true 6482 ms
+# Leaving and returning (100 ms polling of libusb's device list), two more runs:
+# on:  gone at 2335 ms, back at 3351 ms; off: gone at 2730 ms, back at 3745 ms. Zoom read 100 after both.
+# Earlier, through "librehub camera" with fov 78, zoom 150, pan 2°, manual exposure 1/120, priority frame-rate kept:
+# the restore after the restart put back: fov 78°, zoom 150%, pan 2°, auto-exposure off, priority frame-rate
+# (so priority had come back as "exposure").

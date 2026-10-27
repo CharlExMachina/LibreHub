@@ -1,0 +1,129 @@
+== crop-fov78
+G Hub SET /uvc/dev00000000/crop/settings {"@type":"type.googleapis.com/logi.protocol.cards.Card","id":"","name":"","attribute":"CROP_SETTINGS","category":"","readOnly":false,"applicationId":"","profileId":"","deviceSignature":"","cropSettings":{"pan":{"value":0,"mode":"MANUAL"},"tilt":{"value":0,"mode":"MANUAL"},"zoom":{"value":100,"mode":"MANUAL"},"fov":78,"showMode":true,"manualCard":false,"rightSight":{"enabled":false}}}
+  10:5: 00 -> 01
+== crop-fov65
+G Hub SET /uvc/dev00000000/crop/settings {"@type":"type.googleapis.com/logi.protocol.cards.Card","id":"","name":"","attribute":"CROP_SETTINGS","category":"","readOnly":false,"applicationId":"","profileId":"","deviceSignature":"","cropSettings":{"pan":{"value":0,"mode":"MANUAL"},"tilt":{"value":0,"mode":"MANUAL"},"zoom":{"value":100,"mode":"MANUAL"},"fov":65,"showMode":true,"manualCard":false,"rightSight":{"enabled":false}}}
+  9:22: 1f -> 1d
+  10:5: 01 -> 02
+== crop-fov90
+G Hub SET /uvc/dev00000000/crop/settings {"@type":"type.googleapis.com/logi.protocol.cards.Card","id":"","name":"","attribute":"CROP_SETTINGS","category":"","readOnly":false,"applicationId":"","profileId":"","deviceSignature":"","cropSettings":{"pan":{"value":0,"mode":"MANUAL"},"tilt":{"value":0,"mode":"MANUAL"},"zoom":{"value":100,"mode":"MANUAL"},"fov":90,"showMode":true,"manualCard":false,"rightSight":{"enabled":false}}}
+  9:22: 1d -> 1f
+  10:5: 02 -> 00
+== crop-zoom200
+G Hub SET /uvc/dev00000000/crop/settings {"@type":"type.googleapis.com/logi.protocol.cards.Card","id":"","name":"","attribute":"CROP_SETTINGS","category":"","readOnly":false,"applicationId":"","profileId":"","deviceSignature":"","cropSettings":{"pan":{"value":0,"mode":"MANUAL"},"tilt":{"value":0,"mode":"MANUAL"},"zoom":{"value":200,"mode":"MANUAL"},"fov":90,"showMode":true,"manualCard":false,"rightSight":{"enabled":false}}}
+  1:11: 6400 -> c800
+  10:6: 6400 -> c800
+== crop-pan3600
+G Hub SET /uvc/dev00000000/crop/settings {"@type":"type.googleapis.com/logi.protocol.cards.Card","id":"","name":"","attribute":"CROP_SETTINGS","category":"","readOnly":false,"applicationId":"","profileId":"","deviceSignature":"","cropSettings":{"pan":{"value":3600,"mode":"MANUAL"},"tilt":{"value":0,"mode":"MANUAL"},"zoom":{"value":200,"mode":"MANUAL"},"fov":90,"showMode":true,"manualCard":false,"rightSight":{"enabled":false}}}
+  1:13: 0000000000000000 -> 100e000000000000
+  11:12: 0000000000000000 -> 100e000000000000
+== crop-tiltm7200
+G Hub SET /uvc/dev00000000/crop/settings {"@type":"type.googleapis.com/logi.protocol.cards.Card","id":"","name":"","attribute":"CROP_SETTINGS","category":"","readOnly":false,"applicationId":"","profileId":"","deviceSignature":"","cropSettings":{"pan":{"value":3600,"mode":"MANUAL"},"tilt":{"value":-7200,"mode":"MANUAL"},"zoom":{"value":200,"mode":"MANUAL"},"fov":90,"showMode":true,"manualCard":false,"rightSight":{"enabled":false}}}
+  1:13: 100e000000000000 -> 100e0000e0e3ffff
+  9:22: 1f -> 1d
+  11:12: 100e000000000000 -> 100e0000e0e3ffff
+== crop-reset
+G Hub SET /uvc/dev00000000/crop/settings {"@type":"type.googleapis.com/logi.protocol.cards.Card","id":"","name":"","attribute":"CROP_SETTINGS","category":"","readOnly":false,"applicationId":"","profileId":"","deviceSignature":"","cropSettings":{"pan":{"value":0,"mode":"MANUAL"},"tilt":{"value":0,"mode":"MANUAL"},"zoom":{"value":100,"mode":"MANUAL"},"fov":90,"showMode":true,"manualCard":false,"rightSight":{"enabled":false}}}
+  1:11: c800 -> 6400
+  1:13: 100e0000e0e3ffff -> 0000000000000000
+  10:6: c800 -> 6400
+  11:12: 100e0000e0e3ffff -> 0000000000000000
+== crop-show-off
+G Hub SET /uvc/dev00000000/crop/settings {"@type":"type.googleapis.com/logi.protocol.cards.Card","id":"","name":"","attribute":"CROP_SETTINGS","category":"","readOnly":false,"applicationId":"","profileId":"","deviceSignature":"","cropSettings":{"pan":{"value":0,"mode":"MANUAL"},"tilt":{"value":0,"mode":"MANUAL"},"zoom":{"value":100,"mode":"MANUAL"},"fov":90,"showMode":false,"manualCard":false,"rightSight":{"enabled":false}}}
+  10:13: 01 -> 00
+== crop-show-on
+G Hub SET /uvc/dev00000000/crop/settings {"@type":"type.googleapis.com/logi.protocol.cards.Card","id":"","name":"","attribute":"CROP_SETTINGS","category":"","readOnly":false,"applicationId":"","profileId":"","deviceSignature":"","cropSettings":{"pan":{"value":0,"mode":"MANUAL"},"tilt":{"value":0,"mode":"MANUAL"},"zoom":{"value":100,"mode":"MANUAL"},"fov":90,"showMode":true,"manualCard":false,"rightSight":{"enabled":false}}}
+  9:22: 1d -> 1f
+  10:13: 00 -> 01
+== crop-rs-on
+G Hub SET /uvc/dev00000000/crop/settings {"@type":"type.googleapis.com/logi.protocol.cards.Card","id":"","name":"","attribute":"CROP_SETTINGS","category":"","readOnly":false,"applicationId":"","profileId":"","deviceSignature":"","cropSettings":{"pan":{"value":0,"mode":"MANUAL"},"tilt":{"value":0,"mode":"MANUAL"},"zoom":{"value":100,"mode":"MANUAL"},"fov":90,"showMode":true,"manualCard":false,"rightSight":{"enabled":true}}}
+== crop-rs-off
+G Hub SET /uvc/dev00000000/crop/settings {"@type":"type.googleapis.com/logi.protocol.cards.Card","id":"","name":"","attribute":"CROP_SETTINGS","category":"","readOnly":false,"applicationId":"","profileId":"","deviceSignature":"","cropSettings":{"pan":{"value":0,"mode":"MANUAL"},"tilt":{"value":0,"mode":"MANUAL"},"zoom":{"value":100,"mode":"MANUAL"},"fov":90,"showMode":true,"manualCard":false,"rightSight":{"enabled":false}}}
+== ex-manual120
+G Hub SET /uvc/dev00000000/exposure/settings {"@type":"type.googleapis.com/logi.protocol.cards.Card","id":"","name":"","attribute":"EXPOSURE_SETTINGS","category":"","readOnly":false,"applicationId":"","profileId":"","deviceSignature":"","exposureSettings":{"exposure":{"value":120,"mode":"MANUAL"},"exposureCompensation":128,"gain":{"value":100,"mode":"MANUAL"},"hdr":true,"priority":"PRIORITY_EXPOSURE","manualCard":false}}
+  1:2: 08 -> 01
+  1:4: 9c000000 -> 4e000000
+== ex-manual30
+G Hub SET /uvc/dev00000000/exposure/settings {"@type":"type.googleapis.com/logi.protocol.cards.Card","id":"","name":"","attribute":"EXPOSURE_SETTINGS","category":"","readOnly":false,"applicationId":"","profileId":"","deviceSignature":"","exposureSettings":{"exposure":{"value":30,"mode":"MANUAL"},"exposureCompensation":128,"gain":{"value":100,"mode":"MANUAL"},"hdr":true,"priority":"PRIORITY_EXPOSURE","manualCard":false}}
+  1:4: 4e000000 -> 38010000
+== ex-gain300
+G Hub SET /uvc/dev00000000/exposure/settings {"@type":"type.googleapis.com/logi.protocol.cards.Card","id":"","name":"","attribute":"EXPOSURE_SETTINGS","category":"","readOnly":false,"applicationId":"","profileId":"","deviceSignature":"","exposureSettings":{"exposure":{"value":30,"mode":"MANUAL"},"exposureCompensation":128,"gain":{"value":300,"mode":"MANUAL"},"hdr":true,"priority":"PRIORITY_EXPOSURE","manualCard":false}}
+  3:4: 0000 -> 2000
+  9:22: 1f -> 1d
+== ex-auto
+G Hub SET /uvc/dev00000000/exposure/settings {"@type":"type.googleapis.com/logi.protocol.cards.Card","id":"","name":"","attribute":"EXPOSURE_SETTINGS","category":"","readOnly":false,"applicationId":"","profileId":"","deviceSignature":"","exposureSettings":{"exposure":{"value":60,"mode":"AUTO"},"exposureCompensation":128,"gain":{"value":100,"mode":"MANUAL"},"hdr":true,"priority":"PRIORITY_EXPOSURE","manualCard":false}}
+  1:2: 01 -> 08
+  3:4: 2000 -> 0000
+== ex-comp100
+G Hub SET /uvc/dev00000000/exposure/settings {"@type":"type.googleapis.com/logi.protocol.cards.Card","id":"","name":"","attribute":"EXPOSURE_SETTINGS","category":"","readOnly":false,"applicationId":"","profileId":"","deviceSignature":"","exposureSettings":{"exposure":{"value":60,"mode":"AUTO"},"exposureCompensation":100,"gain":{"value":100,"mode":"MANUAL"},"hdr":true,"priority":"PRIORITY_EXPOSURE","manualCard":false}}
+  10:19: 80 -> 64
+== ex-hdroff
+G Hub SET /uvc/dev00000000/exposure/settings {"@type":"type.googleapis.com/logi.protocol.cards.Card","id":"","name":"","attribute":"EXPOSURE_SETTINGS","category":"","readOnly":false,"applicationId":"","profileId":"","deviceSignature":"","exposureSettings":{"exposure":{"value":60,"mode":"AUTO"},"exposureCompensation":100,"gain":{"value":100,"mode":"MANUAL"},"hdr":false,"priority":"PRIORITY_EXPOSURE","manualCard":false}}
+  3:1: 0100 -> 0000
+== ex-prio-fr
+G Hub SET /uvc/dev00000000/exposure/settings {"@type":"type.googleapis.com/logi.protocol.cards.Card","id":"","name":"","attribute":"EXPOSURE_SETTINGS","category":"","readOnly":false,"applicationId":"","profileId":"","deviceSignature":"","exposureSettings":{"exposure":{"value":60,"mode":"AUTO"},"exposureCompensation":100,"gain":{"value":100,"mode":"MANUAL"},"hdr":false,"priority":"PRIORITY_FRAME_RATE","manualCard":false}}
+  1:3: 01 -> 00
+== ex-restore
+G Hub SET /uvc/dev00000000/exposure/settings {"@type":"type.googleapis.com/logi.protocol.cards.Card","id":"","name":"","attribute":"EXPOSURE_SETTINGS","category":"","readOnly":false,"applicationId":"","profileId":"","deviceSignature":"","exposureSettings":{"exposure":{"value":60,"mode":"AUTO"},"exposureCompensation":128,"gain":{"value":100,"mode":"MANUAL"},"hdr":true,"priority":"PRIORITY_EXPOSURE","manualCard":false}}
+  1:3: 00 -> 01
+  3:1: 0000 -> 0100
+  10:19: 64 -> 80
+== im-bright100
+G Hub SET /uvc/dev00000000/image/settings {"@type":"type.googleapis.com/logi.protocol.cards.Card","id":"","name":"","attribute":"IMAGE_SETTINGS","category":"","readOnly":false,"applicationId":"","profileId":"","deviceSignature":"","imageSettings":{"brightness":{"value":100,"mode":"MANUAL"},"contrast":{"value":128,"mode":"MANUAL"},"saturation":{"value":128,"mode":"MANUAL"},"sharpness":{"value":128,"mode":"MANUAL"},"tint":50,"vibrance":128,"whiteBalance":{"value":4679,"mode":"AUTO"},"temperatureCompensation":50,"manualCard":false}}
+  3:2: 8000 -> 6400
+== im-contrast90
+G Hub SET /uvc/dev00000000/image/settings {"@type":"type.googleapis.com/logi.protocol.cards.Card","id":"","name":"","attribute":"IMAGE_SETTINGS","category":"","readOnly":false,"applicationId":"","profileId":"","deviceSignature":"","imageSettings":{"brightness":{"value":100,"mode":"MANUAL"},"contrast":{"value":90,"mode":"MANUAL"},"saturation":{"value":128,"mode":"MANUAL"},"sharpness":{"value":128,"mode":"MANUAL"},"tint":50,"vibrance":128,"whiteBalance":{"value":4679,"mode":"AUTO"},"temperatureCompensation":50,"manualCard":false}}
+  3:3: 8000 -> 5a00
+== im-sat80
+G Hub SET /uvc/dev00000000/image/settings {"@type":"type.googleapis.com/logi.protocol.cards.Card","id":"","name":"","attribute":"IMAGE_SETTINGS","category":"","readOnly":false,"applicationId":"","profileId":"","deviceSignature":"","imageSettings":{"brightness":{"value":100,"mode":"MANUAL"},"contrast":{"value":90,"mode":"MANUAL"},"saturation":{"value":80,"mode":"MANUAL"},"sharpness":{"value":128,"mode":"MANUAL"},"tint":50,"vibrance":128,"whiteBalance":{"value":4679,"mode":"AUTO"},"temperatureCompensation":50,"manualCard":false}}
+  3:7: 8000 -> 5000
+== im-sharp70
+G Hub SET /uvc/dev00000000/image/settings {"@type":"type.googleapis.com/logi.protocol.cards.Card","id":"","name":"","attribute":"IMAGE_SETTINGS","category":"","readOnly":false,"applicationId":"","profileId":"","deviceSignature":"","imageSettings":{"brightness":{"value":100,"mode":"MANUAL"},"contrast":{"value":90,"mode":"MANUAL"},"saturation":{"value":80,"mode":"MANUAL"},"sharpness":{"value":70,"mode":"MANUAL"},"tint":50,"vibrance":128,"whiteBalance":{"value":4679,"mode":"AUTO"},"temperatureCompensation":50,"manualCard":false}}
+  3:8: 8000 -> 4600
+== im-tint60
+G Hub SET /uvc/dev00000000/image/settings {"@type":"type.googleapis.com/logi.protocol.cards.Card","id":"","name":"","attribute":"IMAGE_SETTINGS","category":"","readOnly":false,"applicationId":"","profileId":"","deviceSignature":"","imageSettings":{"brightness":{"value":100,"mode":"MANUAL"},"contrast":{"value":90,"mode":"MANUAL"},"saturation":{"value":80,"mode":"MANUAL"},"sharpness":{"value":70,"mode":"MANUAL"},"tint":60,"vibrance":128,"whiteBalance":{"value":4679,"mode":"AUTO"},"temperatureCompensation":50,"manualCard":false}}
+  10:18: 32 -> 3c
+== im-vib110
+G Hub SET /uvc/dev00000000/image/settings {"@type":"type.googleapis.com/logi.protocol.cards.Card","id":"","name":"","attribute":"IMAGE_SETTINGS","category":"","readOnly":false,"applicationId":"","profileId":"","deviceSignature":"","imageSettings":{"brightness":{"value":100,"mode":"MANUAL"},"contrast":{"value":90,"mode":"MANUAL"},"saturation":{"value":80,"mode":"MANUAL"},"sharpness":{"value":70,"mode":"MANUAL"},"tint":60,"vibrance":110,"whiteBalance":{"value":4679,"mode":"AUTO"},"temperatureCompensation":50,"manualCard":false}}
+  10:20: 80 -> 6e
+== im-tcomp40
+G Hub SET /uvc/dev00000000/image/settings {"@type":"type.googleapis.com/logi.protocol.cards.Card","id":"","name":"","attribute":"IMAGE_SETTINGS","category":"","readOnly":false,"applicationId":"","profileId":"","deviceSignature":"","imageSettings":{"brightness":{"value":100,"mode":"MANUAL"},"contrast":{"value":90,"mode":"MANUAL"},"saturation":{"value":80,"mode":"MANUAL"},"sharpness":{"value":70,"mode":"MANUAL"},"tint":60,"vibrance":110,"whiteBalance":{"value":4679,"mode":"AUTO"},"temperatureCompensation":40,"manualCard":false}}
+  10:21: 32 -> 28
+== im-wb4000
+G Hub SET /uvc/dev00000000/image/settings {"@type":"type.googleapis.com/logi.protocol.cards.Card","id":"","name":"","attribute":"IMAGE_SETTINGS","category":"","readOnly":false,"applicationId":"","profileId":"","deviceSignature":"","imageSettings":{"brightness":{"value":100,"mode":"MANUAL"},"contrast":{"value":90,"mode":"MANUAL"},"saturation":{"value":80,"mode":"MANUAL"},"sharpness":{"value":70,"mode":"MANUAL"},"tint":60,"vibrance":110,"whiteBalance":{"value":4000,"mode":"MANUAL"},"temperatureCompensation":40,"manualCard":false}}
+  3:10: 4712 -> a00f
+  3:11: 01 -> 00
+== im-restore
+G Hub SET /uvc/dev00000000/image/settings {"@type":"type.googleapis.com/logi.protocol.cards.Card","id":"","name":"","attribute":"IMAGE_SETTINGS","category":"","readOnly":false,"applicationId":"","profileId":"","deviceSignature":"","imageSettings":{"brightness":{"value":128,"mode":"MANUAL"},"contrast":{"value":128,"mode":"MANUAL"},"saturation":{"value":128,"mode":"MANUAL"},"sharpness":{"value":128,"mode":"MANUAL"},"tint":50,"vibrance":128,"whiteBalance":{"value":4679,"mode":"AUTO"},"temperatureCompensation":50,"manualCard":false}}
+  3:2: 6400 -> 8000
+  3:3: 5a00 -> 8000
+  3:7: 5000 -> 8000
+  3:8: 4600 -> 8000
+  3:11: 00 -> 01
+  10:18: 3c -> 32
+  10:20: 6e -> 80
+  10:21: 28 -> 32
+== fo-manual40
+G Hub SET /uvc/dev00000000/focus/settings {"@type":"type.googleapis.com/logi.protocol.cards.Card","id":"","name":"","attribute":"FOCUS_SETTINGS","category":"","readOnly":false,"applicationId":"","profileId":"","deviceSignature":"","focusSettings":{"focus":{"value":40,"mode":"MANUAL"},"manualCard":false}}
+  1:6: 0000 -> 2800
+  1:8: 01 -> 00
+== fo-auto
+G Hub SET /uvc/dev00000000/focus/settings {"@type":"type.googleapis.com/logi.protocol.cards.Card","id":"","name":"","attribute":"FOCUS_SETTINGS","category":"","readOnly":false,"applicationId":"","profileId":"","deviceSignature":"","focusSettings":{"focus":{"value":0,"mode":"AUTO"},"manualCard":false}}
+  1:8: 00 -> 01
+== deep-af50
+G Hub SET /uvc/dev00000000/deep/settings {"@type":"type.googleapis.com/logi.protocol.webcam.Webcam.DeepSettings","antiFlicker":50,"videoStabilization":false,"audioMode":"INVALID_MODE","stopVideoOnAppFocusLoss":true,"snapshotPath":"Webcam Snapshots"}
+  3:5: 02 -> 01
+== deep-af60
+G Hub SET /uvc/dev00000000/deep/settings {"@type":"type.googleapis.com/logi.protocol.webcam.Webcam.DeepSettings","antiFlicker":60,"videoStabilization":false,"audioMode":"INVALID_MODE","stopVideoOnAppFocusLoss":true,"snapshotPath":"Webcam Snapshots"}
+  3:5: 01 -> 02
+== mic-on
+G Hub SET /uvc/dev00000000/microphone/enable {"@type":"type.googleapis.com/google.protobuf.BoolValue","value":true}
+  1:4: 38010000 -> 9c000000
+  1:6: 2800 -> 0000
+  3:10: a00f -> 8813
+  8:8: 000000000000000000 -> ERR
+  9:22: 1f -> 40
+  10:11: 00ac -> 0000
+  11:9: 010004007f1a -> 01000400fe01
+  11:16: 00 -> 01
+  21:1: 00020005d002 -> 000000000000
