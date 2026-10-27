@@ -1,10 +1,11 @@
 # LibreHub
 
-Control Logitech gear without G Hub: the **A50 X** headset and the **G502 X PLUS** mouse, from
-one desktop app, **Libre Hub**, or one command, `librehub`. The AppImage has only the app; the
-command comes with a [build from source](#build-from-source-linux).
-The goal is Linux, where G Hub doesn't exist. Everything here also runs on macOS. The A50 X has
-been verified against the real headset on both platforms, the G502 X PLUS on macOS.
+Control Logitech gear without G Hub: the **A50 X** headset, the **G502 X PLUS** mouse and the
+**MX Brio** webcam, from one desktop app, **Libre Hub**, or one command, `librehub`. The AppImage
+has only the app; the command comes with a [build from source](#build-from-source-linux).
+The goal is Linux, where G Hub doesn't exist. Everything here also runs on macOS. The A50 X and
+the G502 X PLUS have been verified against the real devices on both platforms, the MX Brio on
+macOS (its Linux path is written and unit-tested, not yet run on a Linux machine).
 
 <picture>
   <source media="(prefers-color-scheme: light)" srcset="docs/screenshots/a50x-overview-light.webp">
@@ -16,6 +17,8 @@ The protocols were reverse-engineered from G Hub and the devices themselves:
 - A50 X: [docs/PROTOCOL.md](docs/PROTOCOL.md)
 - G502 X PLUS: [docs/G502X-PROTOCOL.md](docs/G502X-PROTOCOL.md), including a map of every G Hub
   setting to where it lives on the mouse
+- MX Brio: [docs/MXBRIO-PROTOCOL.md](docs/MXBRIO-PROTOCOL.md), every G Hub setting and the UVC
+  control it writes
 - How G Hub works and how this was worked out: [docs/GHUB-INTERNALS.md](docs/GHUB-INTERNALS.md)
 
 ## A50 X: what it controls
@@ -43,8 +46,8 @@ normal system input volume (PipeWire/PulseAudio/ALSA on Linux).
 
 ## The app
 
-The sidebar lists both devices; pick one to see its pages. Each shows whether it's connected and
-its battery. The tray menu shows both batteries too.
+The sidebar lists the devices; pick one to see its pages. Each shows whether it's connected, and
+the headset and mouse their battery. The tray menu shows both batteries too.
 
 ### A50 X
 
@@ -104,6 +107,23 @@ change is written to that profile on the mouse, so it keeps working with nothing
 write when you let go). The page follows the mouse: switching profile or DPI level with its own
 buttons shows up within a couple of seconds. When the mouse sleeps the page dims until you move
 it.
+
+### MX Brio
+
+- **Camera:** a live preview (with G Hub's mirror, grid, resolution and snapshot options) beside
+  the framing: field of view (65°, 78°, 90°), zoom up to 4×, pan and tilt when zoomed in, and
+  Show Mode.
+- **Image:** exposure (auto, or shutter speed and ISO; compensation, HDR, frame-rate or exposure
+  priority), colour (brightness, contrast, saturation, vibrance, sharpness, tint, white balance
+  auto or in kelvin, warmer/cooler) and focus (auto or manual).
+- **Settings:** the microphones on or off, anti-flicker (50/60 Hz), what Libre Hub keeps for the
+  camera, reset everything, and device details.
+
+Each card has G Hub's preset menu (its presets, yours, Save, Reset). Every change goes to the
+camera at once (sliders when you let go), so every app gets it. The camera forgets its framing
+when it restarts, so, like G Hub, Libre Hub saves what you change and puts it back whenever the
+camera connects. The preview runs only while its page is in front; snapshots go to
+Pictures/Webcam Snapshots.
 
 ## Tray, start at login and keeping your settings
 
@@ -216,12 +236,37 @@ actions, and firmware updates. See
 The library also implements G Hub's software-mode calls (live DPI, report rate, lighting
 effects, per-LED colours, inactivity timers) for parity, but the CLI works in on-board mode.
 
+## MX Brio: what it controls
+
+Every setting is a USB Video Class control on the camera, the same ones G Hub writes, so any app
+that uses the camera afterwards gets it.
+
+| Setting | G Hub equivalent | Status |
+|---|---|---|
+| Field of view 65° / 78° / 90°, zoom 100–400 %, pan and tilt ±20° | Camera → Crop | ✅ byte-identical to G Hub's writes, read back on hardware |
+| Show Mode (the camera turns the picture when tilted down at the desk) | Camera → Crop → Show Mode | ✅ G Hub's bytes; seen working |
+| Auto exposure, shutter speed (1/2000–1/17), ISO 100–1600, exposure compensation, HDR, priority | Camera → Exposure | ✅ byte-identical to G Hub's writes, read back on hardware |
+| Brightness, contrast, saturation, sharpness, tint, vibrance, white balance (auto or 2800–7500 K), temperature | Camera → Image | ✅ byte-identical to G Hub's writes, read back on hardware |
+| Auto or manual focus | Camera → Focus | ✅ byte-identical to G Hub's writes, read back on hardware |
+| Anti-flicker 50 / 60 Hz | Settings | ✅ byte-identical to G Hub's writes |
+| Microphones on/off (the camera restarts) | Microphone | ✅ G Hub's bytes; the audio device appears and goes |
+| G Hub's presets (FOV 78/65, Zoom 1.5×/2×, Streaming, Black and White, Warmer, Cooler), your own, Reset to default | Each card's Preset menu | ✅ |
+| Live preview: mirror, grid, resolution, snapshot | The preview's toolbar | ✅ in the app |
+| Your settings put back when the camera connects (it forgets framing on restart) | G Hub does this from its profile | ✅ verified on hardware |
+| Firmware, serial | Settings | ✅ read-only |
+
+**Not covered:** RightSight auto framing (LogiRightSight does it on the computer, not the
+camera), separate framing for Show Mode, microphone volume (it's your system's input level),
+G Hub's factory reset, firmware updates, and G Hub's per-application profiles. See
+[docs/MXBRIO-PROTOCOL.md](docs/MXBRIO-PROTOCOL.md#not-covered).
+
 ## Requirements
 
 - A50 X: the **base station connected over USB.** Settings travel USB → base station →
   Lightspeed → headset. The headset's direct Bluetooth link carries audio only and can't
   be configured.
 - G502 X PLUS: its **Lightspeed receiver** (USB 046d:c547), or the mouse on its cable.
+- MX Brio: connected over USB (046d:0944). At USB 2 speed it offers up to 1080p30.
 - To build from source: Node.js 20+. The repo pins Node 24 for [Volta](https://volta.sh) users.
 
 ## Install (Linux)
@@ -243,7 +288,7 @@ your desktop asks for your password (KDE, GNOME and most desktops have this dial
 one udev rule, `/etc/udev/rules.d/70-libre-hub.rules` (from
 [linux/70-libre-hub.rules](linux/70-libre-hub.rules)), and the devices connect right away, with no
 replugging. **Settings → Libre Hub → Device access** shows whether it's set up, and updates or
-removes it. On a desktop without a password dialog, the app shows the equivalent commands instead.
+removes it. The MX Brio needs none of this: Linux already lets the logged-in user open cameras. On a desktop without a password dialog, the app shows the equivalent commands instead.
 Under the hood it runs a small helper, `~/.local/share/libre-hub/allow-device-access`, through
 `pkexec`; that's the program the password dialog names.
 
@@ -265,24 +310,25 @@ sudo udevadm control --reload-rules && sudo udevadm trigger
 # (the rule must sort before systemd's 73-seat-late.rules, hence the 70- prefix)
 
 npm run build
-npm run cli -- status     # the librehub command: both devices
+npm run cli -- status     # the librehub command: every device
 npm start                 # Electron app
 npm run dist              # AppImage in release/
 ```
 
 ## CLI
 
-`librehub` controls both devices, through the same code as the app:
+`librehub` controls every device, through the same code as the app:
 
 ```
-librehub status [--json]           both devices, whichever are connected
+librehub status [--json]           every device, whichever are connected
 librehub headset <command>         the A50 X (alias: a50x)
 librehub mouse <command>           the G502 X PLUS (alias: g502x)
+librehub camera <command>          the MX Brio (alias: mx-brio)
 ```
 
 It isn't part of the AppImage: build from source, then run it with `npm run cli -- <args>`, or
 `npm link` to get `librehub` on your `PATH`.
-`librehub headset help` and `librehub mouse help` list every command.
+`librehub headset help`, `librehub mouse help` and `librehub camera help` list every command.
 
 ### A50 X
 
@@ -347,6 +393,26 @@ systemctl --user daemon-reload && systemctl --user enable --now g502x-agent   # 
 Quit G Hub while the agent runs: it takes the lighting back. On macOS G Hub can restart itself
 in the background.
 
+### MX Brio
+
+```
+librehub camera status [--json]                     settings, microphones, matching presets, what is kept
+librehub camera set fov 78 zoom 150 tilt -2         several at once; pan and tilt in degrees or arc seconds
+librehub camera set auto-exposure off shutter 1/120 iso 400
+librehub camera set auto-white-balance off white-balance 4000 temperature-compensation 60
+librehub camera reset [crop|exposure|image|focus|all]    G Hub's defaults
+librehub camera preset image "Black and White"      G Hub's presets, or yours
+librehub camera preset save crop "Desk"             | preset delete crop "Desk"
+librehub camera microphone on|off                   the camera restarts to apply it
+librehub camera restore                             put the kept settings back (the app does this on connect)
+librehub camera settings                            every setting and its range
+```
+
+Settings you change (in the app or here) are kept in `~/.config/logitech-manager/mx-brio.json`
+(`~/Library/Application Support/logitech-manager/` on macOS); `librehub camera forget` stops that.
+Quit G Hub (and Logi Options+ or Logi Tune if they manage the camera) while you use Libre Hub:
+they write their own settings whenever they see the camera.
+
 ## Releasing
 
 Versions follow [Semantic Versioning](https://semver.org), and `package.json` is the source of
@@ -365,9 +431,10 @@ installed copies don't update to.
 ## Tests
 
 ```bash
-npm test                       # unit + simulated-device tests (241), no hardware needed
+npm test                       # unit + simulated-device tests (349), no hardware needed
 npm run test:hardware          # 12 tests against a connected A50 X
 npm run test:hardware:mouse    # 15 tests against a G502 X PLUS (quit G Hub first)
+npm run test:hardware:camera   # 5 tests against an MX Brio (quit G Hub first; restarts the camera twice)
 ```
 
 - **Unit tests** decode and encode real frames captured from the headset
@@ -410,10 +477,17 @@ npm run test:hardware:mouse    # 15 tests against a G502 X PLUS (quit G Hub firs
   profile sets it; G Hub's live setter only works in host mode), and selecting the profile that is
   already active keeps the current DPI level instead of starting at the default one. The app was
   checked on the real mouse too: every page, and the demo in PR #5.
+- **MX Brio, macOS (Apple Silicon), firmware 1.1.394:** all 5 hardware tests pass. Every setting
+  is written with the bytes G Hub wrote for it and read back from the camera; the camera is
+  restarted and its framing put back; every control matches its first reading afterwards. The
+  app was driven over CDP (framing, presets, the microphone switch through its restart), and each
+  change was read back from the camera. **Not yet run on Linux**: the V4L2 and `UVCIOC_CTRL_QUERY`
+  path is tested against a stand-in kernel only; `npm run test:hardware:camera` on Linux is the
+  next step.
 
 ## Adding a device
 
-The process that mapped both devices is packaged as an agent skill,
+The process that mapped these devices is packaged as an agent skill,
 [`reverse-engineer-device`](.agents/skills/reverse-engineer-device/SKILL.md) (also linked from
 `.claude/skills/`). Ask your coding agent to add a device or a missing G Hub setting and it
 follows the same steps: inventory what G Hub offers, analyse G Hub with
@@ -426,16 +500,18 @@ It needs a machine with G Hub (macOS so far) and the device.
 ```
 src/protocol/   A50 X: framing (packet.ts), feature IDs, per-feature codecs, EQ codec
 src/mouse/      G502 X PLUS: HID++ framing, codecs, onboard-memory format, client, service, CLI
+src/camera/     MX Brio: UVC units and controls, settings map and presets, libusb (macOS) and V4L2
+                (Linux) transports, client, service, settings file, CLI
 src/device/     node-hid transport + A50X client (discovery, request matching, events)
 src/service.ts  snapshot + actions, shared by the app and the CLI
 src/audio/      Linux game/chat audio split (WirePlumber setup, status, undo), live levels
 src/presets/    custom EQ preset store (JSON)
 src/restore/    keeping settings: compare, restore and verify; when to check; saved state
-src/main/       Electron main process, sandboxed preload (window.a50x, window.g502x), tray, preferences,
+src/main/       Electron main process, sandboxed preload (window.a50x, window.g502x, window.brio), tray, preferences,
                 desktop entries
 src/renderer/   UI: plain ES modules and CSS, no build step (fonts: Geist, OFL-1.1); app.js is the
-                shell and the A50 X pages, mouse.js the G502 X PLUS pages
-src/cli.ts      the librehub command; src/headset-cli.ts and src/mouse/cli.ts are its two halves
+                shell and the A50 X pages, mouse.js the G502 X PLUS pages, camera.js the MX Brio pages
+src/cli.ts      the librehub command; src/headset-cli.ts, src/mouse/cli.ts and src/camera/cli.ts are its parts
 test/           unit, simulated-device and hardware tests; fixtures are real captures
 linux/          udev rule; WirePlumber rule and chat-routing script; agent service
 src/access/     Linux device access: the udev rule, installed through pkexec

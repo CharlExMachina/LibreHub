@@ -1,7 +1,7 @@
 # Evidence
 
-Raw material behind [PROTOCOL.md](../PROTOCOL.md), [G502X-PROTOCOL.md](../G502X-PROTOCOL.md) and
-[GHUB-INTERNALS.md](../GHUB-INTERNALS.md). The A50 X material below was captured on 2026-10-20 from a real A50 X (base station firmware 1.2.18) with G Hub
+Raw material behind [PROTOCOL.md](../PROTOCOL.md), [G502X-PROTOCOL.md](../G502X-PROTOCOL.md),
+[MXBRIO-PROTOCOL.md](../MXBRIO-PROTOCOL.md) and [GHUB-INTERNALS.md](../GHUB-INTERNALS.md). The A50 X material below was captured on 2026-10-20 from a real A50 X (base station firmware 1.2.18) with G Hub
 2026.6.981214 on macOS.
 
 | Path | What it is |
@@ -54,3 +54,28 @@ prompt; a "Yes" with a contradicting comment counts as No (lab2, first answer).
 
 The mouse's serial number and unit id are replaced with placeholders, as in the rest of the
 evidence.
+
+## MX Brio (`mx-brio/`)
+
+Captured on 2026-10-27 from an MX Brio (firmware 1.1.394, USB 046d:0944 at high speed) with the
+same G Hub build. Control keys are `unit:selector` with this camera's unit ids (1 camera terminal,
+3 processing unit, 8 device info, 10 video pipe, 11 peripheral; see MXBRIO-PROTOCOL.md#units);
+values are the control's bytes in hex, little-endian.
+
+| Path | What it is |
+|---|---|
+| `ghub/devices-list-mx-brio.json` | `/devices/list` entry: interfaces, `webcamSupport` capability block, slots |
+| `ghub/ghub-gets.txt` | G Hub's crop, exposure, image, focus, deep, show-mode and preview settings for the camera |
+| `ghub/webcam.proto` | `logi.protocol.webcam` schema, from the agent's embedded descriptors |
+| `uvc/config-descriptor-hex.txt` | The whole configuration descriptor (units, extension-unit GUIDs, formats) |
+| `uvc/dump-before-any-write.txt` | GET_LEN/INFO/CUR/MIN/MAX/RES/DEF of every control before anything was written |
+| `uvc/ghub-set-diffs.txt` | 33 rounds of "G Hub SETs one card → which controls changed, to what": the settings map |
+| `uvc/writes-while-auto.txt` | Which manual values the camera refuses while their auto mode is on |
+| `uvc/persistence-reboot.txt`, `uvc/restart-probes.txt` | What the camera keeps and forgets across a restart (the microphone switch), and its timing |
+| `uvc/persist-0-before.txt`, `uvc/persist-3-restored.txt` | Every control before the persistence experiment and after putting it all back |
+| `lab/hid-tilt-no-stream.txt`, `lab/hid-tilt-streaming.txt` | HID input reports while a person tilted the camera (G Hub running), the second with a preview open and the read-only controls polled |
+| `lab/hid-tilt-shutter-ghub-quit.txt` | The same, plus the privacy shutter, with G Hub quit: no reports |
+| `screenshots/ghub-devices.png` | G Hub's device list showing the camera |
+
+The camera's serial number (also in device info selector 7, as ASCII), its hashed form and an
+unexplained per-unit value in device info selector 8 are replaced with placeholders.

@@ -1,0 +1,337 @@
+ "msgId": "",
+ "verb": "OPTIONS",
+ "path": "/",
+ "origin": "backend"
+}
+
+=== /uvc/dev00000000/crop/settings
+{
+ "msgId": "1",
+ "verb": "GET",
+ "path": "/uvc/dev00000000/crop/settings",
+ "origin": "backend",
+ "result": {
+  "code": "SUCCESS",
+  "what": ""
+ },
+ "payload": {
+  "@type": "type.googleapis.com/logi.protocol.cards.Card",
+  "id": "",
+  "name": "",
+  "attribute": "INVALID",
+  "category": "",
+  "readOnly": false,
+  "applicationId": "",
+  "profileId": "",
+  "deviceSignature": "",
+  "cropSettings": {
+   "pan": {
+    "value": 0,
+    "mode": "MANUAL"
+   },
+   "tilt": {
+    "value": 0,
+    "mode": "MANUAL"
+   },
+   "zoom": {
+    "value": 100,
+    "mode": "MANUAL"
+   },
+   "fov": 90,
+   "showMode": true,
+   "manualCard": false,
+   "rightSight": {
+    "enabled": false
+   }
+  }
+ }
+}
+=== /uvc/dev00000000/camera/settings
+{
+ "msgId": "8",
+ "verb": "GET",
+ "path": "/uvc/dev00000000/camera/settings",
+ "origin": "backend",
+ "result": {
+  "code": "NO_SUCH_PATH",
+  "what": "message path '/uvc/dev00000000/camera/settings' not found."
+ }
+}
+=== /uvc/dev00000000/video/settings
+{
+ "msgId": "9",
+ "verb": "GET",
+ "path": "/uvc/dev00000000/video/settings",
+ "origin": "backend",
+ "result": {
+  "code": "NO_SUCH_PATH",
+  "what": "message path '/uvc/dev00000000/video/settings' not found."
+ }
+}
+=== /uvc/dev00000000/exposure/settings
+{
+ "msgId": "2",
+ "verb": "GET",
+ "path": "/uvc/dev00000000/exposure/settings",
+ "origin": "backend",
+ "result": {
+  "code": "SUCCESS",
+  "what": ""
+ },
+ "payload": {
+  "@type": "type.googleapis.com/logi.protocol.cards.Card",
+  "id": "",
+  "name": "",
+  "attribute": "INVALID",
+  "category": "",
+  "readOnly": false,
+  "applicationId": "",
+  "profileId": "",
+  "deviceSignature": "",
+  "exposureSettings": {
+   "exposure": {
+    "value": 60,
+    "mode": "AUTO"
+   },
+   "exposureCompensation": 128,
+   "gain": {
+    "value": 100,
+    "mode": "MANUAL"
+   },
+   "hdr": true,
+   "priority": "PRIORITY_EXPOSURE",
+   "manualCard": false
+  }
+ }
+}
+=== /uvc/dev00000000/image/settings
+{
+ "msgId": "3",
+ "verb": "GET",
+ "path": "/uvc/dev00000000/image/settings",
+ "origin": "backend",
+ "result": {
+  "code": "SUCCESS",
+  "what": ""
+ },
+ "payload": {
+  "@type": "type.googleapis.com/logi.protocol.cards.Card",
+  "id": "",
+  "name": "",
+  "attribute": "INVALID",
+  "category": "",
+  "readOnly": false,
+  "applicationId": "",
+  "profileId": "",
+  "deviceSignature": "",
+  "imageSettings": {
+   "brightness": {
+    "value": 128,
+    "mode": "MANUAL"
+   },
+   "contrast": {
+    "value": 128,
+    "mode": "MANUAL"
+   },
+   "saturation": {
+    "value": 128,
+    "mode": "MANUAL"
+   },
+   "sharpness": {
+    "value": 128,
+    "mode": "MANUAL"
+   },
+   "tint": 50,
+   "vibrance": 128,
+   "whiteBalance": {
+    "value": 4679,
+    "mode": "AUTO"
+   },
+   "temperatureCompensation": 50,
+   "manualCard": false
+  }
+ }
+}
+=== /uvc/dev00000000/focus/settings
+{
+ "msgId": "4",
+ "verb": "GET",
+ "path": "/uvc/dev00000000/focus/settings",
+ "origin": "backend",
+ "result": {
+  "code": "SUCCESS",
+  "what": ""
+ },
+ "payload": {
+  "@type": "type.googleapis.com/logi.protocol.cards.Card",
+  "id": "",
+  "name": "",
+  "attribute": "INVALID",
+  "category": "",
+  "readOnly": false,
+  "applicationId": "",
+  "profileId": "",
+  "deviceSignature": "",
+  "focusSettings": {
+   "focus": {
+    "value": 0,
+    "mode": "AUTO"
+   },
+   "manualCard": false
+  }
+ }
+}
+=== /uvc/dev00000000/microphone/settings
+{
+ "msgId": "6",
+ "verb": "GET",
+ "path": "/uvc/dev00000000/microphone/settings",
+ "origin": "backend",
+ "result": {
+  "code": "EXCEPTION",
+  "what": "Webcam microphone is disabled. Cannot sync microphone settings"
+ }
+}
+=== /uvc/dev00000000/deep/settings
+{
+ "msgId": "5",
+ "verb": "GET",
+ "path": "/uvc/dev00000000/deep/settings",
+ "origin": "backend",
+ "result": {
+  "code": "SUCCESS",
+  "what": ""
+ },
+ "payload": {
+  "@type": "type.googleapis.com/logi.protocol.webcam.Webcam.DeepSettings",
+  "antiFlicker": 60,
+  "videoStabilization": false,
+  "audioMode": "INVALID_MODE",
+  "stopVideoOnAppFocusLoss": true,
+  "snapshotPath": "Webcam Snapshots"
+ }
+}
+=== /uvc/dev00000000/global/settings
+{
+ "msgId": "10",
+ "verb": "GET",
+ "path": "/uvc/dev00000000/global/settings",
+ "origin": "backend",
+ "result": {
+  "code": "SUCCESS",
+  "what": ""
+ },
+ "payload": {
+  "@type": "type.googleapis.com/logi.protocol.webcam.Webcam.BroadcastMode"
+ }
+}
+=== /uvc/dev00000000/showmode/settings
+{
+ "msgId": "7",
+ "verb": "GET",
+ "path": "/uvc/dev00000000/showmode/settings",
+ "origin": "backend",
+ "result": {
+  "code": "SUCCESS",
+  "what": ""
+ },
+ "payload": {
+  "@type": "type.googleapis.com/logi.protocol.webcam.Webcam.ShowModeSettings",
+  "deviceId": "dev00000000",
+  "pan": {
+   "value": 0,
+   "mode": "MANUAL"
+  },
+  "tilt": {
+   "value": 0,
+   "mode": "MANUAL"
+  },
+  "zoom": {
+   "value": 100,
+   "mode": "MANUAL"
+  },
+  "fov": 90,
+  "orientation": false
+ }
+}
+=== /uvc/dev00000000/preview_resolutions
+{
+ "msgId": "11",
+ "verb": "GET",
+ "path": "/uvc/dev00000000/preview_resolutions",
+ "origin": "backend",
+ "result": {
+  "code": "SUCCESS",
+  "what": ""
+ },
+ "payload": {
+  "@type": "type.googleapis.com/logi.protocol.webcam.Webcam.Resolutions",
+  "resolutions": [
+   {
+    "id": "RES_4Kp30",
+    "available": false
+   },
+   {
+    "id": "RES_1080p60",
+    "available": false
+   },
+   {
+    "id": "RES_1080p30",
+    "available": true
+   },
+   {
+    "id": "RES_720p60",
+    "available": true
+   },
+   {
+    "id": "RES_720p30",
+    "available": true
+   },
+   {
+    "id": "RES_360p30",
+    "available": true
+   }
+  ]
+ }
+}
+=== /uvc/dev00000000/streaming_status
+{
+ "msgId": "12",
+ "verb": "GET",
+ "path": "/uvc/dev00000000/streaming_status",
+ "origin": "backend",
+ "result": {
+  "code": "INVALID_ARG",
+  "what": "Wrong payload format!"
+ }
+}
+=== /webcam/dev00000000/orientation
+{
+ "msgId": "14",
+ "verb": "GET",
+ "path": "/webcam/dev00000000/orientation",
+ "origin": "backend",
+ "result": {
+  "code": "CANCELLED",
+  "what": "Orienation is not supported"
+ },
+ "payload": {
+  "@type": "type.googleapis.com/logi.protocol.webcam.Webcam.Orientation"
+ }
+}
+=== /uvc/dev00000000/webcam_in_use
+{
+ "msgId": "13",
+ "verb": "GET",
+ "path": "/uvc/dev00000000/webcam_in_use",
+ "origin": "backend",
+ "result": {
+  "code": "SUCCESS",
+  "what": ""
+ },
+ "payload": {
+  "@type": "type.googleapis.com/google.protobuf.BoolValue",
+  "value": true
+ }
+}
+timeout; pending []

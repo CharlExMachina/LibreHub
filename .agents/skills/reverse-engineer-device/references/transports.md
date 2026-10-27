@@ -1,6 +1,6 @@
 # Transports seen so far
 
-Both devices speak a HID++ 2.0 style protocol: a root feature at index 0 maps 16-bit feature
+The A50 X and the G502 speak a HID++ 2.0 style protocol: a root feature at index 0 maps 16-bit feature
 ids to indexes, and requests carry `(function << 4) | software id`. Resolve indexes from the
 feature table every time; never hardcode them. Use software id `0xB` so our replies are easy to
 tell from G Hub's (`0xD`, `0xA` and `0xE` were seen). Unsolicited events use software id 0.
@@ -37,10 +37,24 @@ receiver slot (1 here; `0xFF` on the cable).
   receiver plugged in, pick one with `HIDPP_PRODUCT=<usb product id, hex>`; `dump` reads
   device index `HIDPP_DEVICE` (default 1, `ff` on the cable).
 
+## UVC (MX Brio webcam, `046d:0944`)
+
+Details are in `docs/MXBRIO-PROTOCOL.md`. Not HID++: every camera setting is a USB Video Class
+control request to a unit in the Video Control interface (`SET_CUR` 0x21/0x01, `GET_*` 0xA1/0x8x,
+`wValue` = selector << 8, `wIndex` = unit << 8 | interface). Logitech's extras live in extension
+units, found by GUID in the configuration descriptor. The HID interface carries no settings.
+
+- macOS: libusb (`usb@2`, not 3.x) sends control requests through the default pipe while other
+  programs hold the camera. Tool: `tools/re/uvc.cjs dump | cur | get | set`.
+- There are no input reports to sniff for settings. Diff every control's GET_CUR before and after
+  each G Hub SET instead (`tools/re/mxbrio-ghub-diff.sh`).
+- Linux: uvcvideo owns the interface; use V4L2 controls and `UVCIOC_CTRL_QUERY`, not libusb.
+
 ## Recognising which one
 
-Both use vendor `0x046d`. A vendor usage page with report id `0x02` and `02 0c` framing means
-Centurion; `0x10`/`0x11` reports on usage page `0xFF00` mean HID++. G Hub's agent names the
+All use vendor `0x046d`. A vendor usage page with report id `0x02` and `02 0c` framing means
+Centurion; `0x10`/`0x11` reports on usage page `0xFF00` mean HID++; a Video Control interface
+(class 14, subclass 1) means UVC. G Hub's agent names the
 features in both cases (`devio::FeatureXXXX…` classes; `CenturionTransport` for Centurion).
 A new transport goes into `docs/` and this file before any code.
 

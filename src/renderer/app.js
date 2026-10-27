@@ -1,5 +1,6 @@
 // The window: a device list in the sidebar, and the pages of the device picked there. This file is
-// the shell and the A50 X control panel; the G502 X PLUS has its own (mouse.js). Pages are built
+// the shell and the A50 X control panel; the G502 X PLUS and the MX Brio have their own (mouse.js,
+// camera.js), called panels here. Pages are built
 // once per device and then updated in place from device snapshots, so sliders keep working while
 // the headset reports changes (e.g. its volume wheel).
 import { headsetArt } from './art.js';
@@ -8,7 +9,8 @@ import { icon } from './icons.js';
 import { dbText, gateWatch, ledMeter, levelBar } from './meters.js';
 import { accessScreen, onAccessAllowed } from './access.js';
 import { autoGlass } from './liquid-glass.js';
-import { createMouse, MOUSE_PAGES } from './mouse.js';
+import { createCamera } from './camera.js';
+import { createMouse } from './mouse.js';
 import { appCard, initAppSettings, keepCard, updateCheckButton } from './prefs.js';
 import { choiceCards, createWriter, el, muteButton, prompt, segmented, slider, toast } from './ui.js';
 
@@ -26,8 +28,8 @@ const PAGES = [
   { id: 'settings', label: 'Settings', icon: 'settings' },
 ];
 
-/** The device whose pages show: 'headset' or 'mouse'. */
-let device = localStorage.getItem('device') === 'mouse' ? 'mouse' : 'headset';
+/** The device whose pages show: 'headset', 'mouse' or 'camera'. */
+let device = ['mouse', 'camera'].includes(localStorage.getItem('device')) ? localStorage.getItem('device') : 'headset';
 let snap = null;
 let lastSnap = null; // shown dimmed while reconnecting
 let built = null;
@@ -180,17 +182,20 @@ function levelsBar(text) {
 
 // ------------------------------------------------------------------ shell
 
-const mouse = createMouse({
-  changed: (what) => {
-    if (what === 'card') renderDevices();
-    if (device !== 'mouse') return;
-    if (what === 'nav') {
-      renderNav();
-      renderFoot();
-    }
-    if (what === 'main') mountMouse();
-  },
-});
+/** What a panel calls when something about it changed: its sidebar card, its nav, or its page. */
+const panelChanged = (id) => (what) => {
+  if (what === 'card') renderDevices();
+  if (device !== id) return;
+  if (what === 'nav') {
+    renderNav();
+    renderFoot();
+  }
+  if (what === 'main') mountPanel();
+};
+const mouse = createMouse({ changed: panelChanged('mouse') });
+const camera = createCamera({ changed: panelChanged('camera') });
+/** The devices with their own panel; the headset is this file's. */
+const panels = { mouse, camera };
 
 /** Show another device's pages. */
 function selectDevice(id) {
@@ -201,11 +206,11 @@ function selectDevice(id) {
   main.classList.remove('reconnecting');
   main.inert = false;
   $('#reconnect')?.remove();
-  mouse.setActive(id === 'mouse');
+  for (const [pid, p] of Object.entries(panels)) p.setActive(id === pid);
   renderDevices();
   renderNav();
   renderFoot();
-  if (id === 'mouse') mountMouse();
+  if (panels[id]) mountPanel();
   else mountHeadset();
   void syncLevels();
 }
@@ -219,9 +224,11 @@ function statusPill(text) {
   }
 }
 
-function mountMouse() {
+/** Put the shown panel's page (or its offline screen) in the page area. */
+function mountPanel() {
+  const panel = panels[device];
   const main = $('#main');
-  const node = mouse.node();
+  const node = panel.node();
   if (main.firstElementChild !== node) {
     main.replaceChildren(node);
     node.style.animation = 'none';
@@ -229,14 +236,14 @@ function mountMouse() {
     node.style.animation = '';
     main.scrollTop = 0;
   }
-  // Asleep: keep the pages, dimmed, until it answers again.
-  main.classList.toggle('reconnecting', mouse.asleep);
-  main.inert = mouse.asleep;
-  if (mouse.asleep) statusPill('The mouse is asleep. Move it to wake it up.');
+  // Asleep (the mouse): keep the pages, dimmed, until it answers again.
+  main.classList.toggle('reconnecting', panel.asleep);
+  main.inert = panel.asleep;
+  if (panel.asleep) statusPill('The mouse is asleep. Move it to wake it up.');
   else $('#reconnect')?.remove();
 }
 
-/** Put the headset's current state back in the page area (after looking at the mouse). */
+/** Put the headset's current state back in the page area (after looking at another device). */
 function mountHeadset() {
   const main = $('#main');
   if (snap) return show(page);
@@ -256,21 +263,21 @@ function mountHeadset() {
 
 let navSig = '';
 function renderNav(reconnecting = false) {
-  const mine = device === 'mouse';
-  const pages = mine ? MOUSE_PAGES : PAGES;
-  const online = mine ? mouse.online : !!snap;
-  const current = mine ? mouse.page : page;
+  const panel = panels[device];
+  const pages = panel ? panel.pages : PAGES;
+  const online = panel ? panel.online : !!snap;
+  const current = panel ? panel.page : page;
   // Rebuilt only when the buttons change, so focus and hover survive snapshots.
   const sig = `${device}|${online}`;
   if (sig !== navSig) {
     navSig = sig;
     $('#nav').replaceChildren(...pages.map((p, i) =>
       el('button', { type: 'button', 'data-page': p.id, disabled: !online, title: `${p.label} (Ctrl+${i + 1})`,
-        onclick: () => (device === 'mouse' ? mouse.show(p.id, { focus: true }) : show(p.id, { focus: true })) },
+        onclick: () => (panels[device] ? panels[device].show(p.id, { focus: true }) : show(p.id, { focus: true })) },
         ic(p.icon, 18), el('span', {}, p.label), el('span', { class: 'hint' }))));
   }
   for (const b of document.querySelectorAll('#nav button')) b.setAttribute('aria-current', online && b.dataset.page === current ? 'page' : 'false');
-  if (mine) paintHints(mouse.hints());
+  if (panel) paintHints(panel.hints());
   else updateNavHints(reconnecting ? lastSnap : snap);
 }
 
@@ -317,14 +324,14 @@ function renderDevices() {
     art: headsetArt('thumb', { glow: false, lit: online, small: true }),
   };
   const host = $('#devices');
-  const card = mouse.card();
+  const cards = { mouse: mouse.card(), camera: camera.card() };
   // Rebuilt only when it changes: the headset reports often (its volume wheel), and a rebuild
   // between pressing and releasing would lose the click.
-  const sig = JSON.stringify([device, headset, card]);
+  const sig = JSON.stringify([device, headset, cards]);
   if (sig === devicesSig) return;
   devicesSig = sig;
   const focused = host.contains(document.activeElement) ? document.activeElement.dataset.device : null;
-  host.replaceChildren(deviceEntry('headset', headset), deviceEntry('mouse', card));
+  host.replaceChildren(deviceEntry('headset', headset), deviceEntry('mouse', cards.mouse), deviceEntry('camera', cards.camera));
   if (focused) host.querySelector(`[data-device="${focused}"]`)?.focus();
 }
 
@@ -343,7 +350,7 @@ function deviceEntry(id, d) {
 const updateCheck = updateCheckButton();
 function renderFoot() {
   const foot = $('#sidebar-foot');
-  const firmware = device === 'mouse' ? mouse.firmware() : snap ? `Firmware ${snap.device.firmware.version}` : null;
+  const firmware = panels[device] ? panels[device].firmware() : snap ? `Firmware ${snap.device.firmware.version}` : null;
   foot.hidden = !firmware;
   if (firmware) foot.replaceChildren(el('div', { class: 'row' }, el('span', {}, firmware), updateCheck));
 }
@@ -470,10 +477,11 @@ window.addEventListener('keydown', (e) => {
     built?.pages.overview.toggleMute();
     return;
   }
-  if (device === 'mouse') {
-    if (mouse.online && n >= 1 && n <= MOUSE_PAGES.length) {
+  const panel = panels[device];
+  if (panel) {
+    if (panel.online && n >= 1 && n <= panel.pages.length) {
       e.preventDefault();
-      mouse.show(MOUSE_PAGES[n - 1].id, { focus: true });
+      panel.show(panel.pages[n - 1].id, { focus: true });
     }
     return;
   }
@@ -1262,7 +1270,7 @@ function offlineView(info) {
 // ------------------------------------------------------------------ start
 
 // The tray's "Settings…" and the keep-settings notifications: the headset's Settings page has the
-// app settings and what was restored, so it goes first; the mouse's has the app settings too.
+// app settings and what was restored, so it goes first; the mouse's and camera's have the app settings too.
 initAppSettings({
   openSettings: () => {
     if (snap) {
@@ -1271,20 +1279,23 @@ initAppSettings({
     } else if (mouse.online) {
       selectDevice('mouse');
       mouse.show('settings', { focus: true });
+    } else if (camera.online) {
+      selectDevice('camera');
+      camera.show('settings', { focus: true });
     }
   },
 });
-mouse.setActive(device === 'mouse');
+for (const [pid, p] of Object.entries(panels)) p.setActive(device === pid);
 // Glass only where something floats over the page: toasts, and the mouse pages' profile bar, which the page
 // scrolls under. Everything else is the plain theme. styles.css sets how each looks (its --glass-* values),
 // Tinted included, so the library's own Tinted and accessibility adjustments are off (adaptive: false).
 autoGlass('.profile-bar, .toast', { adaptive: false });
-// Access was just allowed: connect both now instead of at the next check.
-onAccessAllowed(() => { void refresh(); void mouse.refresh(); });
+// Access was just allowed: connect them all now instead of at the next check.
+onAccessAllowed(() => { void refresh(); void mouse.refresh(); void camera.refresh(); });
 renderNav();
 renderDeviceCard();
 renderFoot();
-if (device === 'mouse') mountMouse();
+if (panels[device]) mountPanel();
 else mountHeadset();
 void refresh();
 // Fresh battery reading every minute; everything else arrives as device events.

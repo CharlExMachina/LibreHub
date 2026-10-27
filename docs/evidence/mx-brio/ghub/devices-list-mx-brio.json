@@ -1,0 +1,589 @@
+{
+ "id": "dev00000000",
+ "pid": 2372,
+ "fwInfo": [],
+ "isSubdevice": false,
+ "parentId": "",
+ "state": "ACTIVE",
+ "onboardMode": false,
+ "individualMode": true,
+ "resourcesAvailable": true,
+ "connectionType": "USB",
+ "hasWirelessInterface": false,
+ "displayConnectionType": "USB",
+ "deviceType": "CAMERA",
+ "deviceFamily": "",
+ "deviceModel": "brio_700",
+ "deviceBaseModel": "brio_700",
+ "displayName": "MX Brio",
+ "extendedDisplayName": "Logi MX Brio 700",
+ "slotPrefix": "brio-700",
+ "thumbnail": "pipeline://core_assets/thumbnails/00f89eaa-95dc-46fb-96e2-fdad1b94d042",
+ "stringPackage": "b4dc453f-fdc9-4941-be94-f025528f59d5/strings",
+ "assetsPackages": {
+  "analogOnboardingPackage": "",
+  "displayPresetLogos": ""
+ },
+ "deviceExt": 0,
+ "deviceUnitId": "123456789012",
+ "deviceSignature": "CAMERA.brio_700.0.123456789012",
+ "givenName": "",
+ "capabilities": {
+  "sleepTimer": false,
+  "mstateSupport": {
+   "count": 1,
+   "timeOut": 0
+  },
+  "fnInversion": false,
+  "presentSplashScreen": true,
+  "customizableColor": false,
+  "wirelessReportRate": false,
+  "hybridEngine": false,
+  "advancedSleepTimer": false,
+  "angleSnapping": false,
+  "excludeGShift": false,
+  "hostRemovalSupport": false,
+  "hostInfos": false,
+  "gkeyLayout": "INVALID_GKEY_LAYOUT",
+  "hasBatteryStatus": false,
+  "powerOffTimer": false,
+  "requiresBackupForDfu": false,
+  "unifiedBattery": false,
+  "dpiLighting": false,
+  "hasGlobalDamping": false,
+  "nonInteractive": false,
+  "chargepadCompatible": false,
+  "individuality": true,
+  "defaultSlotFormat": "UNIQUE",
+  "fnToggle": false,
+  "isFullHidppWheel": false,
+  "hasConfigurationProfiles": false,
+  "disableCenterSpring": false,
+  "hasOnboardDeviceName": false,
+  "systemTraySupport": true,
+  "cidBasedGameModeSupport": false,
+  "depotNotRequired": false,
+  "ledBrightness": false,
+  "autoSleep": false,
+  "hasFactoryReset": true,
+  "disableLightingViewMenu": false,
+  "dpiVersion": 0,
+  "hasWiredReportRate": false,
+  "keyboardSize": "UNKNOWN",
+  "uiThemeVersion": 0,
+  "webcamSupport": {
+   "crop": {
+    "pan": {
+     "default": 0,
+     "mode": "MANUAL",
+     "range": {
+      "minimum": -72000,
+      "maximum": 72000,
+      "value": 0,
+      "step": 3600
+     }
+    },
+    "tilt": {
+     "default": 0,
+     "mode": "MANUAL",
+     "range": {
+      "minimum": -72000,
+      "maximum": 72000,
+      "value": 0,
+      "step": 3600
+     }
+    },
+    "zoom": {
+     "default": 100,
+     "mode": "MANUAL",
+     "range": {
+      "minimum": 100,
+      "maximum": 400,
+      "value": 0,
+      "step": 1
+     }
+    },
+    "fov": {
+     "default": 90,
+     "mode": "INVALID",
+     "list": {
+      "values": [
+       65,
+       78,
+       90
+      ]
+     }
+    },
+    "showMode": {
+     "default": 1,
+     "mode": "MANUAL",
+     "range": {
+      "minimum": 0,
+      "maximum": 1,
+      "value": 0,
+      "step": 1
+     }
+    },
+    "hasPanAndTiltOnMinZoom": true,
+    "hasRightsightSupport": true
+   },
+   "exposure": {
+    "exposure": {
+     "default": 60,
+     "mode": "AUTO",
+     "valueMap": {
+      "customValues": [
+       {
+        "value": 2000,
+        "mac": 5,
+        "win": -11
+       },
+       {
+        "value": 800,
+        "mac": 10,
+        "win": -10
+       },
+       {
+        "value": 400,
+        "mac": 20,
+        "win": -9
+       },
+       {
+        "value": 200,
+        "mac": 39,
+        "win": -8
+       },
+       {
+        "value": 120,
+        "mac": 78,
+        "win": -7
+       },
+       {
+        "value": 60,
+        "mac": 156,
+        "win": -6
+       },
+       {
+        "value": 30,
+        "mac": 312,
+        "win": -5
+       },
+       {
+        "value": 24,
+        "mac": 625,
+        "win": -4
+       },
+       {
+        "value": 20,
+        "mac": 1250,
+        "win": -3
+       },
+       {
+        "value": 17,
+        "mac": 2047,
+        "win": -2
+       }
+      ]
+     }
+    },
+    "exposureCompensation": {
+     "default": 128,
+     "mode": "MANUAL",
+     "range": {
+      "minimum": 0,
+      "maximum": 255,
+      "value": 0,
+      "step": 1
+     }
+    },
+    "gain": {
+     "default": 100,
+     "mode": "MANUAL",
+     "valueMap": {
+      "customValues": [
+       {
+        "value": 100,
+        "mac": 0,
+        "win": 0
+       },
+       {
+        "value": 200,
+        "mac": 16,
+        "win": 16
+       },
+       {
+        "value": 300,
+        "mac": 32,
+        "win": 32
+       },
+       {
+        "value": 400,
+        "mac": 48,
+        "win": 48
+       },
+       {
+        "value": 500,
+        "mac": 64,
+        "win": 64
+       },
+       {
+        "value": 600,
+        "mac": 80,
+        "win": 80
+       },
+       {
+        "value": 700,
+        "mac": 96,
+        "win": 96
+       },
+       {
+        "value": 800,
+        "mac": 112,
+        "win": 112
+       },
+       {
+        "value": 900,
+        "mac": 128,
+        "win": 128
+       },
+       {
+        "value": 1000,
+        "mac": 144,
+        "win": 144
+       },
+       {
+        "value": 1100,
+        "mac": 160,
+        "win": 160
+       },
+       {
+        "value": 1200,
+        "mac": 176,
+        "win": 176
+       },
+       {
+        "value": 1300,
+        "mac": 192,
+        "win": 192
+       },
+       {
+        "value": 1400,
+        "mac": 208,
+        "win": 208
+       },
+       {
+        "value": 1500,
+        "mac": 224,
+        "win": 224
+       },
+       {
+        "value": 1600,
+        "mac": 240,
+        "win": 240
+       }
+      ]
+     }
+    },
+    "hdr": {
+     "default": 1,
+     "mode": "MANUAL",
+     "range": {
+      "minimum": 0,
+      "maximum": 1,
+      "value": 0,
+      "step": 1
+     }
+    },
+    "priority": {
+     "default": 1,
+     "mode": "MANUAL"
+    }
+   },
+   "image": {
+    "brightness": {
+     "default": 128,
+     "mode": "MANUAL",
+     "range": {
+      "minimum": 0,
+      "maximum": 255,
+      "value": 0,
+      "step": 1
+     }
+    },
+    "contrast": {
+     "default": 128,
+     "mode": "MANUAL",
+     "range": {
+      "minimum": 0,
+      "maximum": 255,
+      "value": 0,
+      "step": 1
+     }
+    },
+    "saturation": {
+     "default": 128,
+     "mode": "MANUAL",
+     "range": {
+      "minimum": 0,
+      "maximum": 255,
+      "value": 0,
+      "step": 1
+     }
+    },
+    "sharpness": {
+     "default": 128,
+     "mode": "MANUAL",
+     "range": {
+      "minimum": 0,
+      "maximum": 255,
+      "value": 0,
+      "step": 1
+     }
+    },
+    "tint": {
+     "default": 50,
+     "mode": "MANUAL",
+     "range": {
+      "minimum": 0,
+      "maximum": 100,
+      "value": 0,
+      "step": 1
+     }
+    },
+    "vibrance": {
+     "default": 128,
+     "mode": "MANUAL",
+     "range": {
+      "minimum": 0,
+      "maximum": 255,
+      "value": 0,
+      "step": 1
+     }
+    },
+    "whiteBalance": {
+     "default": 5000,
+     "mode": "BOTH",
+     "range": {
+      "minimum": 2800,
+      "maximum": 7500,
+      "value": 0,
+      "step": 1
+     }
+    },
+    "temperatureCompensation": {
+     "default": 50,
+     "mode": "MANUAL",
+     "range": {
+      "minimum": 0,
+      "maximum": 100,
+      "value": 0,
+      "step": 1
+     }
+    }
+   },
+   "focus": {
+    "focus": {
+     "default": 1,
+     "mode": "BOTH",
+     "range": {
+      "minimum": 0,
+      "maximum": 255,
+      "value": 0,
+      "step": 1
+     }
+    }
+   },
+   "deep": {
+    "antiFlicker": {
+     "default": 60,
+     "mode": "MANUAL",
+     "list": {
+      "values": [
+       50,
+       60
+      ]
+     }
+    },
+    "videoPreview": {
+     "hasGridSupport": true,
+     "hasMirrorSupport": true,
+     "hasDisablePreviewSupport": true,
+     "defaultSettings": {
+      "grid": false,
+      "preview": true,
+      "mirror": false,
+      "resolution": "RES_720p30"
+     },
+     "resolutions": [
+      {
+       "id": "RES_4Kp30",
+       "available": false
+      },
+      {
+       "id": "RES_1080p60",
+       "available": false
+      },
+      {
+       "id": "RES_1080p30",
+       "available": false
+      },
+      {
+       "id": "RES_720p60",
+       "available": false
+      },
+      {
+       "id": "RES_720p30",
+       "available": false
+      },
+      {
+       "id": "RES_360p30",
+       "available": false
+      }
+     ]
+    },
+    "videoOnAppFocusLoss": {
+     "default": 1,
+     "mode": "INVALID"
+    },
+    "snapshotPath": "Webcam Snapshots"
+   },
+   "microphone": {
+    "hasMicrophoneDisableSupport": true,
+    "hasVolumeFeature": true,
+    "defaultVolume": {
+     "muted": false,
+     "gain": 0.95,
+     "channel": "INPUT"
+    }
+   },
+   "hasHardwareResetSupport": true,
+   "hasTalosSupport": false,
+   "hidButtonMap": {},
+   "slotAssignmentPolicy": {},
+   "hasPersistentMemory": false
+  },
+  "deviceNameMaxLength": 0,
+  "hasBatteryEcoMode": false,
+  "hasTotalUsageTime": false,
+  "iprofileDatasyncSupport": false,
+  "modeMatchingAlgorithm": "DEFAULT",
+  "useRealSoc": false,
+  "hasEuPowerModeControl": false,
+  "hasBunnyHoppingSupport": false,
+  "hasSpatialSound": false,
+  "hasPerformanceReportRate": false,
+  "hasRename": false,
+  "deviceSettingsVersion": 2,
+  "hasOnboardEditSupport": false,
+  "hasCustomDeviceNameStyle": false,
+  "hasKeepAliveSupport": false,
+  "hasBoolStates": false,
+  "coachmarksThemeVersion": 0,
+  "hasNoFnKeys": false,
+  "dpiVersionAutoDetectTemporary": false,
+  "reportRateAutoDetectTemporary": false
+ },
+ "activeInterfaces": [
+  {
+   "type": "HIDIO",
+   "id": "HID_046d_0944_ff000001",
+   "pid": 2372,
+   "modelId": 0,
+   "extendedModel": 0,
+   "serialNumber": "123456789012",
+   "path": "",
+   "containerId": "0x2100000",
+   "deviceType": "CAMERA",
+   "deviceName": "",
+   "keyboardLayout": "INVALID_LAYOUT",
+   "firmwareVersion": "00.21",
+   "firmwareName": "",
+   "firmwareRevision": 0,
+   "hardwareRevision": 0,
+   "unitId": "",
+   "fwEntities": [],
+   "connectionType": "USB",
+   "hasOnboardMode": false,
+   "parentPath": "",
+   "hashedSerialNumber": "",
+   "hashedUnitId": ""
+  },
+  {
+   "type": "HIDIO",
+   "id": "HID_046d_0944_ff010001",
+   "pid": 2372,
+   "modelId": 0,
+   "extendedModel": 0,
+   "serialNumber": "123456789012",
+   "path": "",
+   "containerId": "0x2100000",
+   "deviceType": "CAMERA",
+   "deviceName": "",
+   "keyboardLayout": "INVALID_LAYOUT",
+   "firmwareVersion": "00.21",
+   "firmwareName": "",
+   "firmwareRevision": 0,
+   "hardwareRevision": 0,
+   "unitId": "",
+   "fwEntities": [],
+   "connectionType": "USB",
+   "hasOnboardMode": false,
+   "parentPath": "",
+   "hashedSerialNumber": "",
+   "hashedUnitId": ""
+  },
+  {
+   "type": "UVC",
+   "id": "046d_0944",
+   "pid": 2372,
+   "modelId": 0,
+   "extendedModel": 1,
+   "serialNumber": "123456789012",
+   "path": "0x2100000046d0944",
+   "containerId": "0x2100000",
+   "deviceType": "CAMERA",
+   "deviceName": "MX Brio",
+   "keyboardLayout": "INVALID_LAYOUT",
+   "firmwareVersion": "1.1.394",
+   "firmwareName": "",
+   "firmwareRevision": 0,
+   "hardwareRevision": 0,
+   "unitId": "123456789012",
+   "fwEntities": [],
+   "connectionType": "USB",
+   "hasOnboardMode": false,
+   "parentPath": "",
+   "hashedSerialNumber": "0000000000000000000000000000000000000000000000000000000000000000",
+   "hashedUnitId": "0000000000000000000000000000000000000000000000000000000000000000"
+  }
+ ],
+ "slots": {
+  "CAMERA.brio_700.0.123456789012:EXPOSURE_SETTINGS": {
+   "id": "CAMERA.brio_700.0.123456789012:EXPOSURE_SETTINGS",
+   "attribute": "EXPOSURE_SETTINGS",
+   "disabled": false,
+   "defaultCard": "9b85425b-8c71-4b15-808c-122a09440000"
+  },
+  "CAMERA.brio_700.0.123456789012:CROP_SETTINGS": {
+   "id": "CAMERA.brio_700.0.123456789012:CROP_SETTINGS",
+   "attribute": "CROP_SETTINGS",
+   "disabled": false,
+   "defaultCard": "9b85425b-8c71-4b15-808c-122909440000"
+  },
+  "CAMERA.brio_700.0.123456789012:FOCUS_SETTINGS": {
+   "id": "CAMERA.brio_700.0.123456789012:FOCUS_SETTINGS",
+   "attribute": "FOCUS_SETTINGS",
+   "disabled": false,
+   "defaultCard": "9b85425b-8c71-4b15-808c-122709440000"
+  },
+  "CAMERA.brio_700.0.123456789012:IMAGE_SETTINGS": {
+   "id": "CAMERA.brio_700.0.123456789012:IMAGE_SETTINGS",
+   "attribute": "IMAGE_SETTINGS",
+   "disabled": false,
+   "defaultCard": "9b85425b-8c71-4b15-808c-122809440000"
+  }
+ },
+ "configurations": {},
+ "path": "0x2100000046d0944",
+ "parentPath": ""
+}

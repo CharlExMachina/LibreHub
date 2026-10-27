@@ -1,4 +1,4 @@
-# How G Hub talks to the A50 X, and how that was worked out
+# How G Hub talks to the A50 X, the G502 X PLUS and the MX Brio, and how that was worked out
 
 Studied: G Hub 2026.6.981214 (build 876194) on macOS, A50 X base station firmware 1.2.18.
 The wire-level result is in [PROTOCOL.md](PROTOCOL.md); this document covers G Hub's
@@ -222,3 +222,75 @@ All 16 onboard sectors were backed up before the first experiment
 writer (the hardware suite re-checks this after every run). G Hub's software profile ("Desktop:
 Default") was put back to Pulsar Point 32 ms, Neutron Null, 1 min / 5 min, default
 assignments, and the test macro was deleted. The startup effect was toggled and returned to off.
+
+## MX Brio
+
+Studied 2026-10-27 with the same G Hub build, camera firmware 1.1.394. The result is in
+[MXBRIO-PROTOCOL.md](MXBRIO-PROTOCOL.md); the evidence in [evidence/mx-brio/](evidence/mx-brio/).
+
+### What G Hub exposes
+
+`/devices/list` (`ghub/devices-list-mx-brio.json`) shows the camera as `deviceType: CAMERA`, model
+`brio_700`, on three interfaces: two HID collections and a `UVC` one. Its capability block has a
+`webcamSupport` section with every setting's range, default and mode (`MANUAL`, `AUTO`, `BOTH`),
+G Hub's value tables for shutter speed and ISO (with separate "mac" and "win" columns: macOS takes
+UVC's 100 µs units, Windows DirectShow's log2 seconds), and `hasPersistentMemory: false`. The
+websocket paths are `/uvc/{id}/crop|exposure|image|focus/settings` (a `logi.protocol.cards.Card`
+with `cropSettings` etc.), `/uvc/{id}/deep/settings` (anti-flicker), `/uvc/{id}/microphone/enable`
+(a `BoolValue`), `/uvc/{id}/showmode/settings`, `/uvc/{id}/preview_resolutions` and
+`/uvc/{id}/factory_reset`. The schemas are in `ghub/webcam.proto`, extracted with
+`tools/re/extract_protos.py`. The preset menus and defaults come from the model's depot folder
+(`device_presets.json`, `default_configurations.json`), and its strings call gain "ISO" and
+exposure "Shutter Speed".
+
+The agent's strings name its UVC library's units and the GUID each is looked up by ("Device Info
+Unit", "Video Pipe Unit", "Peripheral Unit", "App Settings Unit", "Device Statistics Unit"). They
+also include a format string that logs every UVC request ("method", "unit", "control", "data"). No
+such log turned up: G Hub writes no log files on macOS, and nothing shows in the unified log.
+
+### Method
+
+1. **Read the descriptors.** libusb (`usb@2`) reads the configuration descriptor and sends GET
+   requests on macOS while the system driver, G Hub and LogiRightSight have the camera.
+   LogiRightSight holds the USB device as its exclusive owner, but control requests go through the
+   default pipe anyway. (`usb` 3.x, a WebUSB-style rewrite, insists on claiming the interface
+   first and fails with "invalid state".) The descriptor gave the units and GUIDs. `tools/re/uvc.cjs
+   dump` read every control.
+2. **Make G Hub write, and diff.** On macOS only the device's input reports can be sniffed, and a
+   UVC camera has none for its settings. Instead, `tools/re/mxbrio-ghub-diff.sh` reads the current
+   value of every control, has G Hub SET one settings card over the websocket (one change per
+   round), and reads them all again. 33 rounds covered every setting
+   (`uvc/ghub-set-diffs.txt`). What changed is the control and the bytes G Hub wrote. Controls
+   that changed on their own (unit 9 selector 22, which climbs while streaming) were told apart
+   by repeating.
+3. **Replicate.** With G Hub quit, Libre Hub wrote the same values. The hardware suite reads each
+   control back and compares it with G Hub's bytes, and the simulator tests replay every captured
+   G Hub write against the encoder (`GHUB_WRITES` in `test/fixtures/mx-brio.ts`).
+4. **Persistence and restarts.** Values were written, the camera was restarted through the
+   microphone switch, and everything was read again (`uvc/persistence-reboot.txt`,
+   `uvc/restart-probes.txt`).
+5. **Hands-on.** Show Mode was checked by eye with a preview window (ffplay), and the HID reports
+   with macOS dialogs as in the G502 work (`lab/`).
+
+### Dead ends and corrections
+
+- **G Hub as decoder** (the G502 method) doesn't work here: G Hub writes its own profile when it
+  sees the camera, rather than reading the camera's. The independent check is the raw read-back
+  against G Hub's own bytes.
+- **The HID reports for tilt and the privacy shutter** came only while G Hub ran; with G Hub quit
+  there were none. They are not used.
+- **Reopening after the microphone switch** too early: the camera can vanish from libusb's device
+  list about 2.5 s after the write and still answer on the old handle, so a reopen right then
+  read the framing from before the restart. Waiting until it has gone, then 1.5 s, fixed it.
+- **AE mode "auto"** isn't one of this camera's modes (GET_RES = 0x09: manual and aperture
+  priority). G Hub writes aperture priority (8).
+
+### Things that were touched and restored
+
+Every control was dumped before the first write (`uvc/dump-before-any-write.txt`). Each G Hub
+experiment ended by setting G Hub's original card back (all defaults). The microphone was turned
+on and off twice through G Hub, and many times by the tests, and is off again, as found. After
+the hardware suite and the app tests, the camera reads back G Hub's defaults in every card, the
+microphone is off, and `mx-brio.json` keeps nothing (`uvc/persist-3-restored.txt`: the only
+differences from the first dump are manual values held while their auto mode is on, the
+temperature-like readout, and status bytes that change with every restart).

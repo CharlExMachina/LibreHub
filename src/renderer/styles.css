@@ -1000,3 +1000,51 @@ dialog.assign-dialog { width: min(760px, calc(100vw - 48px)); }
 .access-more code { font: 12px var(--mono); color: var(--text); user-select: text; }
 .text-link { padding: 0; border: 0; background: none; color: var(--brand-text); font: inherit; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
 dialog.commands-dialog { width: min(560px, calc(100vw - 48px)); }
+
+/* ---------------------------------------------------------------- MX Brio */
+.preview-card { padding: 0; overflow: hidden; }
+.preview-frame { position: relative; aspect-ratio: 16 / 9; background: #000; display: grid; place-items: center; }
+.preview-video { width: 100%; height: 100%; object-fit: contain; display: block; }
+.preview-video.mirrored { transform: scaleX(-1); }
+.preview-grid { position: absolute; inset: 0; pointer-events: none; }
+.preview-grid i { position: absolute; background: rgb(255 255 255 / 0.35); }
+.preview-grid i:nth-child(1) { left: 33.33%; top: 0; bottom: 0; width: 1px; }
+.preview-grid i:nth-child(2) { left: 66.67%; top: 0; bottom: 0; width: 1px; }
+.preview-grid i:nth-child(3) { top: 33.33%; left: 0; right: 0; height: 1px; }
+.preview-grid i:nth-child(4) { top: 66.67%; left: 0; right: 0; height: 1px; }
+.preview-msg { position: absolute; inset: auto 16px; max-width: 46ch; text-align: center; color: rgb(255 255 255 / 0.8); font-size: 13.5px; text-wrap: pretty; }
+.preview-msg[hidden] { display: none; }
+.preview-bar { display: flex; align-items: center; gap: 6px; padding: 8px 10px; border-top: 1px solid var(--line); }
+.preview-bar .grow { flex: 1; }
+.preview-bar .btn[aria-pressed='true'] { background: var(--brand-soft); color: var(--brand-text); }
+.field.sm { width: auto; height: 30px; padding: 0 8px; font-size: 13px; border-radius: 8px; }
+.preset-picker { display: flex; align-items: center; gap: 4px; margin: -4px -10px 0 0; }
+.preset-picker select { max-width: 190px; }
+.fovs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.fov {
+  display: grid; justify-items: center; gap: 4px; padding: 14px 10px 12px; border-radius: 12px; cursor: pointer;
+  border: 1px solid var(--line-2); background: var(--surface-2); color: var(--text);
+}
+.fov:hover { border-color: var(--line-3); }
+.fov[aria-checked='true'] { border-color: var(--brand); background: var(--brand-soft); box-shadow: inset 0 0 0 1px var(--brand); }
+.fov b { font-weight: 650; font-variant-numeric: tabular-nums; }
+.fov span { color: var(--text-2); font-size: 12.5px; }
+.fov-person { display: grid; place-items: center; height: 26px; }
+.fov-person .icon { transform: scale(var(--s, 1)); transform-origin: 50% 100%; }
+.param.off { opacity: 0.45; }
+.hint-line { color: var(--text-3); font-size: 12.5px; margin: 2px 0 4px; }
+.hint-line[hidden] { display: none; }
+.kept-file code { font-size: 12px; }
+/* Preview beside the controls when there's room (it stays in view while they scroll), above them when not. */
+.camera-layout { display: grid; gap: 16px; align-items: start; }
+.preview-slot:empty { display: none; }
+@media (min-width: 1100px) {
+  .camera-layout { grid-template-columns: minmax(0, 1.15fr) minmax(400px, 1fr); }
+  .camera-layout > .preview-slot { position: sticky; top: 0; }
+  .camera-layout > .preview-slot:empty { display: block; }
+}
+/* A switch or a short choice beside its description, in the narrower camera cards. */
+.setting.compact { grid-template-columns: minmax(0, 1fr) auto; gap: 20px; }
+.preview-bar { flex-wrap: wrap; row-gap: 6px; }
+.camera-layout .card-head { flex-wrap: wrap; row-gap: 10px; }
+.camera-layout .preset-picker { margin-right: -6px; }

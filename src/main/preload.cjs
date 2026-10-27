@@ -41,3 +41,10 @@ contextBridge.exposeInMainWorld('g502x', {
   restore: () => ipcRenderer.invoke('g502x:restore'),
   onChanged: (listener) => ipcRenderer.on('g502x:changed', (_event, what) => listener(what)),
 });
+
+contextBridge.exposeInMainWorld('brio', {
+  snapshot: () => ipcRenderer.invoke('brio:snapshot'),
+  apply: (action) => ipcRenderer.invoke('brio:apply', action),
+  savePhoto: (dataUrl) => ipcRenderer.invoke('brio:save-photo', dataUrl),
+  onChanged: (listener) => ipcRenderer.on('brio:changed', (_event, what) => listener(what)),
+});
