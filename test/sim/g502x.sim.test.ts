@@ -487,6 +487,22 @@ describe('software actions and Freestyle (agent)', () => {
     await agent.stop();
   });
 
+  it('says when a DPI button is pressed (the mouse itself doesn\'t), and not for other buttons', async () => {
+    const { svc, agent, sim } = await running();
+    const DPI_UP = 1 << 9;
+    expect((await svc.snapshot()).profiles[0].buttons[9].binding).toBe('fn:dpi-up');
+    await agent.start();
+    let dpi = 0;
+    agent.on('dpi', () => dpi++);
+    sim.press(BACK);
+    await tick(5);
+    expect(dpi).toBe(0);
+    sim.press(DPI_UP);
+    await tick(5);
+    expect(dpi).toBeGreaterThan(0);
+    await agent.stop();
+  });
+
   it('does nothing if the mouse binding was changed behind its back (e.g. by G Hub)', async () => {
     const { svc, agent, ran, sim, store } = await running();
     await svc.apply({ type: 'button', profile: 1, control: 'g9', layer: 'base', assignment: 'run:echo hi' });

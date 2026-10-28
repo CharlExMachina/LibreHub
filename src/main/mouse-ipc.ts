@@ -68,6 +68,7 @@ export function registerMouse(ipcMain: IpcMain, getWindow: () => BrowserWindow |
     agent = new SoftwareAgent(svc, store, { watch: true });
     agent.on('error', (err) => console.error('mouse agent:', (err as Error).message));
     agent.on('action', () => notify('action'));
+    agent.on('dpi', () => notify('dpi'));
     try {
       await agent.start();
     } catch (err) {

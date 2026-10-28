@@ -891,12 +891,22 @@ body.idle .led-dot { animation-play-state: paused !important; }
 .dpi-mark { position: absolute; top: 37px; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%; background: var(--solid); border: 2px solid var(--text-2); }
 .dpi-mark b { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); font: 500 11.5px var(--mono); color: var(--text-2); white-space: nowrap; }
 .dpi-mark.up b { bottom: 34px; }
-.dpi-mark.def { background: var(--brand); border-color: var(--brand); box-shadow: 0 0 0 4px var(--brand-soft); }
-.dpi-mark.def b { color: var(--brand-text); }
+/* the level in use: filled and haloed; where the profile starts: a ring of the same colour; the sniper's: an orange middle */
+.dpi-mark.def { border-color: var(--brand); }
+.dpi-mark.now { background: var(--brand); border-color: var(--brand); box-shadow: 0 0 0 5px var(--brand-soft); z-index: 1; }
+.dpi-mark.now b { color: var(--brand-text); font-weight: 650; }
 .dpi-mark.shift::after { content: ''; position: absolute; inset: 3px; border-radius: 50%; background: var(--warn); }
 .dpi-rows { display: grid; gap: 6px; margin-top: 6px; }
-.dpi-row { display: grid; grid-template-columns: 70px auto 1fr auto auto; align-items: center; gap: 16px; padding: 6px 6px 6px 12px; border-radius: 12px; background: var(--well); border: 1px solid var(--line); }
-.dpi-row.def { border-color: var(--brand-line); }
+.dpi-row { display: grid; grid-template-columns: 136px auto 1fr auto auto; align-items: center; gap: 16px; padding: 6px 6px 6px 12px; border-radius: 12px; background: var(--well); border: 1px solid var(--line); }
+.dpi-row.now { border-color: var(--brand-line); background: var(--brand-soft); }
+.dpi-n { display: flex; align-items: center; gap: 8px; }
+.dpi-now { font-size: 11px; padding: 1px 7px; }
+.dpi-legend { display: flex; justify-content: center; gap: 18px; margin: 0 0 12px; color: var(--text-3); font-size: 12px; }
+.dpi-legend span { display: flex; align-items: center; gap: 6px; }
+.dpi-key { position: relative; width: 11px; height: 11px; border-radius: 50%; border: 2px solid var(--text-2); background: var(--solid); }
+.dpi-key.now { background: var(--brand); border-color: var(--brand); }
+.dpi-key.def { border-color: var(--brand); }
+.dpi-key.shift::after { content: ''; position: absolute; inset: 1.5px; border-radius: 50%; background: var(--warn); }
 .dpi-n { color: var(--text-2); font-size: 13px; }
 .stepper { display: inline-flex; align-items: center; gap: 2px; }
 .stepper .btn.icon-only { font-size: 17px; }

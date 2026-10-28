@@ -18,6 +18,14 @@ for new features, a **patch** version for fixes. Each release is the tag `vX.Y.Z
   corner to drag for pan and tilt. The Image page has the same picture, with exposure, colour and
   focus over it as a photo editor has them: a chip for each adjustment with its value, the picked
   one's control under them, and the group's presets along the top.
+- **Fixed: the mouse's DPI buttons took seconds to show in the app**, or only once you clicked
+  back into its window. The mouse doesn't say when its DPI level changes, so Libre Hub checked
+  every two seconds, and only while its window had the focus. It now sees the DPI buttons being
+  pressed and reads the new level at once, whichever window has the focus.
+- **Which DPI level is in use** is now marked on the Sensitivity page: a filled dot on the line and
+  an "In use" tag on its row. Where the profile starts is a ring, and the sniper level an orange
+  middle. The overview's DPI card says what its levels do, and the Computer actions row only shows
+  a badge when the agent isn't running in Libre Hub.
 - **Fixed: no sidetone after the PC starts with the headset on the dock.** The headset came off
   the dock without sidetone, but the base station still reported it as set, so the settings check
   saw nothing to fix. Libre Hub now sends your sidetone on every check, and checks whenever the
