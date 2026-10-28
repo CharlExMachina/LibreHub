@@ -372,9 +372,9 @@ function switchRow(ctx, key, title, desc) {
  * to save the current settings as a preset and to delete yours, and Reset to default.
  */
 /** Save (the current settings as a preset of yours) and Delete (`current()`, one of yours), for a card's presets. */
-function presetActions(ctx, group, current) {
+function presetActions(ctx, group, current, saveLabel = 'Save') {
   const del = el('button', { type: 'button', class: 'btn ghost sm', title: 'Delete this preset', hidden: true }, ic('trash', 14));
-  const saveBtn = el('button', { type: 'button', class: 'btn ghost sm', title: 'Save these settings as a preset' }, ic('save', 14), 'Save');
+  const saveBtn = el('button', { type: 'button', class: 'btn ghost sm', title: 'Save these settings as a preset' }, ic('save', 14), saveLabel);
   saveBtn.addEventListener('click', async () => {
     const name = await prompt({ title: `Save ${GROUP_TITLES[group].toLowerCase()} preset`, body: 'Saved on this computer, with the camera’s current settings for this card.', label: 'Preset name', confirm: 'Save', maxlength: 32 });
     if (!name) return;
@@ -429,7 +429,7 @@ const FRAMING_TITLES = {
 function framingPresets(ctx) {
   const row = el('div', { class: 'segmented preset-strip', role: 'radiogroup', 'aria-label': 'Framing presets' });
   let lit = null;
-  const { del, saveBtn } = presetActions(ctx, 'crop', () => lit);
+  const { del, saveBtn } = presetActions(ctx, 'crop', () => lit, 'Save preset');
   const buttons = () => [...row.querySelectorAll('button')];
   function light(name) {
     lit = name;
@@ -501,7 +501,7 @@ function cameraPage(ctx) {
     bar: [
       el('div', { class: 'stage-item', title: showDesc }, el('span', { class: 'k' }, 'Show Mode'), show.el),
       el('span', { class: 'stage-sep' }),
-      el('div', { class: 'stage-item' }, el('span', { class: 'k' }, 'Framing'), ...presets.actions),
+      el('div', { class: 'stage-item' }, ...presets.actions),
     ],
     update(s) {
       presets.update(s);
@@ -515,14 +515,17 @@ function cameraPage(ctx) {
 /**
  * Where the zoomed-in picture sits in the camera's whole view, as a box on a small map: drag it, or
  * use the arrow keys, to pan and tilt. Pan and tilt only do anything zoomed in, so it shows then.
+ * The map grows as you zoom in further, so the box is never too small for its corners (styles.css).
  * The box's travel is pan and tilt's ±20° spread over the room the zoom leaves (an approximation:
  * it shows which way and how far, not the exact crop). Writes when you let go, like the sliders.
  */
 function cropMap(ctx) {
   const LIMIT = 20;
   const box = el('i');
+  // The box moves within an area a little inside the map, so its corners stay parallel to the map's.
+  const area = el('span', { class: 'crop-area' }, box);
   const map = el('div', { class: 'crop-map', role: 'slider', tabindex: '0', 'aria-label': 'Pan and tilt',
-    'aria-valuemin': String(-LIMIT), 'aria-valuemax': String(LIMIT), title: 'Drag to pan and tilt' }, box);
+    'aria-valuemin': String(-LIMIT), 'aria-valuemax': String(LIMIT), title: 'Drag to pan and tilt' }, area);
   const root = el('div', { class: 'crop-wrap' }, map, el('span', { class: 'crop-cap' }, 'Drag to pan and tilt'));
   let zoom = 100, pan = 0, tilt = 0; // degrees
   let held = false;
@@ -533,6 +536,7 @@ function cropMap(ctx) {
   const flip = () => (map.closest('.preview-frame')?.querySelector('.preview-video.mirrored') ? -1 : 1);
 
   function paint() {
+    map.style.setProperty('--z', String(zoom / 100));
     map.style.setProperty('--w', `${(100 / zoom) * 100}%`);
     map.style.setProperty('--x', `${50 + (pan / LIMIT) * room() * 50}%`);
     map.style.setProperty('--y', `${50 - (tilt / LIMIT) * room() * 50}%`);
@@ -543,7 +547,7 @@ function cropMap(ctx) {
   const commit = () => { clearTimeout(timer); timer = 0; ctx.set('pantilt', { pan: pan * PAN_STEP, tilt: tilt * PAN_STEP }); };
 
   function moveTo(e) {
-    const r = map.getBoundingClientRect();
+    const r = area.getBoundingClientRect();
     const half = room() / 2;
     if (!half) return;
     pan = clamp((((e.clientX - r.left) / r.width - 0.5) / half) * LIMIT * flip());
