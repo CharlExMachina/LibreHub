@@ -1286,10 +1286,11 @@ initAppSettings({
   },
 });
 for (const [pid, p] of Object.entries(panels)) p.setActive(device === pid);
-// Glass only where something floats over the page: toasts, and the mouse pages' profile bar, which the page
-// scrolls under. Everything else is the plain theme. styles.css sets how each looks (its --glass-* values),
-// Tinted included, so the library's own Tinted and accessibility adjustments are off (adaptive: false).
-autoGlass('.profile-bar, .toast', { adaptive: false });
+// Glass only where something floats over the page: toasts, the camera's controls over its picture, and the mouse
+// pages' profile bar, which the page scrolls under. Everything else is the plain theme. styles.css sets how each
+// looks (its --glass-* values), Tinted included, so the library's own Tinted and accessibility adjustments are off
+// (adaptive: false).
+autoGlass('.profile-bar, .toast, .stage-controls, .crop-map', { adaptive: false });
 // Access was just allowed: connect them all now instead of at the next check.
 onAccessAllowed(() => { void refresh(); void mouse.refresh(); void camera.refresh(); });
 renderNav();

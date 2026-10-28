@@ -12,7 +12,9 @@ for new features, a **patch** version for fixes. Each release is the tag `vX.Y.Z
   saturation, vibrance, sharpness, tint, white balance and temperature; auto or manual focus;
   anti-flicker; and the microphones on or off. Each card has G Hub's presets and your own. The
   camera forgets its framing when it restarts, so Libre Hub puts your settings back whenever it
-  connects, like G Hub. `librehub camera …` does the same from a terminal.
+  connects, like G Hub. `librehub camera …` does the same from a terminal. On the Camera page the
+  picture fills the page and the framing floats over it on glass, like a camera app: field of
+  view and zoom along the bottom, and a map in the corner to drag for pan and tilt.
 - **Fixed: no sidetone after the PC starts with the headset on the dock.** The headset came off
   the dock without sidetone, but the base station still reported it as set, so the settings check
   saw nothing to fix. Libre Hub now sends your sidetone on every check, and checks whenever the

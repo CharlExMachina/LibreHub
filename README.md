@@ -110,9 +110,10 @@ it.
 
 ### MX Brio
 
-- **Camera:** a live preview (with G Hub's mirror, grid, resolution and snapshot options) beside
-  the framing: field of view (65°, 78°, 90°), zoom up to 4×, pan and tilt when zoomed in, and
-  Show Mode.
+- **Camera:** a live preview across the page (with G Hub's mirror, grid, resolution and snapshot
+  options), with the framing on glass over the picture: field of view (65°, 78°, 90°) and zoom up
+  to 4× along the bottom, and, zoomed in, a map in the corner to drag for pan and tilt. Show Mode
+  and the framing presets are in the bar under it.
 - **Image:** exposure (auto, or shutter speed and ISO; compensation, HDR, frame-rate or exposure
   priority), colour (brightness, contrast, saturation, vibrance, sharpness, tint, white balance
   auto or in kelvin, warmer/cooler) and focus (auto or manual).

@@ -8,6 +8,8 @@ import { appCard } from './prefs.js';
 import { confirmDialog, createWriter, el, prompt, segmented, slider, toast, toggle } from './ui.js';
 
 const ic = (name, size) => el('span', { style: { display: 'contents' }, html: icon(name, size) });
+/** A select with our chevron: Chromium draws its own almost against the edge, whatever the padding. */
+const selectBox = (select) => el('span', { class: 'select-box' }, select, el('span', { class: 'select-chevron', html: icon('chevron', 14) }));
 
 export const CAMERA_PAGES = [
   { id: 'camera', label: 'Camera', icon: 'camera' },
@@ -43,7 +45,8 @@ const RESOLUTIONS = [
 
 /**
  * The live picture, with G Hub's preview options (mirror, grid, resolution, a still). One element,
- * moved into whichever page shows it. `want(on)` starts or stops the camera stream.
+ * moved into whichever page shows it. `want(on)` starts or stops the camera stream; `mount(page)`
+ * puts that page's controls over the picture (`overlay`) and at the end of the bar (`bar`).
  */
 function cameraPreview() {
   const prefs = { mirror: false, grid: false, res: '720p30', ...JSON.parse(localStorage.getItem('brioPreview') || '{}') };
@@ -51,14 +54,16 @@ function cameraPreview() {
   const video = el('video', { class: 'preview-video', autoplay: true, muted: true, playsinline: true, 'aria-label': 'Camera preview' });
   const grid = el('div', { class: 'preview-grid', 'aria-hidden': 'true' }, ...Array.from({ length: 4 }, () => el('i')));
   const msg = el('div', { class: 'preview-msg', role: 'status' });
-  const frame = el('div', { class: 'preview-frame' }, video, grid, msg);
+  const overlay = el('div', { class: 'preview-overlay' });
+  const extras = el('div', { class: 'preview-extras' });
+  const frame = el('div', { class: 'preview-frame' }, video, grid, msg, overlay);
   const press = (b, on) => b.setAttribute('aria-pressed', String(on));
   const mirrorBtn = el('button', { type: 'button', class: 'btn ghost sm', title: 'Mirror the preview (only here; apps get the camera’s picture)', onclick: () => { prefs.mirror = !prefs.mirror; save(); paint(); } }, ic('shift', 15), 'Mirror');
   const gridBtn = el('button', { type: 'button', class: 'btn ghost sm', title: 'Rule-of-thirds grid', onclick: () => { prefs.grid = !prefs.grid; save(); paint(); } }, ic('overview', 15), 'Grid');
   const res = el('select', { class: 'field sm', 'aria-label': 'Preview resolution', onchange: () => { prefs.res = res.value; save(); restart(); } },
     ...RESOLUTIONS.map((r) => el('option', { value: r.id, title: `${r.width} × ${r.height}, ${r.fps} frames a second` }, r.label)));
   const shot = el('button', { type: 'button', class: 'btn ghost sm', title: 'Save a still to Pictures/Webcam Snapshots', onclick: snapshot }, ic('download', 15), 'Snapshot');
-  const bar = el('div', { class: 'preview-bar' }, mirrorBtn, gridBtn, el('span', { class: 'grow' }), res, shot);
+  const bar = el('div', { class: 'preview-bar' }, mirrorBtn, gridBtn, selectBox(res), shot, el('span', { class: 'grow' }), extras);
   const root = el('div', { class: 'card preview-card' }, frame, bar);
 
   let stream = null;
@@ -138,6 +143,10 @@ function cameraPreview() {
   say('Preview paused');
   return {
     el: root,
+    mount(page) {
+      overlay.replaceChildren(...(page?.overlay ?? []));
+      extras.replaceChildren(...(page?.bar ?? []));
+    },
     want(on) {
       if (on === wanted) return;
       wanted = on;
@@ -206,7 +215,10 @@ export function createCamera({ changed }) {
   function syncPreview() {
     const on = active && !!snap && PREVIEW_PAGES.has(page) && !document.hidden && document.hasFocus();
     const slot = built?.pages[page]?.slot;
-    if (slot && preview.el.parentNode !== slot) slot.append(preview.el);
+    if (slot && preview.el.parentNode !== slot) {
+      slot.append(preview.el);
+      preview.mount(built.pages[page]);
+    }
     preview.want(on);
   }
   for (const ev of ['focus', 'blur']) window.addEventListener(ev, syncPreview);
@@ -382,7 +394,7 @@ function presetPicker(ctx, group) {
   reset.addEventListener('click', () => ctx.send(`preset:${group}`, { type: 'reset', group }, { coalesce: false }));
   let sig = '';
   return {
-    el: el('div', { class: 'preset-picker' }, select, del, saveBtn, reset),
+    el: el('div', { class: 'preset-picker' }, selectBox(select), del, saveBtn, reset),
     update(snap) {
       const list = snap.presets.filter((p) => p.group === group);
       const match = list.find((p) => p.matches);
@@ -405,41 +417,106 @@ function presetPicker(ctx, group) {
 function cameraPage(ctx) {
   const slot = el('div', { class: 'preview-slot' });
   const presets = presetPicker(ctx, 'crop');
-  const fovBtns = FOVS.map((f) => el('button', { type: 'button', class: 'fov', role: 'radio', 'aria-checked': 'false', 'data-fov': String(f.value),
-    onclick: () => ctx.set('fov', { fov: f.value }) },
-    el('span', { class: 'fov-person', style: { '--s': String(f.value === 65 ? 1 : f.value === 78 ? 0.8 : 0.62) }, html: icon('user', 22) }),
-    el('b', {}, `${f.value}°`), el('span', {}, f.label)));
-  const fov = el('div', { class: 'fovs', role: 'radiogroup', 'aria-label': 'Field of view' }, fovBtns);
+  const fov = segmented({ label: 'Field of view', options: FOVS.map((f) => ({ value: f.value, label: `${f.value}° ${f.label}` })),
+    onChange: (v) => ctx.set('fov', { fov: v }) });
+  fov.el.querySelectorAll('button').forEach((b, i) => { b.title = FOVS[i].desc; });
   const zoom = rangeRow(ctx, 'zoom', { label: 'Zoom', min: 100, max: 400, format: (v) => `${(v / 100).toFixed(v % 100 ? 2 : 1)}×` });
-  const deg = (v) => `${v > 0 ? '+' : ''}${v}°`;
-  const pan = rangeRow(ctx, 'pan', { label: 'Pan', min: -20, max: 20, format: (v) => deg(v / PAN_STEP), toValue: (v) => v * PAN_STEP, fromValue: (v) => v / PAN_STEP });
-  const tilt = rangeRow(ctx, 'tilt', { label: 'Tilt', min: -20, max: 20, format: (v) => deg(v / PAN_STEP), toValue: (v) => v * PAN_STEP, fromValue: (v) => v / PAN_STEP });
-  const panNote = el('div', { class: 'hint-line' }, 'Zoom in to move the picture around.');
-  const show = switchRow(ctx, 'showMode', 'Show Mode', 'Tilt the camera down at your desk and it turns the picture the right way up, to share notes and sketches.');
+  const map = cropMap(ctx);
+  const showDesc = 'Tilt the camera down at your desk and it turns the picture the right way up, to share notes and sketches.';
+  const show = toggle({ label: 'Show Mode', onChange: (on) => ctx.set('showMode', { showMode: on }) });
+  show.el.title = showDesc;
 
+  // The picture is the page: framing floats over it on glass, the way a camera app has it.
   const node = pageShell('Camera', 'What the camera shows: how wide, how close, and where. Apps get the camera with these settings.',
-    el('div', { class: 'camera-layout' },
-      slot,
-      el('div', { class: 'stack' }, el('div', { class: 'card' },
-        cardHead('crosshair', 'Framing', null, presets.el),
-        el('div', { class: 'field-label' }, 'Field of view'),
-        fov,
-        el('div', { class: 'params' }, zoom.el, pan.el, tilt.el),
-        panNote,
-        show.el))));
+    el('div', { class: 'camera-stage' }, slot));
 
   return {
     el: node,
     slot,
+    overlay: [el('div', { class: 'stage-controls' }, fov.el, el('span', { class: 'stage-sep' }), zoom.el), map.el],
+    bar: [
+      el('div', { class: 'stage-item', title: showDesc }, el('span', { class: 'k' }, 'Show Mode'), show.el),
+      el('span', { class: 'stage-sep' }),
+      el('div', { class: 'stage-item' }, el('span', { class: 'k' }, 'Framing'), presets.el),
+    ],
     update(s) {
       presets.update(s);
-      for (const b of fovBtns) b.setAttribute('aria-checked', String(Number(b.dataset.fov) === s.settings.fov));
-      const zoomed = s.settings.zoom > 100;
+      if (!ctx.quiet('fov')) fov.set(s.settings.fov);
       zoom.update(s);
-      pan.update(s, !zoomed);
-      tilt.update(s, !zoomed);
-      panNote.hidden = zoomed;
-      show.update(s);
+      map.update(s);
+      if (!ctx.quiet('showMode')) show.set(s.settings.showMode);
+    },
+  };
+}
+
+/**
+ * Where the zoomed-in picture sits in the camera's whole view, as a box on a small map: drag it, or
+ * use the arrow keys, to pan and tilt. Pan and tilt only do anything zoomed in, so it shows then.
+ * The box's travel is pan and tilt's ±20° spread over the room the zoom leaves (an approximation:
+ * it shows which way and how far, not the exact crop). Writes when you let go, like the sliders.
+ */
+function cropMap(ctx) {
+  const LIMIT = 20;
+  const box = el('i');
+  const map = el('div', { class: 'crop-map', role: 'slider', tabindex: '0', 'aria-label': 'Pan and tilt',
+    'aria-valuemin': String(-LIMIT), 'aria-valuemax': String(LIMIT), title: 'Drag to pan and tilt' }, box);
+  const root = el('div', { class: 'crop-wrap' }, map, el('span', { class: 'crop-cap' }, 'Drag to pan and tilt'));
+  let zoom = 100, pan = 0, tilt = 0; // degrees
+  let held = false;
+  let timer = 0;
+  const deg = (v) => `${v > 0 ? '+' : ''}${v}°`;
+  const room = () => 1 - 100 / zoom;
+  // The mirrored preview flips the map with it, so the box moves the way the picture does.
+  const flip = () => (map.closest('.preview-frame')?.querySelector('.preview-video.mirrored') ? -1 : 1);
+
+  function paint() {
+    map.style.setProperty('--w', `${(100 / zoom) * 100}%`);
+    map.style.setProperty('--x', `${50 + (pan / LIMIT) * room() * 50}%`);
+    map.style.setProperty('--y', `${50 - (tilt / LIMIT) * room() * 50}%`);
+    map.setAttribute('aria-valuenow', String(pan));
+    map.setAttribute('aria-valuetext', `Pan ${deg(pan)}, tilt ${deg(tilt)}`);
+  }
+  const clamp = (v) => Math.max(-LIMIT, Math.min(LIMIT, Math.round(v)));
+  const commit = () => { clearTimeout(timer); timer = 0; ctx.set('pantilt', { pan: pan * PAN_STEP, tilt: tilt * PAN_STEP }); };
+
+  function moveTo(e) {
+    const r = map.getBoundingClientRect();
+    const half = room() / 2;
+    if (!half) return;
+    pan = clamp((((e.clientX - r.left) / r.width - 0.5) / half) * LIMIT * flip());
+    tilt = clamp((-((e.clientY - r.top) / r.height - 0.5) / half) * LIMIT);
+    paint();
+  }
+  map.addEventListener('pointerdown', (e) => {
+    held = true;
+    map.setPointerCapture(e.pointerId);
+    moveTo(e);
+  });
+  map.addEventListener('pointermove', (e) => { if (held) moveTo(e); });
+  for (const ev of ['pointerup', 'pointercancel']) map.addEventListener(ev, () => { if (held) { held = false; commit(); } });
+  map.addEventListener('keydown', (e) => {
+    const step = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[e.key];
+    if (!step) return;
+    e.preventDefault();
+    pan = clamp(pan + step[0] * flip());
+    tilt = clamp(tilt + step[1]);
+    paint();
+    // From the keyboard each press is a change; send once the keys pause.
+    clearTimeout(timer);
+    timer = setTimeout(commit, 450);
+  });
+  map.addEventListener('blur', () => { if (timer) commit(); });
+
+  return {
+    el: root,
+    update(snap) {
+      zoom = snap.settings.zoom;
+      root.hidden = zoom <= 100;
+      if (!held && !timer && !ctx.quiet('pantilt')) {
+        pan = snap.settings.pan / PAN_STEP;
+        tilt = snap.settings.tilt / PAN_STEP;
+      }
+      paint();
     },
   };
 }
