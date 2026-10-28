@@ -136,9 +136,9 @@
   /* a little past the target and back, like something with weight */
   --spring: linear(0, 0.2 7%, 0.6 18%, 0.92 29%, 1.025 38%, 1.035 45%, 1.02 55%, 1.005 66%, 0.998 78%, 1);
 
-  /* Glass is only for what floats over the content: toasts, the camera's controls over its picture (a little
-     clearer than a toast, so the picture shows through), and the mouse pages' profile bar, which is clearer
-     still so the page reads through it as it scrolls under. Clear lets the content through;
+  /* Glass is only for what floats over the content: toasts and drop-down menus, the camera's controls over its
+     picture (a little clearer than a toast, so the picture shows through), and the mouse pages' profile bar,
+     which is clearer still so the page reads through it as it scrolls under. Clear lets the content through;
      Tinted (Settings, or the system's reduce-transparency) is more opaque, with more contrast. The glass is
      liquid-glass-electron; its options are the --glass-* properties on each glass element (--glass-backdrop
      takes the frost). These custom properties inherit, so the app's own names stay out of --glass-*. It brightens
@@ -686,6 +686,33 @@ dialog p { margin: 0 0 16px; color: var(--text-2); font-size: 13px; }
 .toast > .icon { color: var(--brand-text); }
 .toast .msg { flex: 1; font-size: 13px; }
 .toast.leaving { animation: toast-out 0.2s ease forwards; }
+/* A drop-down's field, and its menu: glass, like a toast, grown out of the field on a spring (the glass follows
+   the scale, its strength rising as it opens) and shrunk back into it. */
+.dd-field { display: inline-flex; align-items: center; gap: 10px; padding: 0 10px; text-align: left; cursor: pointer; }
+.dd-field:hover { border-color: color-mix(in oklch, var(--foreground) 28%, transparent); }
+.dd-field[aria-expanded='true'] { border-color: var(--brand); }
+.dd-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dd-chevron { display: grid; rotate: 90deg; color: var(--text-2); transition: rotate 0.25s var(--ease); }
+.dd-field[aria-expanded='true'] .dd-chevron { rotate: -90deg; }
+.dd-menu {
+  position: fixed; inset: auto; margin: 0; max-height: min(360px, calc(100vh - 24px)); overflow: auto; overscroll-behavior: contain;
+  padding: 5px; border: 0 solid; border-radius: 14px; color: var(--text); background: var(--toast-tint); box-shadow: var(--shadow-float);
+  --glass-backdrop: var(--toast-frost); --glass-refraction: 0.6; --glass-bevel: 14; outline: none;
+}
+.dd-menu.opening { animation: dd-in 0.42s var(--spring); }
+.dd-menu.opening .dd-item { animation: dd-item-in 0.24s ease-out backwards; animation-delay: 0.08s; }
+.dd-menu.leaving { animation: dd-out 0.16s ease-in forwards; pointer-events: none; }
+@keyframes dd-in { from { scale: 0.6 0.3; opacity: 0.4; --glass-strength: 0.4; } }
+@keyframes dd-item-in { from { opacity: 0; translate: 0 -4px; } }
+@keyframes dd-out { to { scale: 0.7 0.4; opacity: 0; --glass-strength: 0; } }
+.dd-group { padding: 8px 10px 4px 34px; color: var(--text-3); font-size: 11.5px; font-weight: 550; }
+.dd-item {
+  display: grid; grid-template-columns: 16px 1fr; align-items: center; gap: 8px; height: 32px; padding: 0 12px 0 10px;
+  border-radius: 9px; font-size: 13px; white-space: nowrap; cursor: pointer;
+}
+.dd-item.active { background: var(--surface-3); }
+.dd-check { display: grid; color: var(--brand-text); visibility: hidden; }
+.dd-item[aria-selected='true'] .dd-check { visibility: visible; }
 @keyframes toast-in { from { opacity: 0; transform: translateY(12px) scale(0.96); } }
 @keyframes toast-out { to { opacity: 0; transform: translateY(8px); } }
 
@@ -1026,10 +1053,7 @@ dialog.commands-dialog { width: min(560px, calc(100vw - 48px)); }
 .preview-bar .btn[aria-pressed='true'] { background: var(--brand-soft); color: var(--brand-text); }
 .field.sm { width: auto; height: 30px; padding: 0 8px; font-size: 13px; border-radius: 8px; }
 .preset-picker { display: flex; align-items: center; gap: 4px; margin: -4px -10px 0 0; }
-.preset-picker select { max-width: 190px; }
-.select-box { position: relative; display: inline-flex; }
-.select-box select.field { appearance: none; padding: 0 30px 0 10px; }
-.select-chevron { position: absolute; top: 50%; right: 10px; display: grid; translate: 0 -50%; rotate: 90deg; pointer-events: none; color: var(--text-2); }
+.preset-picker .dd-field { max-width: 190px; }
 .param.off { opacity: 0.45; }
 .kept-file code { font-size: 12px; }
 /* Preview beside the controls when there's room (it stays in view while they scroll), above them when not. */

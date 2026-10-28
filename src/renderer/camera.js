@@ -5,11 +5,9 @@
 import { cameraArt } from './art.js';
 import { icon } from './icons.js';
 import { appCard } from './prefs.js';
-import { confirmDialog, createWriter, el, prompt, segmented, slider, toast, toggle } from './ui.js';
+import { confirmDialog, createWriter, dropdown, el, prompt, segmented, slider, toast, toggle } from './ui.js';
 
 const ic = (name, size) => el('span', { style: { display: 'contents' }, html: icon(name, size) });
-/** A select with our chevron: Chromium draws its own almost against the edge, whatever the padding. */
-const selectBox = (select) => el('span', { class: 'select-box' }, select, el('span', { class: 'select-chevron', html: icon('chevron', 14) }));
 
 export const CAMERA_PAGES = [
   { id: 'camera', label: 'Camera', icon: 'camera' },
@@ -60,10 +58,10 @@ function cameraPreview() {
   const press = (b, on) => b.setAttribute('aria-pressed', String(on));
   const mirrorBtn = el('button', { type: 'button', class: 'btn ghost sm', title: 'Mirror the preview (only here; apps get the camera’s picture)', onclick: () => { prefs.mirror = !prefs.mirror; save(); paint(); } }, ic('shift', 15), 'Mirror');
   const gridBtn = el('button', { type: 'button', class: 'btn ghost sm', title: 'Rule-of-thirds grid', onclick: () => { prefs.grid = !prefs.grid; save(); paint(); } }, ic('overview', 15), 'Grid');
-  const res = el('select', { class: 'field sm', 'aria-label': 'Preview resolution', onchange: () => { prefs.res = res.value; save(); restart(); } },
-    ...RESOLUTIONS.map((r) => el('option', { value: r.id, title: `${r.width} × ${r.height}, ${r.fps} frames a second` }, r.label)));
+  const res = dropdown({ label: 'Preview resolution', onChange: (v) => { prefs.res = v; save(); restart(); },
+    groups: [{ options: RESOLUTIONS.map((r) => ({ value: r.id, label: r.label, title: `${r.width} × ${r.height}, ${r.fps} frames a second` })) }] });
   const shot = el('button', { type: 'button', class: 'btn ghost sm', title: 'Save a still to Pictures/Webcam Snapshots', onclick: snapshot }, ic('download', 15), 'Snapshot');
-  const bar = el('div', { class: 'preview-bar' }, mirrorBtn, gridBtn, selectBox(res), shot, el('span', { class: 'grow' }), extras);
+  const bar = el('div', { class: 'preview-bar' }, mirrorBtn, gridBtn, res.el, shot, el('span', { class: 'grow' }), extras);
   const root = el('div', { class: 'card preview-card' }, frame, bar);
 
   let stream = null;
@@ -75,7 +73,7 @@ function cameraPreview() {
     press(gridBtn, prefs.grid);
     video.classList.toggle('mirrored', prefs.mirror);
     grid.hidden = !prefs.grid;
-    res.value = prefs.res;
+    res.set(prefs.res);
     shot.disabled = !stream;
   }
 
@@ -375,8 +373,8 @@ function switchRow(ctx, key, title, desc) {
  * to save the current settings as a preset and to delete yours, and Reset to default.
  */
 function presetPicker(ctx, group) {
-  const select = el('select', { class: 'field sm', 'aria-label': `${GROUP_TITLES[group]} preset`,
-    onchange: () => { if (select.value) ctx.send(`preset:${group}`, { type: 'preset', group, name: select.value }, { coalesce: false }); } });
+  const select = dropdown({ label: `${GROUP_TITLES[group]} preset`, placeholder: 'Custom',
+    onChange: (name) => ctx.send(`preset:${group}`, { type: 'preset', group, name }, { coalesce: false }) });
   const del = el('button', { type: 'button', class: 'btn ghost sm', title: 'Delete this preset', hidden: true }, ic('trash', 14));
   const saveBtn = el('button', { type: 'button', class: 'btn ghost sm', title: 'Save these settings as a preset' }, ic('save', 14), 'Save');
   const reset = el('button', { type: 'button', class: 'btn ghost sm', title: 'G Hub’s defaults for this card' }, ic('reset', 14), 'Reset');
@@ -394,18 +392,18 @@ function presetPicker(ctx, group) {
   reset.addEventListener('click', () => ctx.send(`preset:${group}`, { type: 'reset', group }, { coalesce: false }));
   let sig = '';
   return {
-    el: el('div', { class: 'preset-picker' }, selectBox(select), del, saveBtn, reset),
+    el: el('div', { class: 'preset-picker' }, select.el, del, saveBtn, reset),
     update(snap) {
       const list = snap.presets.filter((p) => p.group === group);
       const match = list.find((p) => p.matches);
       const next = JSON.stringify([list.map((p) => [p.name, p.curated]), match?.name]);
       if (next !== sig) {
         sig = next;
-        select.replaceChildren(
-          ...(match ? [] : [el('option', { value: '' }, 'Custom')]),
-          el('optgroup', { label: 'G Hub presets' }, ...list.filter((p) => p.curated).map((p) => el('option', { value: p.name }, p.name))),
-          ...(list.some((p) => !p.curated) ? [el('optgroup', { label: 'Your presets' }, ...list.filter((p) => !p.curated).map((p) => el('option', { value: p.name }, p.name)))] : []));
-        select.value = match?.name ?? '';
+        const options = (curated) => list.filter((p) => p.curated === curated).map((p) => ({ value: p.name, label: p.name }));
+        select.setGroups([{ label: 'G Hub presets', options: options(true) },
+          ...(list.some((p) => !p.curated) ? [{ label: 'Your presets', options: options(false) }] : [])]);
+        // Settings that match no preset show as Custom.
+        select.set(match?.name ?? null);
         del.hidden = !match || match.curated;
       }
     },
