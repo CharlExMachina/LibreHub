@@ -135,8 +135,10 @@ window back. These options are on the **Settings** page:
 - **Keep my headset settings.** If the headset's settings change while you weren't using the
   app (G Hub on Windows was known to reset sidetone and balance at boot), Libre Hub puts yours
   back. It checks when it starts, after the computer wakes, after you unlock (on Linux via
-  logind's `LockedHint`), and whenever the headset reconnects. A check reads the headset,
-  writes only the settings that differ, then reads again to confirm them. About 20 seconds
+  logind's `LockedHint`), whenever the headset reconnects, and when it leaves the dock or turns
+  on. A check reads the headset, writes only the settings that differ, then reads again to
+  confirm them. Sidetone is the exception: it's always sent again, because the base station can
+  report it as set while the headset plays none (see [PROTOCOL.md](docs/PROTOCOL.md#sidetone-0604)). About 20 seconds
   later a follow-up check makes sure they stuck. A desktop notification tells you when
   something had to be restored. Everything is kept: sidetone, balance, volume, both EQs, noise
   gate, stream mix, sleep timer, tones and brightness.

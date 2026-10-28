@@ -140,6 +140,16 @@ describe('A50X client against the simulated base station', () => {
     expect((await ev).step).toBe(3);
   });
 
+  it('says when the headset leaves the dock or turns on, and when it goes back or off', async () => {
+    const { dev, sim } = await connect();
+    const docked = nextEvent<{ ready: boolean }>(dev, 'headsetReady');
+    sim.emitEvent(19, [0x05]);
+    expect(await docked).toEqual({ ready: false, code: 5 });
+    const back = nextEvent<{ ready: boolean }>(dev, 'headsetReady');
+    sim.emitEvent(19, [0x00]);
+    expect(await back).toEqual({ ready: true, code: 0 });
+  });
+
   it('rejects calls to features the device does not have', async () => {
     const { dev } = await connect();
     await expect(dev.call(0x0605, 0)).rejects.toThrow('not present');

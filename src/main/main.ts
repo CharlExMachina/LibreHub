@@ -107,6 +107,9 @@ async function connect(): Promise<A50XService | undefined> {
       for (const ev of EVENTS) device.on(ev, () => window?.webContents.send('a50x:changed', ev));
       // The volume wheel is on the headset, so its changes are kept as they happen.
       device.on('volume', (v: { level: number; muted: boolean }) => void keeper.observe({ volume: { level: v.level, muted: v.muted } }));
+      // A headset that comes off the dock after the base station powered up has no sidetone, though
+      // the base station still reports it, so check (which sends it again) when the headset is back.
+      device.on('headsetReady', (h: { ready: boolean }) => { if (h.ready) keeper.request('reconnect', 1500); });
       service = new A50XService(device, new PresetStore(join(app.getPath('userData'), 'presets.json')));
       window?.webContents.send('a50x:changed', 'connected');
       // A headset that just came back (powered on, plugged in, woke up) may have lost its settings.

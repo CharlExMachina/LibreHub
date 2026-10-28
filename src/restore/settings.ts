@@ -101,6 +101,16 @@ const ACTIONS: { [G in Group]: (want: Values[G], have: Values[G]) => Action[] } 
   ],
 };
 
+/**
+ * Settings a read can't vouch for. The base station answers with its own copy; the headset starts
+ * without them and gets them from the base station when they connect, except when the base station
+ * powers up with the headset on the dock. Then reads match while the headset plays no sidetone, so
+ * every check sends these again, matching or not.
+ */
+const RESEND: { [G in Group]?: (want: Values[G]) => Action[] } = {
+  sidetone: (w) => [{ type: 'sidetone', step: w }],
+};
+
 export interface Drift {
   group: Group;
   actions: Action[];
@@ -129,26 +139,32 @@ export interface CheckResult {
 
 /**
  * Read the headset, write back any saved setting that differs, then read again to verify.
- * Anything still off gets one more try. Errors other than rejected writes (e.g. the link
- * dropping) propagate.
+ * Anything still off gets one more try. Settings in RESEND that match are sent anyway, and
+ * aren't reported as restored. Errors other than rejected writes (e.g. the link dropping)
+ * propagate.
  */
 export async function restore(service: A50XService, saved: Saved, groups: readonly Group[], first?: Snapshot): Promise<CheckResult> {
   let snapshot = first ?? (await service.snapshot());
   const found = drift(saved, capture(snapshot), groups);
   let pending = found;
   const errors = new Map<Group, string>();
-  for (let attempt = 0; attempt < 2 && pending.length; attempt++) {
-    for (const { group, actions } of pending) {
-      for (const action of actions) {
-        try {
-          await service.apply(action);
-        } catch (err) {
-          // The headset (or the service) turned this value down; anything else means the link is gone.
-          if (!(err instanceof RangeError || err instanceof DeviceError || /^(unknown|no routing)/.test((err as Error)?.message ?? ''))) throw err;
-          errors.set(group, (err as Error).message);
-        }
+  const send = async ({ group, actions }: Drift) => {
+    for (const action of actions) {
+      try {
+        await service.apply(action);
+      } catch (err) {
+        // The headset (or the service) turned this value down; anything else means the link is gone.
+        if (!(err instanceof RangeError || err instanceof DeviceError || /^(unknown|no routing)/.test((err as Error)?.message ?? ''))) throw err;
+        errors.set(group, (err as Error).message);
       }
     }
+  };
+  for (const group of groups) {
+    const resend = RESEND[group] as ((w: unknown) => Action[]) | undefined;
+    if (resend && saved[group] !== undefined && !found.some((d) => d.group === group)) await send({ group, actions: resend(saved[group]) });
+  }
+  for (let attempt = 0; attempt < 2 && pending.length; attempt++) {
+    for (const d of pending) await send(d);
     snapshot = await service.snapshot();
     pending = drift(saved, capture(snapshot), pending.map((d) => d.group));
   }
