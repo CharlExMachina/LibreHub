@@ -147,7 +147,10 @@
   --toast-tint: color-mix(in oklch, var(--card) 40%, transparent);
   --toast-frost: blur(16px) saturate(1.8);
   --stage-tint: color-mix(in oklch, var(--card) 30%, transparent);
-  --stage-frost: blur(10px) saturate(1.6);
+  /* The camera's controls are clear, so the picture shows through; the frost squeezes the picture's light
+     toward the glass's own (lighter here, darker in the dark), so their text reads over a white sky or a
+     black room alike, as Apple's glass does it. */
+  --stage-frost: blur(10px) saturate(1.6) contrast(0.5) brightness(1.6);
   --bar-tint: color-mix(in oklch, var(--card) 18%, transparent);
   --bar-frost: blur(2px) saturate(1.4);
   --shadow-card: 0 1px 2px oklch(0.3 0.02 265 / 0.06);
@@ -168,6 +171,7 @@
     --bg: var(--background);
     --toast-tint: color-mix(in oklch, var(--popover) 45%, transparent);
     --stage-tint: color-mix(in oklch, var(--popover) 32%, transparent);
+    --stage-frost: blur(10px) saturate(1.6) contrast(0.7) brightness(0.62);
     --bar-tint: color-mix(in oklch, var(--popover) 14%, transparent);
     --shadow-card: none;
     --shadow-float: 0 1px 3px rgb(0 0 0 / 0.3), 0 24px 56px -18px rgb(0 0 0 / 0.85);
@@ -1077,6 +1081,8 @@ dialog.commands-dialog { width: min(560px, calc(100vw - 48px)); }
   position: absolute; left: 50%; bottom: 16px; translate: -50% 0; display: flex; align-items: center; gap: 12px;
   max-width: calc(100% - 32px); padding: 5px 18px 5px 5px; border: 0 solid; border-radius: 999px;
   background: var(--stage-tint); box-shadow: var(--shadow-float); color: var(--text);
+  /* secondary text a step stronger than on a card: the picture behind it changes */
+  --text-2: color-mix(in oklch, var(--foreground) 78%, transparent);
   --glass-backdrop: var(--stage-frost); --glass-shape: capsule; --glass-refraction: 0.6; --glass-bevel: 20;
 }
 .stage-controls .segmented { padding: 0; border: 0; border-radius: 999px; background: transparent; }
