@@ -18,7 +18,6 @@ export const CAMERA_PAGES = [
 const PREVIEW_PAGES = new Set(['camera', 'image']);
 
 // G Hub's ranges and steps (src/camera/settings.ts), for the controls.
-const FOVS = [{ value: 65, label: 'Close', desc: 'Head and shoulders' }, { value: 78, label: 'Medium', desc: 'Upper body' }, { value: 90, label: 'Wide', desc: 'The whole desk' }];
 const SHUTTERS = [2000, 800, 400, 200, 120, 60, 30, 24, 20, 17];
 const ISOS = Array.from({ length: 16 }, (_, i) => (i + 1) * 100);
 const PAN_STEP = 3600;
@@ -372,12 +371,10 @@ function switchRow(ctx, key, title, desc) {
  * G Hub's per-tab preset menu: its presets and yours, "Custom" when the settings match none, a way
  * to save the current settings as a preset and to delete yours, and Reset to default.
  */
-function presetPicker(ctx, group) {
-  const select = dropdown({ label: `${GROUP_TITLES[group]} preset`, placeholder: 'Custom',
-    onChange: (name) => ctx.send(`preset:${group}`, { type: 'preset', group, name }, { coalesce: false }) });
+/** Save (the current settings as a preset of yours) and Delete (`current()`, one of yours), for a card's presets. */
+function presetActions(ctx, group, current) {
   const del = el('button', { type: 'button', class: 'btn ghost sm', title: 'Delete this preset', hidden: true }, ic('trash', 14));
   const saveBtn = el('button', { type: 'button', class: 'btn ghost sm', title: 'Save these settings as a preset' }, ic('save', 14), 'Save');
-  const reset = el('button', { type: 'button', class: 'btn ghost sm', title: 'G Hub’s defaults for this card' }, ic('reset', 14), 'Reset');
   saveBtn.addEventListener('click', async () => {
     const name = await prompt({ title: `Save ${GROUP_TITLES[group].toLowerCase()} preset`, body: 'Saved on this computer, with the camera’s current settings for this card.', label: 'Preset name', confirm: 'Save', maxlength: 32 });
     if (!name) return;
@@ -385,10 +382,18 @@ function presetPicker(ctx, group) {
     if (r.connected && !r.error) toast(`Saved “${name}”`);
   });
   del.addEventListener('click', async () => {
-    const name = select.value;
+    const name = current();
     if (!(await confirmDialog({ title: `Delete “${name}”?`, body: 'The preset is removed from this computer. The camera keeps its current settings.', confirm: 'Delete', danger: true }))) return;
     ctx.send(`preset:${group}`, { type: 'deletePreset', group, name }, { coalesce: false });
   });
+  return { del, saveBtn };
+}
+
+function presetPicker(ctx, group) {
+  const select = dropdown({ label: `${GROUP_TITLES[group]} preset`, placeholder: 'Custom',
+    onChange: (name) => ctx.send(`preset:${group}`, { type: 'preset', group, name }, { coalesce: false }) });
+  const { del, saveBtn } = presetActions(ctx, group, () => select.value);
+  const reset = el('button', { type: 'button', class: 'btn ghost sm', title: 'G Hub’s defaults for this card' }, ic('reset', 14), 'Reset');
   reset.addEventListener('click', () => ctx.send(`preset:${group}`, { type: 'reset', group }, { coalesce: false }));
   let sig = '';
   return {
@@ -410,14 +415,75 @@ function presetPicker(ctx, group) {
   };
 }
 
+/** G Hub's framing presets by what they do, in this order; its names are kept as their tooltips. */
+const FRAMING_LABELS = { 'FOV 65°': '65° Close', 'FOV 78°': '78° Medium', Default: '90° Wide', 'Zoom 1.5×': '1.5×', 'Zoom 2×': '2×' };
+const FRAMING_TITLES = {
+  'FOV 65°': 'Head and shoulders', 'FOV 78°': 'Upper body', Default: 'The whole desk: G Hub’s default framing', 'Zoom 1.5×': 'Wide, zoomed in 1.5×', 'Zoom 2×': 'Wide, zoomed in 2×',
+};
+
+/**
+ * The framing presets as one row of choices: G Hub's, then yours. Each sets the whole framing (field of
+ * view, zoom, pan, tilt, Show Mode), as in G Hub, so 78° Medium also takes the zoom back to 1×. The one
+ * the camera matches is lit; none is when you've changed something since. The arrow keys move along it.
+ */
+function framingPresets(ctx) {
+  const row = el('div', { class: 'segmented preset-strip', role: 'radiogroup', 'aria-label': 'Framing presets' });
+  let lit = null;
+  const { del, saveBtn } = presetActions(ctx, 'crop', () => lit);
+  const buttons = () => [...row.querySelectorAll('button')];
+  function light(name) {
+    lit = name;
+    for (const b of buttons()) {
+      b.setAttribute('aria-checked', String(b.dataset.name === name));
+      b.tabIndex = b.dataset.name === name ? 0 : -1;
+    }
+    const first = buttons()[0];
+    if (name === null && first) first.tabIndex = 0;
+  }
+  function pick(name) {
+    light(name);
+    ctx.send('preset:crop', { type: 'preset', group: 'crop', name }, { coalesce: false });
+  }
+  row.addEventListener('keydown', (e) => {
+    const dir = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+    if (!dir) return;
+    e.preventDefault();
+    const all = buttons();
+    const next = all[(all.indexOf(document.activeElement) + dir + all.length) % all.length];
+    next.focus();
+    pick(next.dataset.name);
+  });
+  let sig = '';
+  return {
+    el: row,
+    actions: [saveBtn, del],
+    update(snap) {
+      const list = snap.presets.filter((p) => p.group === 'crop');
+      const order = Object.keys(FRAMING_LABELS);
+      const rank = (p) => (p.curated ? (order.indexOf(p.name) + 1 || order.length + 1) : order.length + 2);
+      const next = JSON.stringify(list.map((p) => [p.name, p.curated]));
+      if (next !== sig) {
+        sig = next;
+        const sorted = [...list].sort((a, b) => rank(a) - rank(b));
+        row.replaceChildren(...sorted.flatMap((p, i) => [
+          // a line between G Hub's and yours
+          i > 0 && !p.curated && sorted[i - 1].curated ? el('span', { class: 'stage-sep', 'aria-hidden': 'true' }) : null,
+          el('button', { type: 'button', role: 'radio', 'data-name': p.name, tabindex: '-1', onclick: () => pick(p.name),
+            title: p.curated ? `${FRAMING_TITLES[p.name] ?? p.name} (G Hub’s “${p.name}”)` : 'Your preset' }, p.curated ? FRAMING_LABELS[p.name] ?? p.name : p.name),
+        ].filter(Boolean)));
+      }
+      const match = list.find((p) => p.matches);
+      if (!ctx.quiet('preset:crop')) light(match?.name ?? null);
+      del.hidden = !match || match.curated;
+    },
+  };
+}
+
 // ---------------------------------------------------------------- camera (framing)
 
 function cameraPage(ctx) {
   const slot = el('div', { class: 'preview-slot' });
-  const presets = presetPicker(ctx, 'crop');
-  const fov = segmented({ label: 'Field of view', options: FOVS.map((f) => ({ value: f.value, label: `${f.value}° ${f.label}` })),
-    onChange: (v) => ctx.set('fov', { fov: v }) });
-  fov.el.querySelectorAll('button').forEach((b, i) => { b.title = FOVS[i].desc; });
+  const presets = framingPresets(ctx);
   const zoom = rangeRow(ctx, 'zoom', { label: 'Zoom', min: 100, max: 400, format: (v) => `${(v / 100).toFixed(v % 100 ? 2 : 1)}×` });
   const map = cropMap(ctx);
   const showDesc = 'Tilt the camera down at your desk and it turns the picture the right way up, to share notes and sketches.';
@@ -431,15 +497,14 @@ function cameraPage(ctx) {
   return {
     el: node,
     slot,
-    overlay: [el('div', { class: 'stage-controls' }, fov.el, el('span', { class: 'stage-sep' }), zoom.el), map.el],
+    overlay: [el('div', { class: 'stage-controls' }, presets.el, el('span', { class: 'stage-sep' }), zoom.el), map.el],
     bar: [
       el('div', { class: 'stage-item', title: showDesc }, el('span', { class: 'k' }, 'Show Mode'), show.el),
       el('span', { class: 'stage-sep' }),
-      el('div', { class: 'stage-item' }, el('span', { class: 'k' }, 'Framing'), presets.el),
+      el('div', { class: 'stage-item' }, el('span', { class: 'k' }, 'Framing'), ...presets.actions),
     ],
     update(s) {
       presets.update(s);
-      if (!ctx.quiet('fov')) fov.set(s.settings.fov);
       zoom.update(s);
       map.update(s);
       if (!ctx.quiet('showMode')) show.set(s.settings.showMode);

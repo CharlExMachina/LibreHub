@@ -111,16 +111,17 @@ it.
 ### MX Brio
 
 - **Camera:** a live preview across the page (with G Hub's mirror, grid, resolution and snapshot
-  options), with the framing on glass over the picture: field of view (65°, 78°, 90°) and zoom up
-  to 4× along the bottom, and, zoomed in, a map in the corner to drag for pan and tilt. Show Mode
-  and the framing presets are in the bar under it.
+  options), with the framing on glass over the picture. Along the bottom, G Hub's framing presets
+  by what they do (65° Close, 78° Medium, 90° Wide, 1.5×, 2×), then yours, and zoom up to 4×;
+  zoomed in, a map in the corner to drag for pan and tilt. Show Mode, and saving the framing as a
+  preset, are in the bar under it.
 - **Image:** exposure (auto, or shutter speed and ISO; compensation, HDR, frame-rate or exposure
   priority), colour (brightness, contrast, saturation, vibrance, sharpness, tint, white balance
   auto or in kelvin, warmer/cooler) and focus (auto or manual).
 - **Settings:** the microphones on or off, anti-flicker (50/60 Hz), what Libre Hub keeps for the
   camera, reset everything, and device details.
 
-Each card has G Hub's preset menu (its presets, yours, Save, Reset). Every change goes to the
+The other cards have G Hub's preset menu (its presets, yours, Save, Reset). Every change goes to the
 camera at once (sliders when you let go), so every app gets it. The camera forgets its framing
 when it restarts, so, like G Hub, Libre Hub saves what you change and puts it back whenever the
 camera connects. The preview runs only while its page is in front; snapshots go to

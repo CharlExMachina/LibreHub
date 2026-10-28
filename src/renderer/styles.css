@@ -1082,6 +1082,11 @@ dialog.commands-dialog { width: min(560px, calc(100vw - 48px)); }
 }
 .stage-controls .segmented { padding: 0; border: 0; border-radius: 999px; background: transparent; }
 .stage-controls .segmented button { height: 34px; padding: 0 14px; border-radius: 999px; }
+/* the framing presets: a row as long as there are presets, scrolling sideways when yours make it longer than the picture */
+.preset-strip { display: flex; align-items: center; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.preset-strip button { flex: none; }
+.preset-strip .stage-sep { margin: 0 6px; }
+.stage-controls .param { flex: none; }
 .stage-controls .param { display: flex; gap: 12px; min-height: 0; padding: 0; border: 0; }
 .stage-controls .param .range { width: 170px; }
 .stage-controls .param .val { min-width: 44px; }
