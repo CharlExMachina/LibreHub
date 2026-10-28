@@ -69,10 +69,25 @@ describe('restoring kept settings', () => {
     expect(capture(await svc.snapshot())).toEqual(saved);
     expect(sim.state).toMatchObject({ sidetone: 6, balance: 6, gate: 0, brightness: 100 });
 
-    // A second pass has nothing left to write.
+    // A second pass has nothing left to write except sidetone, which a read can't confirm.
     applied.length = 0;
     expect((await restore(svc, saved, ALL)).restored).toEqual([]);
-    expect(applied).toEqual([]);
+    expect(applied).toEqual(['sidetone']);
+  });
+
+  it('sends sidetone even when the base station reports it, without calling it restored', async () => {
+    const { sim, svc } = await setup();
+    const saved = capture(await svc.snapshot());
+    const sent = sim.written.length;
+    const result = await restore(svc, saved, ALL);
+    expect(result).toMatchObject({ restored: [], failed: [] });
+    const writes = sim.written.slice(sent).map((r) => [r[4], r[5] >> 4, ...r.slice(6, 9)]);
+    expect(writes).toContainEqual([9, 1, 0x01, 0xff, 6]);
+
+    // Not when sidetone isn't kept.
+    const before = sim.written.length;
+    await restore(svc, saved, ['balance']);
+    expect(sim.written.slice(before).some((r) => r[4] === 9 && r[5] >> 4 === 1)).toBe(false);
   });
 
   it('leaves settings that aren’t kept alone', async () => {

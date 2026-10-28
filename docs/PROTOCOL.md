@@ -78,7 +78,7 @@ per reply. Don't hardcode indexes; resolve them. On firmware 1.2.18 they are:
 | 16 | `060B` | 1 | HeadsetTones | yes |
 | 17 | `0103` | 1 | Memfault | no |
 | 18 | `0004` | 4 | Profile | settings-checksum events |
-| 19 | `020E` | 2 | MicTest | no |
+| 19 | `020E` | 2 | MicTest | docked/away events |
 | 20 | `0806` | 1 | (none) | no |
 | 21 | `0805` | 1 | (none) | no |
 | 22 | `0801` | 1 | MixerMic | yes (noise gate) |
@@ -101,6 +101,16 @@ function number. Every setter below was checked against the bytes G Hub itself p
 | event fn0 | same layout as `fn0` |
 
 The middle byte of the setter isn't understood; `01 01 05` was also accepted.
+
+**A read doesn't prove the headset has it.** `fn0` answers with the base station's copy. The
+headset starts with no sidetone and gets it from the base station when they connect: turning the
+headset on, or plugging the base station back in, both bring it back within a few seconds. Docking
+and undocking don't send it, and the headset keeps whatever it had through a dock. If the base
+station powers up while the headset is on the dock (the PC starting with the headset docked
+overnight), the headset comes off the dock with no sidetone while `fn0` still reports the saved
+step. Writing the same step again with `fn1` brings it back. Tested by ear on 2026-10-28, firmware
+1.2.18. Libre Hub sends the saved step on every check, and checks whenever the headset leaves the
+dock or turns on (see MicTest below).
 
 ### Device volume (`0200`)
 
@@ -176,6 +186,17 @@ Audio profile, firmware 1.2.18, quiet room, nobody talking): with the gate off t
 room noise peaking around −60 dBFS; with any of the three gates closed it sends digital
 silence, ±1 LSB of 16-bit (−90.3 dBFS peak, about 73% exact zeros). The app's Microphone
 page uses this to show when the gate is open or closed.
+
+### Headset docked or away (MicTest, `020E`)
+
+| | |
+|---|---|
+| event fn0 `[00]` | the headset came off the dock, or was turned on |
+| event fn0 `[05]` | the headset went on the dock, or was turned off |
+
+Only the event is used; the feature's functions weren't looked at. Each `[05]` came with a
+balance event (`0609`, same value), and a MixerAudio `fn0` event `[00 00 00 0a]` came about two
+seconds before a dock, and `[00 00 00 0b]` about two seconds after the undock. Neither is decoded.
 
 ### Stream-port mix (MixerAudio, `0800`)
 

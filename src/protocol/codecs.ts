@@ -172,6 +172,12 @@ export const HeadsetTones = {
 
 export type TonesName = keyof typeof HeadsetTones.VALUES;
 
+// ---------------------------------------------------------------- MicTest (0x020E)
+export const MicTest = {
+  /** Event fn0: [00] when the headset comes off the dock or is turned on, [05] when it's docked or turned off. */
+  decodeEvent: (p: Uint8Array) => (need(p, 1, 'MicTest'), { ready: p[0] === 0, code: p[0] }),
+};
+
 // ---------------------------------------------------------------- MixerMic (0x0801), noise gate
 export const MixerMic = {
   GET_CAPABILITIES: 0,

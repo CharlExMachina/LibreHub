@@ -11,6 +11,7 @@ import {
   GameVoiceMix,
   HeadsetTones,
   LedBrightness,
+  MicTest,
   MixerAudio,
   MixerMic,
   Root,
@@ -75,7 +76,8 @@ export interface EqualizerState {
  * Client for the A50 X base station. Requests are serialized (one in flight), matched by
  * feature index + function + software id; unsolicited device events (swid 0) are re-emitted
  * as typed events: 'sidetone', 'volume', 'balance', 'sleep', 'tones', 'noiseGate', 'routing',
- * 'equalizer', 'battery', 'settingsChecksum', plus 'raw' for everything.
+ * 'equalizer', 'battery', 'settingsChecksum', 'headsetReady' (the headset left or went back on
+ * the dock, or was turned on or off), plus 'raw' for everything.
  */
 export class A50X extends EventEmitter {
   readonly swid: number;
@@ -212,6 +214,7 @@ export class A50X extends EventEmitter {
         case Feature.MIXER_AUDIO: if (fn === MixerAudio.EVENT_STATE) this.emit('routing', MixerAudio.decodeEvent(params)); break;
         case Feature.PARAMETRIC_EQ: if (fn === Eq.EQ.GET_INFO) this.emit('equalizer', Eq.decodeBandsEvent(params)); break;
         case Feature.PROFILE: this.emit('settingsChecksum', toHex(params)); break;
+        case Feature.MIC_TEST: if (fn === 0) this.emit('headsetReady', MicTest.decodeEvent(params)); break;
       }
     } catch (err) {
       this.emit('decodeError', err);

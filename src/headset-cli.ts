@@ -199,7 +199,7 @@ export async function runHeadsetCli(argv: string[]): Promise<void> {
         break;
       }
       case 'watch':
-        for (const ev of ['sidetone', 'volume', 'balance', 'sleep', 'tones', 'noiseGate', 'routing', 'equalizer', 'battery', 'settingsChecksum']) {
+        for (const ev of ['sidetone', 'volume', 'balance', 'sleep', 'tones', 'noiseGate', 'routing', 'equalizer', 'battery', 'settingsChecksum', 'headsetReady']) {
           dev.on(ev, (v) => console.log(new Date().toISOString(), ev, JSON.stringify(v)));
         }
         console.log('watching device events (Ctrl-C to stop)');

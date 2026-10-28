@@ -13,6 +13,10 @@ for new features, a **patch** version for fixes. Each release is the tag `vX.Y.Z
   anti-flicker; and the microphones on or off. Each card has G Hub's presets and your own. The
   camera forgets its framing when it restarts, so Libre Hub puts your settings back whenever it
   connects, like G Hub. `librehub camera …` does the same from a terminal.
+- **Fixed: no sidetone after the PC starts with the headset on the dock.** The headset came off
+  the dock without sidetone, but the base station still reported it as set, so the settings check
+  saw nothing to fix. Libre Hub now sends your sidetone on every check, and checks whenever the
+  headset leaves the dock or turns on.
 
 ## 1.3.0 - 2026-10-24
 
