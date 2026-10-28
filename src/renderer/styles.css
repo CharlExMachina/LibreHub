@@ -1052,25 +1052,14 @@ dialog.commands-dialog { width: min(560px, calc(100vw - 48px)); }
 .preview-bar .grow { flex: 1; }
 .preview-bar .btn[aria-pressed='true'] { background: var(--brand-soft); color: var(--brand-text); }
 .field.sm { width: auto; height: 30px; padding: 0 8px; font-size: 13px; border-radius: 8px; }
-.preset-picker { display: flex; align-items: center; gap: 4px; margin: -4px -10px 0 0; }
-.preset-picker .dd-field { max-width: 190px; }
 .param.off { opacity: 0.45; }
 .kept-file code { font-size: 12px; }
-/* Preview beside the controls when there's room (it stays in view while they scroll), above them when not. */
-.camera-layout { display: grid; gap: 16px; align-items: start; }
-.preview-slot:empty { display: none; }
-@media (min-width: 1100px) {
-  .camera-layout { grid-template-columns: minmax(0, 1.15fr) minmax(400px, 1fr); }
-  .camera-layout > .preview-slot { position: sticky; top: 0; }
-  .camera-layout > .preview-slot:empty { display: block; }
-}
 /* A switch or a short choice beside its description, in the narrower camera cards. */
 .setting.compact { grid-template-columns: minmax(0, 1fr) auto; gap: 20px; }
 .preview-bar { flex-wrap: wrap; row-gap: 6px; }
-.camera-layout .card-head { flex-wrap: wrap; row-gap: 10px; }
-.camera-layout .preset-picker { margin-right: -6px; }
-/* The Camera page is the picture, across the page and as tall as the window allows, with framing on glass over
-   it as a camera app has it: field of view and zoom along the bottom, pan and tilt as a map in the corner. */
+/* The Camera and Image pages are the picture, across the page and as tall as the window allows, with their
+   controls on glass over it as a camera app has them. Camera: framing presets and zoom along the bottom, pan and
+   tilt as a map in the corner. Image: a group's presets at the top, its adjustments along the bottom. */
 .camera-stage .preview-frame { max-height: max(300px, calc(100vh - 230px)); }
 .preview-overlay { position: absolute; inset: 0; pointer-events: none; }
 .preview-overlay > * { pointer-events: auto; }
@@ -1094,6 +1083,33 @@ dialog.commands-dialog { width: min(560px, calc(100vw - 48px)); }
    trimmed to the capitals, it's in the middle. */
 .stage-controls .segmented button, .stage-controls .param > span { text-box: trim-both cap alphabetic; }
 .stage-sep { flex: none; width: 1px; height: 20px; background: var(--line-2); }
+.stage-controls[hidden], .stage-item[hidden] { display: none; }
+.stage-top { left: 14px; top: 14px; bottom: auto; translate: none; padding: 5px; }
+/* A group's adjustments, as a photo editor has them: a chip for each with its value, and the picked one's control */
+.adjust-panel {
+  flex-direction: column; align-items: stretch; gap: 4px; width: min(820px, calc(100% - 32px)); padding: 6px 6px 10px;
+  border-radius: 24px; --glass-shape: rect;
+}
+.adj-chips { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; }
+.adj-chip {
+  flex: 1 0 auto; display: grid; justify-items: center; gap: 3px; padding: 7px 12px; border: 0; border-radius: 18px;
+  background: transparent; color: var(--text-2); font-size: 11.5px; cursor: pointer; transition: background 0.18s, color 0.18s;
+}
+.adj-chip b { color: var(--text); font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.adj-chip:hover { background: var(--surface-2); }
+.adj-chip[aria-selected='true'] { background: var(--brand-soft); color: var(--brand-text); box-shadow: inset 0 0 0 1px var(--brand-line); }
+.adj-chip[aria-selected='true'] b { color: var(--brand-text); }
+.adj-control { padding: 4px 12px 0; }
+.adj-row { display: flex; align-items: center; gap: 16px; min-height: 38px; }
+.adj-row .grow { flex: 1; }
+.adj-row .param-k { min-width: 110px; }
+.adjust-panel .param { flex: 1; }
+.adjust-panel .param .range { flex: 1; width: auto; }
+.adj-auto { display: flex; align-items: center; gap: 8px; padding-right: 16px; border-right: 1px solid var(--line-2); color: var(--text-2); font-size: 13px; white-space: nowrap; }
+.adj-desc { padding: 0 12px; color: var(--text-2); font-size: 12px; }
+.adj-desc:empty { display: none; }
+.preview-extras .segmented { padding: 2px; }
+.preview-extras .segmented button { height: 28px; padding: 0 12px; }
 .crop-wrap { position: absolute; top: 14px; right: 14px; display: grid; justify-items: end; gap: 6px; }
 .crop-wrap[hidden] { display: none; }
 /* The map grows with the zoom (--z) rather than the box shrinking without end: the box is never under 48 × 27 px,
@@ -1119,4 +1135,3 @@ dialog.commands-dialog { width: min(560px, calc(100vw - 48px)); }
 .preview-extras:empty { display: none; }
 .stage-item { display: flex; align-items: center; gap: 10px; }
 .stage-item .k { color: var(--text-2); font-size: 13px; }
-.preview-bar .preset-picker { margin: 0; }

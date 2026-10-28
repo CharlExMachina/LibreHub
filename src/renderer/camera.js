@@ -361,16 +361,6 @@ function rangeRow(ctx, key, { label, min, max, step = 1, format = String, toValu
   };
 }
 
-/** A switch row: title, description, toggle. */
-function switchRow(ctx, key, title, desc) {
-  const t = toggle({ label: title, onChange: (on) => ctx.set(key, { [key]: on }) });
-  return { el: setting(title, desc, t.el), update(snap) { if (!ctx.quiet(key)) t.set(snap.settings[key]); } };
-}
-
-/**
- * G Hub's per-tab preset menu: its presets and yours, "Custom" when the settings match none, a way
- * to save the current settings as a preset and to delete yours, and Reset to default.
- */
 /** Save (the current settings as a preset of yours) and Delete (`current()`, one of yours), for a card's presets. */
 function presetActions(ctx, group, current, saveLabel = 'Save') {
   const del = el('button', { type: 'button', class: 'btn ghost sm', title: 'Delete this preset', hidden: true }, ic('trash', 14));
@@ -389,32 +379,6 @@ function presetActions(ctx, group, current, saveLabel = 'Save') {
   return { del, saveBtn };
 }
 
-function presetPicker(ctx, group) {
-  const select = dropdown({ label: `${GROUP_TITLES[group]} preset`, placeholder: 'Custom',
-    onChange: (name) => ctx.send(`preset:${group}`, { type: 'preset', group, name }, { coalesce: false }) });
-  const { del, saveBtn } = presetActions(ctx, group, () => select.value);
-  const reset = el('button', { type: 'button', class: 'btn ghost sm', title: 'G Hub’s defaults for this card' }, ic('reset', 14), 'Reset');
-  reset.addEventListener('click', () => ctx.send(`preset:${group}`, { type: 'reset', group }, { coalesce: false }));
-  let sig = '';
-  return {
-    el: el('div', { class: 'preset-picker' }, select.el, del, saveBtn, reset),
-    update(snap) {
-      const list = snap.presets.filter((p) => p.group === group);
-      const match = list.find((p) => p.matches);
-      const next = JSON.stringify([list.map((p) => [p.name, p.curated]), match?.name]);
-      if (next !== sig) {
-        sig = next;
-        const options = (curated) => list.filter((p) => p.curated === curated).map((p) => ({ value: p.name, label: p.name }));
-        select.setGroups([{ label: 'G Hub presets', options: options(true) },
-          ...(list.some((p) => !p.curated) ? [{ label: 'Your presets', options: options(false) }] : [])]);
-        // Settings that match no preset show as Custom.
-        select.set(match?.name ?? null);
-        del.hidden = !match || match.curated;
-      }
-    },
-  };
-}
-
 /** G Hub's framing presets by what they do, in this order; its names are kept as their tooltips. */
 const FRAMING_LABELS = { 'FOV 65°': '65° Close', 'FOV 78°': '78° Medium', Default: '90° Wide', 'Zoom 1.5×': '1.5×', 'Zoom 2×': '2×' };
 const FRAMING_TITLES = {
@@ -422,14 +386,15 @@ const FRAMING_TITLES = {
 };
 
 /**
- * The framing presets as one row of choices: G Hub's, then yours. Each sets the whole framing (field of
- * view, zoom, pan, tilt, Show Mode), as in G Hub, so 78° Medium also takes the zoom back to 1×. The one
- * the camera matches is lit; none is when you've changed something since. The arrow keys move along it.
+ * A card's presets as one row of choices: G Hub's (by `labels`, in their order, where given), then yours.
+ * Each sets the whole card, as in G Hub: the framing presets set field of view, zoom, pan, tilt and Show
+ * Mode, so 78° Medium also takes the zoom back to 1×. The one the camera matches is lit; none is when
+ * you've changed something since. The arrow keys move along it.
  */
-function framingPresets(ctx) {
-  const row = el('div', { class: 'segmented preset-strip', role: 'radiogroup', 'aria-label': 'Framing presets' });
+function presetRow(ctx, group, { labels = {}, titles = {} } = {}) {
+  const row = el('div', { class: 'segmented preset-strip', role: 'radiogroup', 'aria-label': `${GROUP_TITLES[group]} presets` });
   let lit = null;
-  const { del, saveBtn } = presetActions(ctx, 'crop', () => lit, 'Save preset');
+  const { del, saveBtn } = presetActions(ctx, group, () => lit, 'Save preset');
   const buttons = () => [...row.querySelectorAll('button')];
   function light(name) {
     lit = name;
@@ -442,7 +407,7 @@ function framingPresets(ctx) {
   }
   function pick(name) {
     light(name);
-    ctx.send('preset:crop', { type: 'preset', group: 'crop', name }, { coalesce: false });
+    ctx.send(`preset:${group}`, { type: 'preset', group, name }, { coalesce: false });
   }
   row.addEventListener('keydown', (e) => {
     const dir = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
@@ -458,8 +423,8 @@ function framingPresets(ctx) {
     el: row,
     actions: [saveBtn, del],
     update(snap) {
-      const list = snap.presets.filter((p) => p.group === 'crop');
-      const order = Object.keys(FRAMING_LABELS);
+      const list = snap.presets.filter((p) => p.group === group);
+      const order = Object.keys(labels);
       const rank = (p) => (p.curated ? (order.indexOf(p.name) + 1 || order.length + 1) : order.length + 2);
       const next = JSON.stringify(list.map((p) => [p.name, p.curated]));
       if (next !== sig) {
@@ -469,11 +434,11 @@ function framingPresets(ctx) {
           // a line between G Hub's and yours
           i > 0 && !p.curated && sorted[i - 1].curated ? el('span', { class: 'stage-sep', 'aria-hidden': 'true' }) : null,
           el('button', { type: 'button', role: 'radio', 'data-name': p.name, tabindex: '-1', onclick: () => pick(p.name),
-            title: p.curated ? `${FRAMING_TITLES[p.name] ?? p.name} (G Hub’s “${p.name}”)` : 'Your preset' }, p.curated ? FRAMING_LABELS[p.name] ?? p.name : p.name),
+            title: p.curated ? (titles[p.name] ? `${titles[p.name]} (G Hub’s “${p.name}”)` : 'G Hub’s preset') : 'Your preset' }, p.curated ? labels[p.name] ?? p.name : p.name),
         ].filter(Boolean)));
       }
       const match = list.find((p) => p.matches);
-      if (!ctx.quiet('preset:crop')) light(match?.name ?? null);
+      if (!ctx.quiet(`preset:${group}`)) light(match?.name ?? null);
       del.hidden = !match || match.curated;
     },
   };
@@ -483,7 +448,7 @@ function framingPresets(ctx) {
 
 function cameraPage(ctx) {
   const slot = el('div', { class: 'preview-slot' });
-  const presets = framingPresets(ctx);
+  const presets = presetRow(ctx, 'crop', { labels: FRAMING_LABELS, titles: FRAMING_TITLES });
   const zoom = rangeRow(ctx, 'zoom', { label: 'Zoom', min: 100, max: 400, format: (v) => `${(v / 100).toFixed(v % 100 ? 2 : 1)}×` });
   const map = cropMap(ctx);
   const showDesc = 'Tilt the camera down at your desk and it turns the picture the right way up, to share notes and sketches.';
@@ -590,77 +555,149 @@ function cropMap(ctx) {
 
 // ---------------------------------------------------------------- image (exposure, colour, focus)
 
+/**
+ * One adjustment on the Image page: a chip that shows its value, and the control the panel shows when it's
+ * picked, with what it does under it. A setting with an Auto (shutter, ISO, white balance, focus) has that
+ * switch beside its slider, which works once Auto is off.
+ */
+function slide(ctx, key, opts, { auto, autoLabel, desc } = {}) {
+  const range = rangeRow(ctx, key, opts);
+  const autoSwitch = auto ? toggle({ label: autoLabel, onChange: (on) => ctx.set(auto, { [auto]: on }) }) : null;
+  const format = opts.format ?? String;
+  return {
+    label: opts.label,
+    desc,
+    el: el('div', { class: 'adj-row' }, autoSwitch ? el('span', { class: 'adj-auto', title: autoLabel }, 'Auto', autoSwitch.el) : null, range.el),
+    value: (snap) => (auto && snap.settings[auto] ? 'Auto' : format(snap.settings[key])),
+    update(snap) {
+      if (autoSwitch && !ctx.quiet(auto)) autoSwitch.set(snap.settings[auto]);
+      range.update(snap, !!(auto && snap.settings[auto]));
+    },
+  };
+}
+
+function flag(ctx, key, label, desc) {
+  const t = toggle({ label, onChange: (on) => ctx.set(key, { [key]: on }) });
+  return {
+    label,
+    desc,
+    el: el('div', { class: 'adj-row' }, el('span', { class: 'param-k' }, label), el('span', { class: 'grow' }), t.el),
+    value: (snap) => (snap.settings[key] ? 'On' : 'Off'),
+    update(snap) { if (!ctx.quiet(key)) t.set(snap.settings[key]); },
+  };
+}
+
+function choice(ctx, key, label, options, desc) {
+  const seg = segmented({ label, options, onChange: (v) => ctx.set(key, { [key]: v }) });
+  return {
+    label,
+    desc,
+    el: el('div', { class: 'adj-row' }, el('span', { class: 'param-k' }, label), el('span', { class: 'grow' }), seg.el),
+    value: (snap) => options.find((o) => o.value === snap.settings[key])?.label ?? '',
+    update(snap) { if (!ctx.quiet(key)) seg.set(snap.settings[key]); },
+  };
+}
+
+/**
+ * A group's adjustments on glass over the picture, as a photo editor has them: a chip for each, showing its
+ * value (live while you drag), and under them the control for the one you pick. The arrow keys move along
+ * the chips. A group of one is just its control.
+ */
+function adjustPanel(label, items) {
+  let current = 0;
+  const chips = items.map((it, i) => el('button', { type: 'button', role: 'tab', class: 'adj-chip', 'aria-selected': 'false', tabindex: '-1',
+    onclick: () => pick(i) }, el('span', {}, it.label), el('b', {})));
+  const tabs = el('div', { class: 'adj-chips', role: 'tablist', 'aria-label': label }, chips);
+  const control = el('div', { class: 'adj-control', role: 'tabpanel' });
+  const desc = el('div', { class: 'adj-desc' });
+  tabs.addEventListener('keydown', (e) => {
+    const dir = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
+    if (!dir) return;
+    e.preventDefault();
+    pick((current + dir + items.length) % items.length);
+    chips[current].focus();
+  });
+  // The slider shows its value as you drag; so does its chip.
+  control.addEventListener('input', () => {
+    const val = control.querySelector('.val');
+    if (val) chips[current].lastChild.textContent = val.textContent;
+  });
+  function pick(i) {
+    current = i;
+    chips.forEach((c, j) => { c.setAttribute('aria-selected', String(j === i)); c.tabIndex = j === i ? 0 : -1; });
+    control.replaceChildren(items[i].el);
+    desc.textContent = items[i].desc ?? '';
+  }
+  pick(0);
+  return {
+    el: el('div', { class: 'stage-controls adjust-panel' }, items.length > 1 ? tabs : null, control, desc),
+    update(snap) {
+      items.forEach((it, i) => {
+        it.update(snap);
+        chips[i].lastChild.textContent = it.value(snap);
+      });
+    },
+  };
+}
+
 function imagePage(ctx) {
   const slot = el('div', { class: 'preview-slot' });
-
-  // Exposure
-  const exPresets = presetPicker(ctx, 'exposure');
-  const autoEx = switchRow(ctx, 'autoExposure', 'Auto exposure', 'The camera picks shutter speed and ISO for the light.');
-  const shutter = rangeRow(ctx, 'shutter', { label: 'Shutter speed', min: 0, max: SHUTTERS.length - 1, format: (v) => `1/${v}`, toValue: (i) => SHUTTERS[i], fromValue: (v) => Math.max(0, SHUTTERS.indexOf(v)) });
-  const iso = rangeRow(ctx, 'iso', { label: 'ISO', min: 0, max: ISOS.length - 1, format: (v) => String(v), toValue: (i) => ISOS[i], fromValue: (v) => Math.max(0, ISOS.indexOf(v)) });
-  const comp = rangeRow(ctx, 'exposureCompensation', { label: 'Compensation', min: 0, max: 255, format: (v) => (v === 128 ? '0' : `${v > 128 ? '+' : ''}${v - 128}`) });
-  const hdr = switchRow(ctx, 'hdr', 'HDR', 'Keeps bright windows and dark corners visible at the same time.');
-  const priority = segmented({ label: 'Priority', options: [{ value: 'exposure', label: 'Exposure' }, { value: 'frame-rate', label: 'Frame rate' }],
-    onChange: (v) => ctx.set('priority', { priority: v }) });
-
-  // Colour
-  const imPresets = presetPicker(ctx, 'image');
-  const colourRows = [
-    rangeRow(ctx, 'brightness', { label: 'Brightness', min: 0, max: 255 }),
-    rangeRow(ctx, 'contrast', { label: 'Contrast', min: 0, max: 255 }),
-    rangeRow(ctx, 'saturation', { label: 'Saturation', min: 0, max: 255 }),
-    rangeRow(ctx, 'vibrance', { label: 'Vibrance', min: 0, max: 255 }),
-    rangeRow(ctx, 'sharpness', { label: 'Sharpness', min: 0, max: 255 }),
-    rangeRow(ctx, 'tint', { label: 'Tint', min: 0, max: 100, format: (v) => (v === 50 ? '0' : `${v > 50 ? '+' : ''}${v - 50}`) }),
+  const signed = (mid) => (v) => (v === mid ? '0' : `${v > mid ? '+' : ''}${v - mid}`);
+  const groups = [
+    { id: 'exposure', label: 'Exposure', items: [
+      slide(ctx, 'shutter', { label: 'Shutter speed', min: 0, max: SHUTTERS.length - 1, format: (v) => `1/${v}`, toValue: (i) => SHUTTERS[i], fromValue: (v) => Math.max(0, SHUTTERS.indexOf(v)) },
+        { auto: 'autoExposure', autoLabel: 'Auto exposure', desc: 'How long each frame takes in the light. Auto exposure sets it, and ISO, for you.' }),
+      slide(ctx, 'iso', { label: 'ISO', min: 0, max: ISOS.length - 1, toValue: (i) => ISOS[i], fromValue: (v) => Math.max(0, ISOS.indexOf(v)) },
+        { auto: 'autoExposure', autoLabel: 'Auto exposure', desc: 'How much the sensor amplifies the light: higher is brighter, and grainier.' }),
+      slide(ctx, 'exposureCompensation', { label: 'Compensation', min: 0, max: 255, format: signed(128) }, { desc: 'Brighter or darker than the exposure would be.' }),
+      flag(ctx, 'hdr', 'HDR', 'Keeps bright windows and dark corners visible at the same time.'),
+      choice(ctx, 'priority', 'Priority', [{ value: 'exposure', label: 'Exposure' }, { value: 'frame-rate', label: 'Frame rate' }],
+        'In low light, keep the frame rate (a darker picture) or the exposure (fewer frames a second).'),
+    ] },
+    { id: 'image', label: 'Colour', items: [
+      slide(ctx, 'brightness', { label: 'Brightness', min: 0, max: 255 }, { desc: 'How light the whole picture is.' }),
+      slide(ctx, 'contrast', { label: 'Contrast', min: 0, max: 255 }, { desc: 'How far apart the light and dark parts are.' }),
+      slide(ctx, 'saturation', { label: 'Saturation', min: 0, max: 255 }, { desc: 'How strong the colours are; at 0 the picture is black and white.' }),
+      slide(ctx, 'vibrance', { label: 'Vibrance', min: 0, max: 255 }, { desc: 'Strengthens the muted colours more than the strong ones, so skin stays natural.' }),
+      slide(ctx, 'sharpness', { label: 'Sharpness', min: 0, max: 255 }, { desc: 'How crisp edges look.' }),
+      slide(ctx, 'tint', { label: 'Tint', min: 0, max: 100, format: signed(50) }, { desc: 'Shifts the picture’s colour cast.' }),
+      slide(ctx, 'whiteBalance', { label: 'White balance', min: 2800, max: 7500, step: 100, format: (v) => `${v} K` },
+        { auto: 'autoWhiteBalance', autoLabel: 'Auto white balance', desc: 'The colour of your light, in kelvin. Auto white balance matches it for you.' }),
+      slide(ctx, 'temperatureCompensation', { label: 'Temperature', min: 0, max: 100, format: (v) => (v === 50 ? '0' : v > 50 ? `+${v - 50} warmer` : `${v - 50} cooler`) },
+        { desc: 'Warmer or cooler than the white balance.' }),
+    ] },
+    { id: 'focus', label: 'Focus', items: [
+      slide(ctx, 'focus', { label: 'Focus', min: 0, max: 255, format: (v) => (v < 30 ? `${v} (far)` : v > 200 ? `${v} (near)` : String(v)) },
+        { auto: 'autoFocus', autoLabel: 'Auto focus', desc: 'Auto focus keeps whatever is in the middle of the picture sharp; off, you set the distance.' }),
+    ] },
   ];
-  const autoWb = switchRow(ctx, 'autoWhiteBalance', 'Auto white balance', 'The camera matches the colour of your light.');
-  const wb = rangeRow(ctx, 'whiteBalance', { label: 'White balance', min: 2800, max: 7500, step: 100, format: (v) => `${v} K` });
-  const temp = rangeRow(ctx, 'temperatureCompensation', { label: 'Temperature', min: 0, max: 100, format: (v) => (v === 50 ? '0' : v > 50 ? `+${v - 50} warmer` : `${v - 50} cooler`) });
+  for (const g of groups) {
+    g.presets = presetRow(ctx, g.id);
+    g.panel = adjustPanel(`${g.label} adjustments`, g.items);
+    g.top = el('div', { class: 'stage-controls stage-top' }, g.presets.el);
+    g.actions = el('div', { class: 'stage-item' }, ...g.presets.actions);
+  }
+  const tabs = segmented({ label: 'Adjust', options: groups.map((g) => ({ value: g.id, label: g.label })), onChange: (id) => open(id) });
+  function open(id) {
+    tabs.set(id);
+    for (const g of groups) g.top.hidden = g.panel.el.hidden = g.actions.hidden = g.id !== id;
+  }
+  open('exposure');
 
-  // Focus
-  const foPresets = presetPicker(ctx, 'focus');
-  const autoFo = switchRow(ctx, 'autoFocus', 'Auto focus', 'Keeps whatever is in the middle of the picture sharp.');
-  const focus = rangeRow(ctx, 'focus', { label: 'Focus', min: 0, max: 255, format: (v) => (v < 30 ? `${v} (far)` : v > 200 ? `${v} (near)` : String(v)) });
-
+  // Like the Camera page: the picture is the page, and a group's presets and adjustments float over it on glass.
   const node = pageShell('Image', 'How the picture looks: exposure, colour and focus. Like G Hub, Libre Hub writes these to the camera, so every app gets them.',
-    el('div', { class: 'camera-layout' },
-      slot,
-      el('div', { class: 'stack' }, el('div', { class: 'card' },
-        cardHead('sun', 'Exposure', null, exPresets.el),
-        autoEx.el,
-        el('div', { class: 'params' }, shutter.el, iso.el, comp.el),
-        hdr.el,
-        setting('Priority', 'In low light, keep the frame rate (darker picture) or the exposure (fewer frames a second).', priority.el)),
-      el('div', { class: 'card' },
-        cardHead('palette', 'Colour', null, imPresets.el),
-        el('div', { class: 'params' }, ...colourRows.map((r) => r.el)),
-        autoWb.el,
-        el('div', { class: 'params' }, wb.el, temp.el)),
-      el('div', { class: 'card' },
-        cardHead('crosshair', 'Focus', null, foPresets.el),
-        autoFo.el,
-        el('div', { class: 'params' }, focus.el)))));
+    el('div', { class: 'camera-stage' }, slot));
 
   return {
     el: node,
     slot,
-    update(s) {
-      const st = s.settings;
-      exPresets.update(s);
-      autoEx.update(s);
-      shutter.update(s, st.autoExposure);
-      iso.update(s, st.autoExposure);
-      comp.update(s);
-      hdr.update(s);
-      if (!ctx.quiet('priority')) priority.set(st.priority);
-      imPresets.update(s);
-      for (const r of colourRows) r.update(s);
-      autoWb.update(s);
-      wb.update(s, st.autoWhiteBalance);
-      temp.update(s);
-      foPresets.update(s);
-      autoFo.update(s);
-      focus.update(s, st.autoFocus);
+    overlay: groups.flatMap((g) => [g.top, g.panel.el]),
+    bar: [tabs.el, el('span', { class: 'stage-sep' }), ...groups.map((g) => g.actions)],
+    update(snap) {
+      for (const g of groups) {
+        g.presets.update(snap);
+        g.panel.update(snap);
+      }
     },
   };
 }

@@ -115,16 +115,18 @@ it.
   by what they do (65° Close, 78° Medium, 90° Wide, 1.5×, 2×), then yours, and zoom up to 4×;
   zoomed in, a map in the corner to drag for pan and tilt. Show Mode, and saving the framing as a
   preset, are in the bar under it.
-- **Image:** exposure (auto, or shutter speed and ISO; compensation, HDR, frame-rate or exposure
-  priority), colour (brightness, contrast, saturation, vibrance, sharpness, tint, white balance
-  auto or in kelvin, warmer/cooler) and focus (auto or manual).
+- **Image:** the same picture, with exposure (auto, or shutter speed and ISO; compensation, HDR,
+  frame-rate or exposure priority), colour (brightness, contrast, saturation, vibrance, sharpness,
+  tint, white balance auto or in kelvin, warmer/cooler) and focus (auto or manual) on glass over
+  it, as a photo editor has them: a chip for each adjustment, showing its value, and the picked
+  one's control and what it does. The group's presets are a row at the top.
 - **Settings:** the microphones on or off, anti-flicker (50/60 Hz), what Libre Hub keeps for the
   camera, reset everything, and device details.
 
-The other cards have G Hub's preset menu (its presets, yours, Save, Reset). Every change goes to the
-camera at once (sliders when you let go), so every app gets it. The camera forgets its framing
-when it restarts, so, like G Hub, Libre Hub saves what you change and puts it back whenever the
-camera connects. The preview runs only while its page is in front; snapshots go to
+Presets are a row of choices: G Hub's and yours after them, the one your settings match lit, and
+Save preset to keep the current settings as one of yours. Every change goes to the camera at once
+(sliders when you let go), so every app gets it. The camera forgets its framing when it restarts,
+so, like G Hub, Libre Hub saves what you change and puts it back whenever the camera connects. The preview runs only while its page is in front; snapshots go to
 Pictures/Webcam Snapshots.
 
 ## Tray, start at login and keeping your settings

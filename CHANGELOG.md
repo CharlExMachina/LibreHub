@@ -15,7 +15,9 @@ for new features, a **patch** version for fixes. Each release is the tag `vX.Y.Z
   connects, like G Hub. `librehub camera …` does the same from a terminal. On the Camera page the
   picture fills the page and the framing floats over it on glass, like a camera app: the framing
   presets (G Hub's, named by what they do, then yours) and zoom along the bottom, and a map in the
-  corner to drag for pan and tilt.
+  corner to drag for pan and tilt. The Image page has the same picture, with exposure, colour and
+  focus over it as a photo editor has them: a chip for each adjustment with its value, the picked
+  one's control under them, and the group's presets along the top.
 - **Fixed: no sidetone after the PC starts with the headset on the dock.** The headset came off
   the dock without sidetone, but the base station still reported it as set, so the settings check
   saw nothing to fix. Libre Hub now sends your sidetone on every check, and checks whenever the
