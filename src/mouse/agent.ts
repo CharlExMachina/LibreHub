@@ -8,6 +8,9 @@
 //   LEDs, and repaints its own effect when the profile changes or it wakes up, so the agent paints
 //   them again after each of those.
 //
+// Its button reports also show when a DPI button is pressed (the mouse says nothing when its DPI level
+// changes), so it tells the app, which reads the new level at once: the 'dpi' event.
+//
 // The agent follows the active onboard profile. In host mode (G Hub's software mode) it does
 // nothing: there is no active profile to follow. Run one agent per mouse: the app runs one while
 // it runs, `librehub mouse agent` runs one without the app; a lock file keeps them from both acting.
@@ -180,7 +183,11 @@ export class SoftwareAgent extends EventEmitter {
 
   private onButtons(mask: number): void {
     const pressed = mask & ~this.held;
+    // A DPI button changes the level when pressed, and the sniper button again when let go.
+    const changed = mask ^ this.held;
     this.held = mask;
+    const dpi = (b: Binding | undefined) => b?.type === 'function' && typeof b.fn === 'string' && b.fn.startsWith('dpi-');
+    if (G502X_CONTROLS.some((_, k) => changed & (1 << k) && (dpi(this.bindings.base[k]) || dpi(this.bindings.gshift[k])))) this.emit('dpi');
     if (!pressed || !this.software) return;
     // G-Shift: another held control whose normal binding is the G-Shift function.
     const shiftHeld = this.bindings.base.some((b, k) => b.type === 'function' && b.fn === 'g-shift' && mask & (1 << k) && !(pressed & (1 << k)));

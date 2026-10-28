@@ -599,9 +599,10 @@ export function createMouse({ changed }) {
     }
   }
 
-  // The mouse's own buttons switch profile and DPI level: follow them while this device shows.
-  async function poll() {
-    if (!active || !res?.connected || document.hidden || !document.hasFocus() || !writer.idle || inflight) return;
+  // The mouse's own buttons switch profile and DPI level: follow them while this device shows. A DPI
+  // button press (the 'dpi' event) reads at once, also while another window has the focus.
+  async function poll(now = false) {
+    if (!active || !res?.connected || document.hidden || (!now && !document.hasFocus()) || !writer.idle || inflight) return;
     const r = await window.g502x.live().catch(() => null);
     if (!r?.connected) return void refresh();
     const wasAsleep = !!res.asleep;
@@ -622,7 +623,7 @@ export function createMouse({ changed }) {
     changed('card');
     changed('nav');
   }
-  setInterval(poll, 2000);
+  setInterval(() => poll(), 2000);
   // The LED previews only animate while the window is in front.
   const idle = () => document.body.classList.toggle('idle', document.hidden || !document.hasFocus());
   for (const ev of ['focus', 'blur']) window.addEventListener(ev, idle);
@@ -631,6 +632,8 @@ export function createMouse({ changed }) {
   let pending;
   window.g502x.onChanged((what) => {
     if (what === 'action') return; // the agent performed a software action; nothing to show
+    // Just after the press, so the mouse has switched level before it's read.
+    if (what === 'dpi') return void setTimeout(() => poll(true), 60);
     clearTimeout(pending);
     pending = setTimeout(refresh, what === 'connection' ? 900 : 150);
   });
@@ -846,7 +849,7 @@ function overviewPage(ctx) {
   let lastLevels = '';
   const shiftNote = el('span', { class: 'quiet-text' });
   const dpiCard = el('div', { class: 'card quick-card' },
-    cardHead('gauge', 'DPI level', 'The DPI buttons next to the left button switch too',
+    cardHead('gauge', 'DPI level', 'The one lit is in use. Pick another to switch to it, as the DPI buttons next to the left button do.',
       el('button', { class: 'btn ghost sm', type: 'button', onclick: () => ctx.go('sensitivity') }, 'Edit', ic('chevron', 14))),
     el('div', { class: 'quick-control' }, levels, el('div', { class: 'quick-foot' }, shiftNote)));
 
@@ -928,8 +931,9 @@ function overviewPage(ctx) {
       agentRow.replaceChildren(
         el('div', { class: 'card-title' }, ic('rocket', 18), 'Computer actions'),
         el('div', { class: 'gate-desc' }, 'Launching apps and Freestyle lighting'),
-        el('span', { class: `pill ${agent === 'off' ? 'warn' : 'on'}`, style: { justifySelf: 'end' } },
-          agent === 'running' ? 'Running in Libre Hub' : agent === 'elsewhere' ? 'Running in the terminal' : 'Not running'),
+        // Running here is the usual; say so only when it's running elsewhere or not at all.
+        agent === 'running' ? el('span') : el('span', { class: `pill ${agent === 'off' ? 'warn' : 'on'}`, style: { justifySelf: 'end' } },
+          agent === 'elsewhere' ? 'Running in the terminal' : 'Not running'),
         el('button', { class: 'btn ghost sm', type: 'button', onclick: () => ctx.go('settings') }, 'Details', ic('chevron', 14)));
     },
   };
@@ -954,6 +958,8 @@ function sensitivityPage(ctx) {
   // What the user is editing, kept while their write is under way.
   let draft = null;
   let draftSlot = 0;
+  // The level the mouse is using now, when this is the profile it runs from (else -1).
+  let now = -1;
   let timer = 0;
   let later = null;
   const flush = () => {
@@ -997,7 +1003,7 @@ function sensitivityPage(ctx) {
         const pos = dpiPos(d, lim);
         const crowded = i > 0 && pos - dpiPos(draft.levels[i - 1], lim) < 4 && !crowdedLast;
         crowdedLast = crowded;
-        return el('span', { class: `dpi-mark${i === draft.def ? ' def' : ''}${i === draft.shift ? ' shift' : ''}${crowded ? ' up' : ''}`, style: { left: `${pos}%` } }, el('b', {}, String(d)));
+        return el('span', { class: `dpi-mark${i === now ? ' now' : ''}${i === draft.def ? ' def' : ''}${i === draft.shift ? ' shift' : ''}${crowded ? ' up' : ''}`, style: { left: `${pos}%` } }, el('b', {}, String(d)));
       }));
     const name = `dpi-def-${Math.random().toString(36).slice(2, 6)}`;
     // The rows are rebuilt; put keyboard focus back on the same control (or its neighbour, after a removal).
@@ -1012,8 +1018,8 @@ function sensitivityPage(ctx) {
         commit(true);
       });
       const nudgeBy = (delta) => { draft.levels[i] = snapTo(draft.levels[i] + delta); input.value = String(draft.levels[i]); commit(true); };
-      return el('div', { class: `dpi-row${i === draft.def ? ' def' : ''}` },
-        el('span', { class: 'dpi-n' }, `Level ${i + 1}`),
+      return el('div', { class: `dpi-row${i === now ? ' now' : ''}` },
+        el('span', { class: 'dpi-n' }, `Level ${i + 1}`, i === now ? el('span', { class: 'pill on dpi-now' }, 'In use') : null),
         el('div', { class: 'stepper' },
           el('button', { class: 'btn ghost sm icon-only', type: 'button', 'aria-label': `Lower level ${i + 1} by ${lim.step}`, 'data-focus': `lo${i}`, onclick: () => nudgeBy(-lim.step) }, '−'),
           input,
@@ -1051,7 +1057,11 @@ function sensitivityPage(ctx) {
   const dpiCard = el('div', { class: 'card' },
     cardHead('gauge', 'DPI levels', 'Up to five. The DPI buttons next to the left button step through them; the sniper button holds its level.', liveNote),
     el('div', { class: 'section-label' }, 'Presets from G Hub'),
-    presets, track, rows,
+    presets, track,
+    el('div', { class: 'dpi-legend', 'aria-hidden': 'true' },
+      el('span', {}, el('i', { class: 'dpi-key now' }), 'In use now'), el('span', {}, el('i', { class: 'dpi-key def' }), 'Starts here'),
+      el('span', {}, el('i', { class: 'dpi-key shift' }), 'Sniper')),
+    rows,
     el('div', { class: 'eq-foot' }, el('span', {}, 'Higher DPI moves the pointer further for the same hand movement.'), addBtn));
   const rateCard = el('div', { class: 'card' },
     cardHead('signal', 'Report rate', 'How often the mouse tells the computer where it is. Higher is smoother and uses a little more battery.'),
@@ -1078,6 +1088,9 @@ function sensitivityPage(ctx) {
       }
       const live = s.mode === 'onboard' && p.slot === s.activeProfile;
       liveNote.replaceChildren(...(live ? [String(s.dpi.current), el('span', { class: 'of' }, ' DPI now')] : []));
+      const wasNow = now;
+      now = live ? s.dpi.level : -1;
+      if (now !== wasNow) paint();
       // Another profile picked while +/- clicks wait: write them now, then show the new one.
       if (timer && draftSlot !== p.slot) flush();
       const next = { levels: [...p.dpiLevels], def: p.defaultDpiIndex, shift: p.shiftDpiIndex };

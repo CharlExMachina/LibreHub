@@ -227,6 +227,125 @@ export function segmented({ label, options, onChange, full = false }) {
   return { el: root, set: (v) => pick(v, false) };
 }
 
+/**
+ * A drop-down, in place of <select>, whose list the system draws itself (plain grey on Linux). A field
+ * shows the choice; its menu is glass that grows out of the field, as iOS's pop-up menus do. It's a
+ * popover, so it shows over anything that clips the field. groups: [{ label?, options: [{ value, label,
+ * title? }] }]. `placeholder` is what the field says when the value is none of the options.
+ */
+export function dropdown({ label, groups = [], onChange, placeholder = '' }) {
+  const text = el('span', { class: 'dd-text' });
+  const field = el('button', { type: 'button', class: 'field sm dd-field', 'aria-haspopup': 'listbox', 'aria-expanded': 'false', 'aria-label': label },
+    text, el('span', { class: 'dd-chevron', html: icon('chevron', 14) }));
+  const menu = el('div', { class: 'dd-menu', role: 'listbox', 'aria-label': label, tabindex: '-1', popover: 'manual' });
+  let value = null;
+  let items = [];
+  let active = -1;
+  let open = false;
+
+  function paint() {
+    const opt = groups.flatMap((g) => g.options).find((o) => String(o.value) === String(value));
+    text.textContent = opt?.label ?? placeholder;
+    field.title = opt?.title ?? '';
+  }
+  function build() {
+    items = [];
+    menu.replaceChildren(...groups.map((g) => el('div', { role: 'group', 'aria-label': g.label },
+      g.label ? el('div', { class: 'dd-group', 'aria-hidden': 'true' }, g.label) : null,
+      g.options.map((o) => {
+        const item = el('div', { class: 'dd-item', role: 'option', title: o.title, 'aria-selected': String(String(o.value) === String(value)),
+          onclick: () => pick(o.value) }, el('span', { class: 'dd-check', html: icon('check', 14) }), el('span', {}, o.label));
+        item.addEventListener('pointermove', () => highlight(items.indexOf(item)));
+        items.push(item);
+        return item;
+      }))));
+  }
+  function highlight(i) {
+    active = i;
+    items.forEach((it, j) => it.classList.toggle('active', j === i));
+    items[i]?.scrollIntoView({ block: 'nearest' });
+  }
+  // Below the field, or above it where there's no room; at least as wide as the field.
+  function place() {
+    const r = field.getBoundingClientRect();
+    menu.style.minWidth = `${r.width}px`;
+    const h = menu.offsetHeight;
+    const below = innerHeight - r.bottom - 12;
+    const up = below < h && r.top - 12 > below;
+    menu.style.left = `${Math.max(8, Math.min(r.left, innerWidth - menu.offsetWidth - 8))}px`;
+    menu.style.top = `${up ? Math.max(8, r.top - 6 - h) : r.bottom + 6}px`;
+    menu.style.transformOrigin = `${Math.min(r.width / 2, menu.offsetWidth / 2)}px ${up ? '100%' : '0'}`;
+  }
+  function show() {
+    if (open) return;
+    open = true;
+    build();
+    document.body.append(menu);
+    menu.showPopover();
+    place();
+    field.setAttribute('aria-expanded', 'true');
+    highlight(Math.max(0, items.findIndex((it) => it.getAttribute('aria-selected') === 'true')));
+    menu.focus({ preventScroll: true });
+    menu.classList.remove('leaving');
+    menu.classList.add('opening');
+    addEventListener('pointerdown', outside, true);
+    addEventListener('resize', hide);
+    addEventListener('blur', hide);
+    document.addEventListener('scroll', scrolled, true);
+  }
+  function hide({ refocus = false } = {}) {
+    if (!open) return;
+    open = false;
+    field.setAttribute('aria-expanded', 'false');
+    removeEventListener('pointerdown', outside, true);
+    removeEventListener('resize', hide);
+    removeEventListener('blur', hide);
+    document.removeEventListener('scroll', scrolled, true);
+    if (refocus) field.focus({ preventScroll: true });
+    menu.classList.remove('opening');
+    menu.classList.add('leaving');
+    setTimeout(() => { if (!open) { menu.hidePopover(); menu.remove(); } }, 160);
+  }
+  function outside(e) {
+    if (!menu.contains(e.target) && !field.contains(e.target)) hide();
+  }
+  // The page scrolling would leave the menu behind; the menu's own list scrolling is fine.
+  function scrolled(e) {
+    if (!menu.contains(e.target)) hide();
+  }
+  function pick(v) {
+    const changed = String(v) !== String(value);
+    value = v;
+    paint();
+    hide({ refocus: true });
+    if (changed) onChange(v);
+  }
+
+  field.addEventListener('click', () => (open ? hide() : show()));
+  field.addEventListener('keydown', (e) => {
+    if (['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(e.key)) { e.preventDefault(); show(); }
+  });
+  menu.addEventListener('keydown', (e) => {
+    const n = items.length;
+    if (e.key === 'ArrowDown') highlight((active + 1) % n);
+    else if (e.key === 'ArrowUp') highlight((active - 1 + n) % n);
+    else if (e.key === 'Home') highlight(0);
+    else if (e.key === 'End') highlight(n - 1);
+    else if (e.key === 'Enter' || e.key === ' ') items[active]?.click();
+    else if (e.key === 'Escape') hide({ refocus: true });
+    else if (e.key === 'Tab') return hide({ refocus: true });
+    else return;
+    e.preventDefault();
+  });
+
+  return {
+    el: field,
+    get value() { return value; },
+    set(v) { value = v; paint(); if (open) build(); },
+    setGroups(next) { groups = next; paint(); if (open) { build(); place(); } },
+  };
+}
+
 /** Bigger radio cards with an icon and a description. options: [{ value, label, desc, icon }] */
 export function choiceCards({ label, options, onChange }) {
   const cards = options.map((o) =>
