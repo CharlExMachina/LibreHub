@@ -256,7 +256,7 @@ const appImage = app.isPackaged && APPIMAGE && APPDIR && process.execPath.starts
 // Updates come from GitHub Releases, and only an AppImage can replace itself.
 let notifiedUpdate = '';
 const updates = new Updates({
-  enabled: !!appImage,
+  appImage,
   feedUrl: process.env.LIBRE_HUB_UPDATE_URL,
   onChange: (state: UpdateState) => {
     window?.webContents.send('app:event', 'update', state);

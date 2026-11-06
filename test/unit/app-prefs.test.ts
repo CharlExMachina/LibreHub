@@ -1,8 +1,12 @@
+import { spawnSync } from 'node:child_process';
+import { chmodSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { autostartFile, desktopEntry, execArg, iconFile, launchAgent, launcherFile } from '../../src/main/autostart.js';
 import { DEFAULT_PREFS, normalize } from '../../src/main/prefs.js';
 import { parseLogindLine } from '../../src/main/session.js';
-import { describeUpdateError } from '../../src/main/updates.js';
+import { describeUpdateError, envForNewAppImage, RUN_WITHOUT_INHERITED_FILES } from '../../src/main/updates.js';
 
 describe('preferences', () => {
   it('fills defaults and ignores junk', () => {
@@ -74,5 +78,53 @@ describe('update errors', () => {
     expect(describeUpdateError(new Error('net::ERR_INTERNET_DISCONNECTED'))).toBe('no connection to GitHub');
     expect(describeUpdateError(new Error('getaddrinfo ENOTFOUND github.com'))).toBe('no connection to GitHub');
     expect(describeUpdateError(new Error('something odd\nwith details'))).toBe('something odd');
+  });
+});
+
+describe('starting the updated AppImage', () => {
+  it('leaves out what the old AppImage added to the environment', () => {
+    const appDir = '/tmp/.mount_Libre-abc123';
+    const env = envForNewAppImage({
+      APPDIR: appDir,
+      APPIMAGE: '/home/me/Applications/Libre-Hub-x86_64.AppImage',
+      ARGV0: 'Libre-Hub-x86_64.AppImage',
+      OWD: '/home/me',
+      PATH: `${appDir}:${appDir}/usr/sbin:/usr/local/bin:/usr/bin`,
+      LD_LIBRARY_PATH: `${appDir}/usr/lib`,
+      XDG_DATA_DIRS: `${appDir}/usr/share/::/usr/share/gnome:/usr/local/share/:/usr/share/`,
+      // Only the mount itself and what is under it: a folder that merely starts the same way stays.
+      GSETTINGS_SCHEMA_DIR: `${appDir}/usr/share/glib-2.0/schemas:${appDir}-other/schemas`,
+      HOME: '/home/me',
+    });
+    expect(env).toEqual({
+      PATH: '/usr/local/bin:/usr/bin',
+      XDG_DATA_DIRS: '/usr/share/gnome:/usr/local/share/:/usr/share/',
+      GSETTINGS_SCHEMA_DIR: `${appDir}-other/schemas`,
+      HOME: '/home/me',
+    });
+  });
+
+  it('keeps the environment as it is when not started from an AppImage', () => {
+    expect(envForNewAppImage({ PATH: '/usr/bin', HOME: '/home/me' })).toEqual({ PATH: '/usr/bin', HOME: '/home/me' });
+  });
+
+  it.runIf(process.platform === 'linux')('runs the new AppImage with only stdin, stdout and stderr open', () => {
+    // A stand-in for the AppImage that lists the files it was started with.
+    const target = join(mkdtempSync(join(tmpdir(), 'librehub-')), 'fake.AppImage');
+    writeFileSync(target, '#!/bin/sh\nexec ls /proc/self/fd\n');
+    chmodSync(target, 0o755);
+    // Files 3, 4 and 12 are open in the shell that starts it, as the old copy's files would be.
+    const files = (script: string) => {
+      const run = spawnSync('bash', ['-c', `exec 12</dev/null; exec bash -c '${script}' "$0"`, target], {
+        stdio: ['ignore', 'pipe', 'pipe', 'pipe', 'pipe'],
+        encoding: 'utf8',
+      });
+      expect(run.stderr).toBe('');
+      // ls opens its own directory listing, as the lowest free number.
+      return run.stdout.trim().split(/\s+/).map(Number).sort((a, b) => a - b);
+    };
+    // Without the script they reach it (along with whatever this test runner has open).
+    expect(files('exec "$0"')).toEqual(expect.arrayContaining([3, 4, 12]));
+    expect(files(RUN_WITHOUT_INHERITED_FILES)).toEqual([0, 1, 2, 3]);
   });
 });

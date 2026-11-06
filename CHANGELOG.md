@@ -4,6 +4,14 @@ Libre Hub follows [Semantic Versioning](https://semver.org): a **major** version
 that break something you rely on (a moved settings file, a dropped feature), a **minor** version
 for new features, a **patch** version for fixes. Each release is the tag `vX.Y.Z`.
 
+## Unreleased
+
+- **Fixed: each update left the old version behind until you quit Libre Hub.** After Restart to
+  update, the new version held on to some of the old one's files, so the old AppImage stayed
+  mounted, with a process serving it and its 120 MB still taken on disk (the file itself was
+  already replaced). Each update added another. The new version now starts with none of the old
+  one's files, and the old one is gone as soon as it quits.
+
 ## 1.5.0 - 2026-11-06
 
 - **MX Brio presets keep the whole camera.** Save preset keeps the camera's framing, exposure,
