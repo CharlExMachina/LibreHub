@@ -123,7 +123,8 @@ describe('starting the updated AppImage', () => {
       // ls opens its own directory listing, as the lowest free number.
       return run.stdout.trim().split(/\s+/).map(Number).sort((a, b) => a - b);
     };
-    expect(files('exec "$0"')).toEqual([0, 1, 2, 3, 4, 5, 12]);
+    // Without the script they reach it (along with whatever this test runner has open).
+    expect(files('exec "$0"')).toEqual(expect.arrayContaining([3, 4, 12]));
     expect(files(RUN_WITHOUT_INHERITED_FILES)).toEqual([0, 1, 2, 3]);
   });
 });
