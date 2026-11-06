@@ -2,7 +2,7 @@
   "name": "logitech-manager",
   "productName": "Libre Hub",
   "desktopName": "com.charlexmachina.LibreHub.desktop",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "private": true,
   "description": "Libre Hub: manage Logitech gear without G Hub: the A50 X headset, the G502 X PLUS mouse and the MX Brio webcam (Linux first, works on macOS).",
   "type": "module",

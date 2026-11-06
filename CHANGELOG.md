@@ -4,7 +4,7 @@ Libre Hub follows [Semantic Versioning](https://semver.org): a **major** version
 that break something you rely on (a moved settings file, a dropped feature), a **minor** version
 for new features, a **patch** version for fixes. Each release is the tag `vX.Y.Z`.
 
-## Unreleased
+## 1.5.0 - 2026-11-06
 
 - **MX Brio presets keep the whole camera.** Save preset keeps the camera's framing, exposure,
   colour and focus under one name, the way an EQ preset keeps a whole curve, and picking it puts
