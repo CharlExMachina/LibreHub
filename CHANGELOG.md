@@ -4,6 +4,19 @@ Libre Hub follows [Semantic Versioning](https://semver.org): a **major** version
 that break something you rely on (a moved settings file, a dropped feature), a **minor** version
 for new features, a **patch** version for fixes. Each release is the tag `vX.Y.Z`.
 
+## Unreleased
+
+- **MX Brio presets keep the whole camera.** Save preset keeps the camera's framing, exposure,
+  colour and focus under one name, the way an EQ preset keeps a whole curve, and picking it puts
+  all of it back at once. Your presets are in a drop-down at the top of the Camera and Image pages,
+  which says which one the camera has now ("Custom" when none), with Save preset and Delete beside
+  it. Before, Save preset kept just the framing or just one Image tab, and the preset went at the
+  end of a row that could run off the edge of the picture with no sign it was there. G Hub's
+  presets stay where they were, each setting its own tab. Presets saved by 1.4 are kept as they
+  were, with just their tab's settings (tabs saved under the same name become one preset); save
+  over one to keep the whole camera. `librehub camera preset save <name>`, `preset <name>` and
+  `preset delete <name>` do the same from a terminal.
+
 ## 1.4.0 - 2026-11-06
 
 - **The MX Brio webcam.** The sidebar lists it next to the headset and the mouse, with a live

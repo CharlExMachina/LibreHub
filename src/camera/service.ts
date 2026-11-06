@@ -7,17 +7,23 @@
 // runs it whenever the camera connects, as G Hub does.
 
 import type { CameraInfo, MxBrio } from './mxbrio.js';
-import { CURATED_PRESETS, DEFAULTS, GROUP_KEYS, matchesPreset, SETTINGS, writePlan, type CameraSettings, type Group, type Preset, type SettingKey } from './settings.js';
+import { CURATED_PRESETS, DEFAULTS, GROUP_KEYS, matchesPreset, PRESET_KEYS, SETTINGS, writePlan, type CameraPreset, type CameraSettings, type Group, type Preset, type SettingKey } from './settings.js';
 import { cleanSettings, type CameraStore } from './store.js';
 
 export type PresetGroup = Preset['group'];
 
+/** One of G Hub's presets, for one tab. */
 export interface PresetView {
   group: PresetGroup;
   name: string;
-  /** One of G Hub's own; these can't be deleted. */
-  curated: boolean;
   /** The camera's settings for this group are exactly this preset. */
+  matches: boolean;
+}
+
+/** One of your presets: the camera's whole look. */
+export interface CustomPresetView {
+  name: string;
+  /** The camera's settings are exactly this preset. */
   matches: boolean;
 }
 
@@ -25,7 +31,10 @@ export interface CameraSnapshot {
   device: CameraInfo;
   settings: CameraSettings;
   microphone: boolean;
+  /** G Hub's presets, per tab. */
   presets: PresetView[];
+  /** Yours, in the order you saved them. */
+  custom: CustomPresetView[];
   /** Settings Libre Hub puts back when the camera connects (the ones you changed). */
   saved: Partial<CameraSettings>;
 }
@@ -34,14 +43,16 @@ export type CameraAction =
   | { type: 'set'; settings: Partial<CameraSettings> }
   /** G Hub's "Reset to default", for one tab or everything. */
   | { type: 'reset'; group: Group | 'all' }
+  /** One of G Hub's presets: sets that tab. */
   | { type: 'preset'; group: PresetGroup; name: string }
-  | { type: 'savePreset'; group: PresetGroup; name: string }
-  | { type: 'deletePreset'; group: PresetGroup; name: string }
+  /** One of yours: sets framing, exposure, colour and focus. */
+  | { type: 'customPreset'; name: string }
+  /** Keep the camera's current look as a preset of yours (replacing one of the same name). */
+  | { type: 'savePreset'; name: string }
+  | { type: 'deletePreset'; name: string }
   | { type: 'microphone'; enabled: boolean }
   /** Stop putting settings back on connect (forget what was saved for this camera). */
   | { type: 'forget' };
-
-const PRESET_GROUPS: PresetGroup[] = ['crop', 'exposure', 'image', 'focus'];
 
 /** Settings in `target` that differ from `current` and would make a difference (see writePlan). */
 export function drift(target: Partial<CameraSettings>, current: CameraSettings): Partial<CameraSettings> {
@@ -76,7 +87,12 @@ export class CameraService {
       const settings = await this.camera.readSettings();
       const microphone = await this.camera.microphone();
       const config = await this.store.read();
-      return { device, settings, microphone, presets: presetViews(settings, config.presets), saved: config.cameras[device.serial] ?? {} };
+      return {
+        device, settings, microphone,
+        presets: CURATED_PRESETS.map((p) => ({ group: p.group, name: p.name, matches: matchesPreset(settings, p) })),
+        custom: config.presets.map((p) => ({ name: p.name, matches: matchesPreset(settings, p) })),
+        saved: config.cameras[device.serial] ?? {},
+      };
     });
   }
 
@@ -90,28 +106,28 @@ export class CameraService {
           return this.write(Object.fromEntries(keys.map((k) => [k, DEFAULTS[k]])));
         }
         case 'preset': {
-          const preset = (await this.allPresets()).find((p) => p.group === action.group && p.name === action.name);
-          if (!preset) throw new Error(`no ${action.group} preset called "${action.name}"`);
+          const preset = CURATED_PRESETS.find((p) => p.group === action.group && p.name === action.name);
+          if (!preset) throw new Error(`G Hub has no ${action.group} preset called "${action.name}"`);
           return this.write(preset.settings);
         }
+        case 'customPreset':
+          return this.write(findPreset((await this.store.read()).presets, action.name).settings);
         case 'savePreset': {
-          const name = action.name.trim();
+          const name = action.name?.trim() ?? '';
           if (!name) throw new Error('a preset needs a name');
-          if (!PRESET_GROUPS.includes(action.group)) throw new Error(`unknown preset group "${action.group}"`);
-          if (CURATED_PRESETS.some((p) => p.group === action.group && p.name.toLowerCase() === name.toLowerCase())) throw new Error(`"${name}" is one of G Hub’s presets; pick another name`);
           const settings = await this.camera.readSettings();
-          const values = Object.fromEntries(GROUP_KEYS[action.group].map((k) => [k, settings[k]])) as Partial<CameraSettings>;
+          const values = Object.fromEntries(PRESET_KEYS.map((k) => [k, settings[k]])) as Partial<CameraSettings>;
           await this.store.update((c) => {
-            c.presets = c.presets.filter((p) => !(p.group === action.group && p.name === name));
-            c.presets.push({ group: action.group, name, settings: values });
+            const i = c.presets.findIndex((p) => sameName(p.name, name));
+            if (i >= 0) c.presets[i] = { name, settings: values };
+            else c.presets.push({ name, settings: values });
           });
           return;
         }
         case 'deletePreset':
           await this.store.update((c) => {
-            const before = c.presets.length;
-            c.presets = c.presets.filter((p) => !(p.group === action.group && p.name === action.name));
-            if (c.presets.length === before) throw new Error(`no saved ${action.group} preset called "${action.name}"`);
+            const preset = findPreset(c.presets, action.name);
+            c.presets = c.presets.filter((p) => p !== preset);
           });
           return;
         case 'microphone':
@@ -145,10 +161,6 @@ export class CameraService {
     });
   }
 
-  private async allPresets(): Promise<Preset[]> {
-    return [...CURATED_PRESETS, ...(await this.store.read()).presets];
-  }
-
   /** Write what differs to the camera (switches first), then remember the settings for this camera. */
   private async write(settings: Partial<CameraSettings>): Promise<void> {
     const current = await this.camera.readSettings();
@@ -177,9 +189,10 @@ function cleanOrThrow(settings: Partial<CameraSettings>): Partial<CameraSettings
   return clean;
 }
 
-function presetViews(settings: CameraSettings, custom: Preset[]): PresetView[] {
-  return [
-    ...CURATED_PRESETS.map((p) => ({ group: p.group, name: p.name, curated: true, matches: matchesPreset(settings, p) })),
-    ...custom.map((p) => ({ group: p.group, name: p.name, curated: false, matches: matchesPreset(settings, p) })),
-  ];
+const sameName = (a: string, b: string) => a.toLowerCase() === b.trim().toLowerCase();
+
+function findPreset(presets: CameraPreset[], name: string): CameraPreset {
+  const preset = presets.find((p) => sameName(p.name, name ?? ''));
+  if (!preset) throw new Error(`you have no preset called "${name}"`);
+  return preset;
 }

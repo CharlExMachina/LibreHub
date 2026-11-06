@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
@@ -32,6 +32,7 @@ describe('reading', () => {
     expect(s.settings).toEqual({ ...DEFAULTS, focus: 0, whiteBalance: 4679 });
     expect(s.microphone).toBe(false);
     expect(s.presets.filter((p) => p.matches).map((p) => `${p.group}/${p.name}`)).toEqual(['crop/Default', 'exposure/Default', 'image/Default', 'focus/Default']);
+    expect(s.custom).toEqual([]);
     expect(s.saved).toEqual({});
   });
 });
@@ -90,17 +91,63 @@ describe('presets and reset', () => {
     expect(s.presets.filter((p) => p.matches).map((p) => p.name)).toEqual(['Zoom 2×', 'Default', 'Black and White', 'Default']);
   });
 
-  it('saves your own, which then match and can be deleted', async () => {
+  it('saves yours as the whole camera, which then match, come back in one go and can be deleted', async () => {
     const { svc, store } = await setup();
-    await svc.apply({ type: 'set', settings: { brightness: 90, vibrance: 200 } });
-    await svc.apply({ type: 'savePreset', group: 'image', name: 'Desk lamp' });
-    expect((await store.read()).presets).toEqual([{ group: 'image', name: 'Desk lamp', settings: expect.objectContaining({ brightness: 90, vibrance: 200, saturation: 128 }) }]);
-    await svc.apply({ type: 'reset', group: 'image' });
-    await svc.apply({ type: 'preset', group: 'image', name: 'Desk lamp' });
-    expect((await svc.snapshot()).presets.find((p) => p.name === 'Desk lamp')).toMatchObject({ curated: false, matches: true });
-    await expect(svc.apply({ type: 'savePreset', group: 'image', name: 'warmer' })).rejects.toThrow(/G Hub’s presets/);
-    await svc.apply({ type: 'deletePreset', group: 'image', name: 'Desk lamp' });
-    await expect(svc.apply({ type: 'deletePreset', group: 'image', name: 'Desk lamp' })).rejects.toThrow(/no saved image preset/);
+    await svc.apply({ type: 'set', settings: { fov: 78, zoom: 150, tilt: -7200, autoExposure: false, shutter: 120, iso: 400, brightness: 90, autoFocus: false, focus: 40, antiFlicker: 50 } });
+    await svc.apply({ type: 'savePreset', name: ' Desk at night ' });
+    const [saved] = (await store.read()).presets;
+    expect(saved.name).toBe('Desk at night');
+    // Framing, exposure, colour and focus: everything but anti-flicker.
+    expect(Object.keys(saved.settings).sort()).toEqual(Object.keys(DEFAULTS).filter((k) => k !== 'antiFlicker').sort());
+    expect(saved.settings).toMatchObject({ fov: 78, zoom: 150, tilt: -7200, autoExposure: false, shutter: 120, iso: 400, brightness: 90, autoFocus: false, focus: 40 });
+    expect((await svc.snapshot()).custom).toEqual([{ name: 'Desk at night', matches: true }]);
+
+    await svc.apply({ type: 'reset', group: 'all' });
+    expect((await svc.snapshot()).custom).toEqual([{ name: 'Desk at night', matches: false }]);
+    await svc.apply({ type: 'customPreset', name: 'desk at night' });
+    const s = await svc.snapshot();
+    expect(s.custom).toEqual([{ name: 'Desk at night', matches: true }]);
+    expect(s.settings).toMatchObject({ fov: 78, zoom: 150, shutter: 120, brightness: 90, focus: 40, antiFlicker: 60 });
+
+    // The same name, in any case, replaces it in place.
+    await svc.apply({ type: 'set', settings: { brightness: 100 } });
+    await svc.apply({ type: 'savePreset', name: 'Daylight' });
+    await svc.apply({ type: 'savePreset', name: 'DESK AT NIGHT' });
+    expect((await store.read()).presets.map((p) => [p.name, p.settings.brightness])).toEqual([['DESK AT NIGHT', 100], ['Daylight', 100]]);
+    expect((await svc.snapshot()).custom.map((p) => p.matches)).toEqual([true, true]);
+
+    await svc.apply({ type: 'deletePreset', name: 'daylight' });
+    expect((await store.read()).presets.map((p) => p.name)).toEqual(['DESK AT NIGHT']);
+    await expect(svc.apply({ type: 'deletePreset', name: 'Daylight' })).rejects.toThrow(/no preset called "Daylight"/);
+    await expect(svc.apply({ type: 'customPreset', name: 'Daylight' })).rejects.toThrow(/no preset called "Daylight"/);
+    await expect(svc.apply({ type: 'savePreset', name: '  ' })).rejects.toThrow(/needs a name/);
+  });
+
+  it('matches a preset in auto exposure whatever ISO the camera reads', async () => {
+    const { svc } = await setup();
+    await svc.apply({ type: 'savePreset', name: 'Auto' });
+    await svc.apply({ type: 'set', settings: { iso: 800 } });
+    expect((await svc.snapshot()).custom).toEqual([{ name: 'Auto', matches: true }]);
+  });
+
+  it('keeps presets saved by 1.4, one tab each, merging tabs saved under the same name', async () => {
+    const store = tempStore();
+    writeFileSync(store.file, JSON.stringify({ version: 1, cameras: {}, presets: [
+      { group: 'crop', name: 'Main', settings: { fov: 78, zoom: 100, pan: 0, tilt: 0, showMode: true } },
+      { group: 'image', name: 'Warm', settings: { temperatureCompensation: 70 } },
+      { group: 'image', name: 'main', settings: { saturation: 90 } },
+      { group: 'crop', name: ' ', settings: { fov: 65 } },
+    ] }));
+    expect((await store.read()).presets).toEqual([
+      { name: 'Main', settings: { fov: 78, zoom: 100, pan: 0, tilt: 0, showMode: true, saturation: 90 } },
+      { name: 'Warm', settings: { temperatureCompensation: 70 } },
+    ]);
+    const { sim, svc } = await setup(undefined, store);
+    await svc.apply({ type: 'customPreset', name: 'Main' });
+    expect(sim.cur('10:5')).toBe('01'); // 78°
+    const s = await svc.snapshot();
+    expect(s.settings).toMatchObject({ fov: 78, saturation: 90, brightness: 128 });
+    expect(s.custom).toEqual([{ name: 'Main', matches: true }, { name: 'Warm', matches: false }]);
   });
 
   it('resets one tab to G Hub’s defaults, leaving the others', async () => {
@@ -188,6 +235,22 @@ describe('librehub camera', () => {
     expect(out).toMatch(/shutter\s+1\/60 s {2}\(auto\)/);
   });
 
+  it('saves, lists, applies and deletes your presets', async () => {
+    const sim = new SimulatedMxBrio();
+    await run(sim, 'set', 'fov', '65', 'saturation', '0');
+    await run(sim, 'preset', 'save', 'Desk', 'at', 'night');
+    expect(await run(sim, 'status')).toMatch(/Your presets: Desk at night \(in use\)/);
+    await run(sim, 'reset');
+    expect(sim.cur('10:5')).toBe('00');
+    await run(sim, 'preset', 'Desk at night');
+    expect(sim.cur('10:5')).toBe('02');
+    expect(sim.cur('3:7')).toBe('0000');
+    // How 1.4 saved one tab: say how it works now rather than save "crop Desk".
+    await expect(run(sim, 'preset', 'save', 'crop', 'Desk')).rejects.toThrow(/whole camera now: librehub camera preset save "Desk"/);
+    await run(sim, 'preset', 'delete', 'desk at night');
+    expect(await run(sim, 'status')).toMatch(/Your presets: none yet/);
+  });
+
   it('turns the microphones on and off', async () => {
     const sim = new SimulatedMxBrio();
     expect(await run(sim, 'microphone', 'on')).toMatch(/restarts with its microphones on/);
@@ -198,6 +261,7 @@ describe('librehub camera', () => {
     const sim = new SimulatedMxBrio();
     await expect(run(sim, 'set', 'zoom')).rejects.toThrow(/pairs/);
     await expect(run(sim, 'set', 'glow', '1')).rejects.toThrow(/unknown setting "glow"/);
-    await expect(run(sim, 'preset', 'sound', 'x')).rejects.toThrow(/crop, exposure, image or focus/);
+    await expect(run(sim, 'preset', 'sound', 'x')).rejects.toThrow(/no preset called "sound x"/);
+    await expect(run(sim, 'preset', 'image', 'Sepia')).rejects.toThrow(/G Hub has no image preset called "Sepia"/);
   });
 });

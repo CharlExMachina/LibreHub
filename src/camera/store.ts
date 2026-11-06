@@ -1,18 +1,18 @@
 // What Libre Hub keeps on this computer for the MX Brio: the settings you chose (per camera, by
-// serial number) and your own presets. The camera forgets its framing when it restarts and has no
+// serial number) and your own presets, each the camera's whole look. The camera forgets its framing when it restarts and has no
 // profile memory (G Hub's capability block: hasPersistentMemory false), so, like G Hub, Libre Hub
 // puts your settings back whenever the camera connects.
 
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
-import { SETTINGS, toRaw, type CameraSettings, type Preset, type SettingKey } from './settings.js';
+import { SETTINGS, toRaw, type CameraPreset, type CameraSettings, type SettingKey } from './settings.js';
 
 export interface CameraConfig {
-  version: 1;
+  version: 2;
   /** Settings by camera serial number: only the ones you changed. */
   cameras: Record<string, Partial<CameraSettings>>;
-  presets: Preset[];
+  presets: CameraPreset[];
 }
 
 export function defaultCameraFile(env: NodeJS.ProcessEnv = process.env, platform = process.platform): string {
@@ -21,8 +21,6 @@ export function defaultCameraFile(env: NodeJS.ProcessEnv = process.env, platform
     ? join(homedir(), 'Library', 'Application Support', 'logitech-manager', 'mx-brio.json')
     : join(env.XDG_CONFIG_HOME || join(homedir(), '.config'), 'logitech-manager', 'mx-brio.json');
 }
-
-const GROUPS = new Set(['crop', 'exposure', 'image', 'focus']);
 
 /** Keep only settings this version knows, with valid values (a hand-edited file may have anything). */
 export function cleanSettings(input: unknown): Partial<CameraSettings> {
@@ -40,14 +38,28 @@ export function cleanSettings(input: unknown): Partial<CameraSettings> {
   return out as Partial<CameraSettings>;
 }
 
+/**
+ * Your presets, by name (whatever its case). Version 1 kept one tab's settings per preset (the file
+ * says which `group`); presets of the same name from different tabs become one, with each tab's settings.
+ */
+function cleanPresets(input: unknown): CameraPreset[] {
+  const out: CameraPreset[] = [];
+  for (const p of Array.isArray(input) ? input : []) {
+    const name = typeof p?.name === 'string' ? p.name.trim() : '';
+    if (!name) continue;
+    const settings = cleanSettings(p.settings);
+    const same = out.find((x) => x.name.toLowerCase() === name.toLowerCase());
+    if (same) Object.assign(same.settings, settings);
+    else out.push({ name, settings });
+  }
+  return out;
+}
+
 function sanitize(raw: unknown): CameraConfig {
   const c = (raw && typeof raw === 'object' ? raw : {}) as Partial<CameraConfig>;
   const cameras: CameraConfig['cameras'] = {};
   for (const [serial, s] of Object.entries(c.cameras ?? {})) cameras[serial] = cleanSettings(s);
-  const presets = (Array.isArray(c.presets) ? c.presets : [])
-    .filter((p): p is Preset => !!p && typeof p.name === 'string' && !!p.name.trim() && GROUPS.has(p.group))
-    .map((p) => ({ name: p.name.trim(), group: p.group, settings: cleanSettings(p.settings) }));
-  return { version: 1, cameras, presets };
+  return { version: 2, cameras, presets: cleanPresets(c.presets) };
 }
 
 export class CameraStore {
@@ -70,7 +82,7 @@ export class CameraStore {
     try {
       return sanitize(JSON.parse(await readFile(this.file, 'utf8')));
     } catch (err) {
-      if ((err as NodeJS.ErrnoException).code === 'ENOENT') return { version: 1, cameras: {}, presets: [] };
+      if ((err as NodeJS.ErrnoException).code === 'ENOENT') return { version: 2, cameras: {}, presets: [] };
       if (err instanceof SyntaxError) throw new Error(`${this.file} is not valid JSON: ${err.message}`);
       throw err;
     }

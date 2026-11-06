@@ -695,6 +695,8 @@ dialog p { margin: 0 0 16px; color: var(--text-2); font-size: 13px; }
 .dd-field { display: inline-flex; align-items: center; gap: 10px; padding: 0 10px; text-align: left; cursor: pointer; }
 .dd-field:hover { border-color: color-mix(in oklch, var(--foreground) 28%, transparent); }
 .dd-field[aria-expanded='true'] { border-color: var(--brand); }
+.dd-field:disabled { opacity: 0.55; cursor: default; }
+.dd-field:disabled:hover { border-color: var(--line-3); }
 .dd-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dd-chevron { display: grid; rotate: 90deg; color: var(--text-2); transition: rotate 0.25s var(--ease); }
 .dd-field[aria-expanded='true'] .dd-chevron { rotate: -90deg; }
@@ -1151,3 +1153,9 @@ dialog.commands-dialog { width: min(560px, calc(100vw - 48px)); }
 .preview-extras:empty { display: none; }
 .stage-item { display: flex; align-items: center; gap: 10px; }
 .stage-item .k { color: var(--text-2); font-size: 13px; }
+/* Your camera presets, beside the page's title: what the camera has now, and Save preset. */
+.page-presets { display: flex; align-items: center; gap: 8px; flex: none; }
+.page-presets .k { color: var(--text-2); font-size: 13px; }
+.page-presets .dd-field { width: 190px; }
+/* Delete shows for the preset in use; its room stays, so the drop-down doesn't jump. */
+.page-presets .btn[hidden] { display: inline-flex; visibility: hidden; }

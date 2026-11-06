@@ -177,12 +177,24 @@ export const DEFAULTS: CameraSettings = {
   antiFlicker: 60,
 };
 
-/** A preset is a setting group's values, by name. */
+/** One of G Hub's presets: one tab's values, by name. */
 export interface Preset {
   name: string;
   group: Exclude<Group, 'general'>;
   settings: Partial<CameraSettings>;
 }
+
+/**
+ * One of your presets: the camera's whole look (framing, exposure, colour and focus), by name, as an
+ * EQ preset is a whole curve. Anti-flicker isn't in it: that's where you are, not how the picture looks.
+ */
+export interface CameraPreset {
+  name: string;
+  settings: Partial<CameraSettings>;
+}
+
+/** What a preset of yours keeps. */
+export const PRESET_KEYS: SettingKey[] = [...GROUP_KEYS.crop, ...GROUP_KEYS.exposure, ...GROUP_KEYS.image, ...GROUP_KEYS.focus];
 
 const pick = (group: Group, over: Partial<CameraSettings> = {}): Partial<CameraSettings> =>
   Object.fromEntries(GROUP_KEYS[group].map((k) => [k, k in over ? over[k] : DEFAULTS[k]]));
@@ -204,12 +216,12 @@ export const CURATED_PRESETS: Preset[] = [
 ];
 
 /**
- * Whether the settings match a preset. Values that don't apply (a manual shutter speed while
+ * Whether the settings match a preset. Values that don't apply (a manual shutter speed or ISO while
  * auto exposure is on) don't count, as G Hub doesn't show them either.
  */
-export function matchesPreset(settings: CameraSettings, preset: Preset): boolean {
+export function matchesPreset(settings: CameraSettings, preset: { settings: Partial<CameraSettings> }): boolean {
   return Object.entries(preset.settings).every(([k, v]) => {
-    const auto = SETTINGS[k as SettingKey].auto;
+    const auto = SETTINGS[k as SettingKey].auto ?? SETTINGS[k as SettingKey].manualWith;
     if (auto && settings[auto] === true && preset.settings[auto] === true) return true;
     return settings[k as SettingKey] === v;
   });
