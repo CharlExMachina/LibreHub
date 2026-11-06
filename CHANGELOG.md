@@ -4,7 +4,7 @@ Libre Hub follows [Semantic Versioning](https://semver.org): a **major** version
 that break something you rely on (a moved settings file, a dropped feature), a **minor** version
 for new features, a **patch** version for fixes. Each release is the tag `vX.Y.Z`.
 
-## Unreleased
+## 1.4.0 - 2026-11-06
 
 - **The MX Brio webcam.** The sidebar lists it next to the headset and the mouse, with a live
   preview and everything G Hub sets on it: field of view, zoom, pan and tilt, Show Mode; auto or
