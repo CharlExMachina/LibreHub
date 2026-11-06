@@ -234,6 +234,8 @@ export function createCamera({ changed }) {
 
   const ctx = {
     send, set, quiet: (key) => writer.quiet(key), receive: (r) => receive(r), go: (id) => show(id, { focus: true }),
+    /** The preset of yours last picked or saved, on either page (see yourPresets). */
+    preset: null,
     get snap() { return snap; }, get file() { return res?.file; },
   };
 
@@ -327,9 +329,10 @@ export function createCamera({ changed }) {
 
 // ------------------------------------------------------------------ shared page parts
 
-const pageShell = (title, desc, ...body) =>
+/** A page: its title, what it's for, and on the right of the title whatever `head` holds. */
+const pageShell = (title, desc, head, ...body) =>
   el('section', { class: 'page' },
-    el('header', { class: 'page-head' }, el('div', {}, el('h1', { tabindex: '-1' }, title), desc ? el('p', {}, desc) : null)),
+    el('header', { class: 'page-head' }, el('div', {}, el('h1', { tabindex: '-1' }, title), desc ? el('p', {}, desc) : null), head ?? null),
     body);
 
 const cardHead = (iconName, title, sub, right) =>
@@ -361,22 +364,62 @@ function rangeRow(ctx, key, { label, min, max, step = 1, format = String, toValu
   };
 }
 
-/** Save (the current settings as a preset of yours) and Delete (`current()`, one of yours), for a card's presets. */
-function presetActions(ctx, group, current, saveLabel = 'Save') {
-  const del = el('button', { type: 'button', class: 'btn ghost sm', title: 'Delete this preset', hidden: true }, ic('trash', 14));
-  const saveBtn = el('button', { type: 'button', class: 'btn ghost sm', title: 'Save these settings as a preset' }, ic('save', 14), saveLabel);
+/**
+ * Your presets: each is the camera's whole look (framing, exposure, colour and focus), as an EQ preset is a
+ * whole curve. A drop-down to pick one, which says which one the camera has now ("Custom" when none), Save
+ * preset to keep the current look, and Delete for the one in use. The Camera and Image pages both have it.
+ */
+function yourPresets(ctx) {
+  const key = 'preset:custom';
+  let list = [];
+  const pick = dropdown({ label: 'Your presets', placeholder: 'Custom', onChange: (name) => {
+    ctx.preset = name;
+    ctx.send(key, { type: 'customPreset', name }, { coalesce: false });
+  } });
+  const saveBtn = el('button', { type: 'button', class: 'btn sm', title: 'Keep the camera’s framing, exposure, colour and focus as a preset' }, ic('save', 14), 'Save preset');
+  const del = el('button', { type: 'button', class: 'btn ghost sm icon-only', title: 'Delete this preset', 'aria-label': 'Delete this preset', hidden: true }, ic('trash', 14));
   saveBtn.addEventListener('click', async () => {
-    const name = await prompt({ title: `Save ${GROUP_TITLES[group].toLowerCase()} preset`, body: 'Saved on this computer, with the camera’s current settings for this card.', label: 'Preset name', confirm: 'Save', maxlength: 32 });
+    const name = await prompt({
+      title: 'Save preset',
+      body: 'Keeps the camera’s framing, exposure, colour and focus as they are now, so you can go back to all of it with one pick. Saved on this computer.',
+      label: 'Preset name',
+      placeholder: 'e.g. Desk at night',
+      initial: ctx.preset ?? '',
+      maxlength: 32,
+      validate: (n) => (list.some((p) => p.name.toLowerCase() === n.toLowerCase()) ? { hint: 'This replaces your preset with the same name.', confirm: 'Replace' } : null),
+    });
     if (!name) return;
-    const r = await ctx.send(`preset:${group}`, { type: 'savePreset', group, name }, { coalesce: false });
+    ctx.preset = name;
+    const r = await ctx.send(key, { type: 'savePreset', name }, { coalesce: false });
     if (r.connected && !r.error) toast(`Saved “${name}”`);
   });
   del.addEventListener('click', async () => {
-    const name = current();
-    if (!(await confirmDialog({ title: `Delete “${name}”?`, body: 'The preset is removed from this computer. The camera keeps its current settings.', confirm: 'Delete', danger: true }))) return;
-    ctx.send(`preset:${group}`, { type: 'deletePreset', group, name }, { coalesce: false });
+    const name = ctx.preset;
+    if (!name || !(await confirmDialog({ title: `Delete “${name}”?`, body: 'The preset is removed from this computer. The camera keeps its current settings.', confirm: 'Delete', danger: true }))) return;
+    const r = await ctx.send(key, { type: 'deletePreset', name }, { coalesce: false });
+    if (r.connected && !r.error) toast(`Deleted “${name}”`);
   });
-  return { del, saveBtn };
+  let sig = '';
+  return {
+    el: el('div', { class: 'page-presets', role: 'group', 'aria-label': 'Your presets' }, el('span', { class: 'k' }, 'Preset'), pick.el, del, saveBtn),
+    update(snap) {
+      list = snap.custom;
+      const next = JSON.stringify(list.map((p) => p.name));
+      if (next !== sig) {
+        sig = next;
+        pick.setGroups(list.length ? [{ label: 'Your presets', options: list.map((p) => ({ value: p.name, label: p.name })) }] : []);
+        pick.setPlaceholder(list.length ? 'Custom' : 'None saved yet');
+        pick.el.disabled = !list.length;
+      }
+      if (ctx.quiet(key)) return;
+      // Presets saved by 1.4 have one tab's settings, so more than one can match: keep the one you picked or saved.
+      const matching = list.filter((p) => p.matches).map((p) => p.name);
+      const same = matching.find((n) => n.toLowerCase() === ctx.preset?.toLowerCase());
+      ctx.preset = same ?? matching[0] ?? null;
+      pick.set(ctx.preset);
+      del.hidden = !ctx.preset;
+    },
+  };
 }
 
 /** G Hub's framing presets by what they do, in this order; its names are kept as their tooltips. */
@@ -386,18 +429,15 @@ const FRAMING_TITLES = {
 };
 
 /**
- * A card's presets as one row of choices: G Hub's (by `labels`, in their order, where given), then yours.
- * Each sets the whole card, as in G Hub: the framing presets set field of view, zoom, pan, tilt and Show
- * Mode, so 78° Medium also takes the zoom back to 1×. The one the camera matches is lit; none is when
- * you've changed something since. The arrow keys move along it.
+ * G Hub's presets for one tab as a row of choices (by `labels`, in their order, where given). Each sets the
+ * whole tab, as in G Hub: the framing presets set field of view, zoom, pan, tilt and Show Mode, so 78° Medium
+ * also takes the zoom back to 1×. The one the camera matches is lit; none is when you've changed something
+ * since. The arrow keys move along it. Your own presets, the whole camera, are in the page's head (yourPresets).
  */
 function presetRow(ctx, group, { labels = {}, titles = {} } = {}) {
-  const row = el('div', { class: 'segmented preset-strip', role: 'radiogroup', 'aria-label': `${GROUP_TITLES[group]} presets` });
-  let lit = null;
-  const { del, saveBtn } = presetActions(ctx, group, () => lit, 'Save preset');
+  const row = el('div', { class: 'segmented preset-strip', role: 'radiogroup', 'aria-label': `G Hub’s ${GROUP_TITLES[group].toLowerCase()} presets` });
   const buttons = () => [...row.querySelectorAll('button')];
   function light(name) {
-    lit = name;
     for (const b of buttons()) {
       b.setAttribute('aria-checked', String(b.dataset.name === name));
       b.tabIndex = b.dataset.name === name ? 0 : -1;
@@ -421,25 +461,19 @@ function presetRow(ctx, group, { labels = {}, titles = {} } = {}) {
   let sig = '';
   return {
     el: row,
-    actions: [saveBtn, del],
     update(snap) {
       const list = snap.presets.filter((p) => p.group === group);
       const order = Object.keys(labels);
-      const rank = (p) => (p.curated ? (order.indexOf(p.name) + 1 || order.length + 1) : order.length + 2);
-      const next = JSON.stringify(list.map((p) => [p.name, p.curated]));
+      const rank = (p) => order.indexOf(p.name) + 1 || order.length + 1;
+      const next = JSON.stringify(list.map((p) => p.name));
       if (next !== sig) {
         sig = next;
-        const sorted = [...list].sort((a, b) => rank(a) - rank(b));
-        row.replaceChildren(...sorted.flatMap((p, i) => [
-          // a line between G Hub's and yours
-          i > 0 && !p.curated && sorted[i - 1].curated ? el('span', { class: 'stage-sep', 'aria-hidden': 'true' }) : null,
+        row.replaceChildren(...[...list].sort((a, b) => rank(a) - rank(b)).map((p) =>
           el('button', { type: 'button', role: 'radio', 'data-name': p.name, tabindex: '-1', onclick: () => pick(p.name),
-            title: p.curated ? (titles[p.name] ? `${titles[p.name]} (G Hub’s “${p.name}”)` : 'G Hub’s preset') : 'Your preset' }, p.curated ? labels[p.name] ?? p.name : p.name),
-        ].filter(Boolean)));
+            title: titles[p.name] ? `${titles[p.name]} (G Hub’s “${p.name}”)` : 'G Hub’s preset' }, labels[p.name] ?? p.name)));
       }
       const match = list.find((p) => p.matches);
       if (!ctx.quiet(`preset:${group}`)) light(match?.name ?? null);
-      del.hidden = !match || match.curated;
     },
   };
 }
@@ -449,6 +483,7 @@ function presetRow(ctx, group, { labels = {}, titles = {} } = {}) {
 function cameraPage(ctx) {
   const slot = el('div', { class: 'preview-slot' });
   const presets = presetRow(ctx, 'crop', { labels: FRAMING_LABELS, titles: FRAMING_TITLES });
+  const yours = yourPresets(ctx);
   const zoom = rangeRow(ctx, 'zoom', { label: 'Zoom', min: 100, max: 400, format: (v) => `${(v / 100).toFixed(v % 100 ? 2 : 1)}×` });
   const map = cropMap(ctx);
   const showDesc = 'Tilt the camera down at your desk and it turns the picture the right way up, to share notes and sketches.';
@@ -457,7 +492,7 @@ function cameraPage(ctx) {
 
   // The picture is the page: framing floats over it on glass, the way a camera app has it.
   const node = pageShell('Camera', 'What the camera shows: how wide, how close, and where. Apps get the camera with these settings.',
-    el('div', { class: 'camera-stage' }, slot));
+    yours.el, el('div', { class: 'camera-stage' }, slot));
 
   return {
     el: node,
@@ -465,10 +500,9 @@ function cameraPage(ctx) {
     overlay: [el('div', { class: 'stage-controls' }, presets.el, el('span', { class: 'stage-sep' }), zoom.el), map.el],
     bar: [
       el('div', { class: 'stage-item', title: showDesc }, el('span', { class: 'k' }, 'Show Mode'), show.el),
-      el('span', { class: 'stage-sep' }),
-      el('div', { class: 'stage-item' }, ...presets.actions),
     ],
     update(s) {
+      yours.update(s);
       presets.update(s);
       zoom.update(s);
       map.update(s);
@@ -675,25 +709,26 @@ function imagePage(ctx) {
     g.presets = presetRow(ctx, g.id);
     g.panel = adjustPanel(`${g.label} adjustments`, g.items);
     g.top = el('div', { class: 'stage-controls stage-top' }, g.presets.el);
-    g.actions = el('div', { class: 'stage-item' }, ...g.presets.actions);
   }
+  const yours = yourPresets(ctx);
   const tabs = segmented({ label: 'Adjust', options: groups.map((g) => ({ value: g.id, label: g.label })), onChange: (id) => open(id) });
   function open(id) {
     tabs.set(id);
-    for (const g of groups) g.top.hidden = g.panel.el.hidden = g.actions.hidden = g.id !== id;
+    for (const g of groups) g.top.hidden = g.panel.el.hidden = g.id !== id;
   }
   open('exposure');
 
   // Like the Camera page: the picture is the page, and a group's presets and adjustments float over it on glass.
   const node = pageShell('Image', 'How the picture looks: exposure, colour and focus. Like G Hub, Libre Hub writes these to the camera, so every app gets them.',
-    el('div', { class: 'camera-stage' }, slot));
+    yours.el, el('div', { class: 'camera-stage' }, slot));
 
   return {
     el: node,
     slot,
     overlay: groups.flatMap((g) => [g.top, g.panel.el]),
-    bar: [tabs.el, el('span', { class: 'stage-sep' }), ...groups.map((g) => g.actions)],
+    bar: [tabs.el],
     update(snap) {
+      yours.update(snap);
       for (const g of groups) {
         g.presets.update(snap);
         g.panel.update(snap);
@@ -724,7 +759,7 @@ function settingsPage(ctx) {
   } }, ic('reset', 14), 'Reset all');
   const facts = el('div', { class: 'facts' });
 
-  const node = pageShell('Settings', 'The camera’s microphones and mains frequency, and what Libre Hub keeps for it.',
+  const node = pageShell('Settings', 'The camera’s microphones and mains frequency, and what Libre Hub keeps for it.', null,
     el('div', { class: 'stack' },
       el('div', { class: 'card' },
         cardHead('camera', 'Camera', null),

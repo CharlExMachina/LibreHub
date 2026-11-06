@@ -112,20 +112,24 @@ it.
 
 - **Camera:** a live preview across the page (with G Hub's mirror, grid, resolution and snapshot
   options), with the framing on glass over the picture. Along the bottom, G Hub's framing presets
-  by what they do (65° Close, 78° Medium, 90° Wide, 1.5×, 2×), then yours, and zoom up to 4×;
-  zoomed in, a map in the corner to drag for pan and tilt. Show Mode, and saving the framing as a
-  preset, are in the bar under it.
+  by what they do (65° Close, 78° Medium, 90° Wide, 1.5×, 2×) and zoom up to 4×; zoomed in, a map
+  in the corner to drag for pan and tilt. Show Mode is in the bar under it, and your presets at the
+  top (below).
 - **Image:** the same picture, with exposure (auto, or shutter speed and ISO; compensation, HDR,
   frame-rate or exposure priority), colour (brightness, contrast, saturation, vibrance, sharpness,
   tint, white balance auto or in kelvin, warmer/cooler) and focus (auto or manual) on glass over
   it, as a photo editor has them: a chip for each adjustment, showing its value, and the picked
-  one's control and what it does. The group's presets are a row at the top.
+  one's control and what it does. G Hub's presets for the group are a row at the top.
 - **Settings:** the microphones on or off, anti-flicker (50/60 Hz), what Libre Hub keeps for the
   camera, reset everything, and device details.
 
-Presets are a row of choices: G Hub's and yours after them, the one your settings match lit, and
-Save preset to keep the current settings as one of yours. Every change goes to the camera at once
-(sliders when you let go), so every app gets it. The camera forgets its framing when it restarts,
+Your presets are in a drop-down at the top of the Camera and Image pages. Save preset keeps the
+camera's whole look (framing, exposure, colour and focus) under a name, and picking it puts all of
+it back at once; the drop-down says which one the camera has now. G Hub's presets each set one
+part: framing along the bottom of the picture, and exposure, colour or focus at the top of the
+Image page.
+
+Every change goes to the camera at once (sliders when you let go), so every app gets it. The camera forgets its framing when it restarts,
 so, like G Hub, Libre Hub saves what you change and puts it back whenever the camera connects. The preview runs only while its page is in front; snapshots go to
 Pictures/Webcam Snapshots.
 
@@ -256,7 +260,8 @@ that uses the camera afterwards gets it.
 | Auto or manual focus | Camera → Focus | ✅ byte-identical to G Hub's writes, read back on hardware |
 | Anti-flicker 50 / 60 Hz | Settings | ✅ byte-identical to G Hub's writes |
 | Microphones on/off (the camera restarts) | Microphone | ✅ G Hub's bytes; the audio device appears and goes |
-| G Hub's presets (FOV 78/65, Zoom 1.5×/2×, Streaming, Black and White, Warmer, Cooler), your own, Reset to default | Each card's Preset menu | ✅ |
+| G Hub's presets (FOV 78/65, Zoom 1.5×/2×, Streaming, Black and White, Warmer, Cooler), Reset to default | Each card's Preset menu | ✅ |
+| Your presets: the whole camera (framing, exposure, colour, focus) by name | Libre Hub's own (G Hub's are per card) | ✅ |
 | Live preview: mirror, grid, resolution, snapshot | The preview's toolbar | ✅ in the app |
 | Your settings put back when the camera connects (it forgets framing on restart) | G Hub does this from its profile | ✅ verified on hardware |
 | Firmware, serial | Settings | ✅ read-only |
@@ -407,8 +412,9 @@ librehub camera set fov 78 zoom 150 tilt -2         several at once; pan and til
 librehub camera set auto-exposure off shutter 1/120 iso 400
 librehub camera set auto-white-balance off white-balance 4000 temperature-compensation 60
 librehub camera reset [crop|exposure|image|focus|all]    G Hub's defaults
-librehub camera preset image "Black and White"      G Hub's presets, or yours
-librehub camera preset save crop "Desk"             | preset delete crop "Desk"
+librehub camera preset save "Desk"                  the whole camera, as one of your presets
+librehub camera preset "Desk"                       | preset delete "Desk"
+librehub camera preset image "Black and White"      G Hub's presets, one card each
 librehub camera microphone on|off                   the camera restarts to apply it
 librehub camera restore                             put the kept settings back (the app does this on connect)
 librehub camera settings                            every setting and its range

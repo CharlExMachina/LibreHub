@@ -9,15 +9,17 @@ import { openCamera, type CameraTransport } from './transport.js';
 const GROUP_TITLES: Record<Group, string> = { crop: 'Crop', exposure: 'Exposure', image: 'Image', focus: 'Focus', general: 'General' };
 
 const USAGE = `usage: librehub camera <command>
-  status [--json]                 settings, microphone, presets, and what is kept
+  status [--json]                 settings, microphone, presets (G Hub's and yours), and what is kept
   set <setting> <value> [<setting> <value> …]
                                   write settings to the camera (and keep them; see below)
   reset [crop|exposure|image|focus|all]
                                   G Hub's "Reset to default" for one tab (default: all)
+  preset <name>                   apply one of your presets: framing, exposure, colour and focus
+  preset save <name>              save the camera's current look as a preset (replacing one of
+                                  the same name); everything but anti-flicker
+  preset delete <name>
   preset <crop|exposure|image|focus> <name>
-                                  apply one of G Hub's presets, or one of yours
-  preset save <group> <name>      save the group's current settings as a preset
-  preset delete <group> <name>
+                                  apply one of G Hub's presets, which sets just that tab
   microphone <on|off>             the camera's microphones (it restarts to apply this)
   restore                         put the kept settings back where the camera differs
   forget                          stop keeping settings for this camera
@@ -30,6 +32,8 @@ the camera forgets its framing when it restarts, as G Hub knows.
 examples:
   librehub camera set fov 78 zoom 150
   librehub camera set auto-exposure off shutter 1/120 iso 400
+  librehub camera preset save "Desk at night"
+  librehub camera preset "Desk at night"
   librehub camera preset image "Black and White"`;
 
 /** "auto-exposure" and "autoExposure" both name the same setting. */
@@ -40,9 +44,22 @@ function settingKey(name: string): SettingKey {
 }
 const kebab = (k: string) => k.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
 
-function presetGroup(g: string | undefined): PresetGroup {
-  if (g === 'crop' || g === 'exposure' || g === 'image' || g === 'focus') return g;
-  throw new Error('preset group must be crop, exposure, image or focus');
+const PRESET_GROUPS: readonly string[] = ['crop', 'exposure', 'image', 'focus'];
+const isGroup = (g: string | undefined): g is PresetGroup => PRESET_GROUPS.includes(g ?? '');
+
+/** `preset <name>`, `preset <group> <name>` (G Hub's), `preset save|delete <name>`. */
+function presetAction(args: string[]): CameraAction {
+  const [first, ...rest] = args;
+  if (first === 'save' || first === 'delete') {
+    // Before 1.5 a preset was one tab's settings: "preset save crop Desk".
+    if (isGroup(rest[0]) && rest.length > 1) throw new Error(`presets keep the whole camera now: librehub camera preset ${first} "${rest.slice(1).join(' ')}"`);
+    const name = rest.join(' ');
+    if (!name.trim()) throw new Error(`preset ${first} takes a name`);
+    return { type: first === 'save' ? 'savePreset' : 'deletePreset', name };
+  }
+  if (isGroup(first) && rest.length) return { type: 'preset', group: first, name: rest.join(' ') };
+  if (!args.length) throw new Error('preset takes a name; "librehub camera status" lists them');
+  return { type: 'customPreset', name: args.join(' ') };
 }
 
 export function printStatus(s: CameraSnapshot): void {
@@ -58,6 +75,7 @@ export function printStatus(s: CameraSnapshot): void {
       console.log(`  ${kebab(k).padEnd(26)}${formatSetting(k, s.settings[k])}${idle}`);
     }
   }
+  console.log(`\nYour presets: ${s.custom.length ? s.custom.map((p) => (p.matches ? `${p.name} (in use)` : p.name)).join(', ') : 'none yet'}`);
   const kept = Object.keys(s.saved);
   console.log(`\nKept and put back on connect: ${kept.length ? kept.map(kebab).join(', ') : 'nothing yet'}`);
 }
@@ -113,9 +131,7 @@ export async function runCli(raw: string[], open: () => Promise<CameraTransport>
         return await apply({ type: 'reset', group });
       }
       case 'preset':
-        if (args[0] === 'save') return await apply({ type: 'savePreset', group: presetGroup(args[1]), name: args.slice(2).join(' ') });
-        if (args[0] === 'delete') return await apply({ type: 'deletePreset', group: presetGroup(args[1]), name: args.slice(2).join(' ') });
-        return await apply({ type: 'preset', group: presetGroup(args[0]), name: args.slice(1).join(' ') });
+        return await apply(presetAction(args));
       case 'microphone':
         if (args[0] !== 'on' && args[0] !== 'off') throw new Error('expected on or off');
         await apply({ type: 'microphone', enabled: args[0] === 'on' });

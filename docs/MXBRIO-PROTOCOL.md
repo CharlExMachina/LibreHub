@@ -92,7 +92,8 @@ FOV 78, FOV 65, Zoom 1.5×, Zoom 2×; Exposure: Default, Streaming (frame-rate p
 Default, Black and White (saturation 0), Warmer (temperature 60), Cooler (temperature 40); Focus:
 Default. "Default" and G Hub's Reset are its `default_configurations.json`: everything as in the
 tables' defaults, with Show Mode on, HDR on, exposure priority, 60 Hz. Libre Hub has the same
-presets, and saves yours in `mx-brio.json`.
+presets. Yours are Libre Hub's own: each keeps framing, exposure, image and focus (everything but
+anti-flicker), saved in `mx-brio.json`.
 
 ## Transport
 

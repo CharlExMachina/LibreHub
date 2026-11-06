@@ -343,6 +343,7 @@ export function dropdown({ label, groups = [], onChange, placeholder = '' }) {
     get value() { return value; },
     set(v) { value = v; paint(); if (open) build(); },
     setGroups(next) { groups = next; paint(); if (open) { build(); place(); } },
+    setPlaceholder(text) { placeholder = text; paint(); },
   };
 }
 
